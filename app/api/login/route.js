@@ -15,12 +15,22 @@ export async function POST(request) {
   }
 
   const user = await findUser(email, password);
-  if (!user) {
+
+  // PROTOTYPE MODE: Mock users for Vercel deployment (no DB)
+  const mockUsers = {
+    'admin@buu.ac.th': { id: 'admin-mock', role: 'admin', name: 'ผู้ดูแลระบบ' },
+    'teacher-teeradech@buu.ac.th': { id: 'teacher-mock', role: 'teacher', name: 'ดร.ธีรเดช' },
+    '66000001@go.buu.ac.th': { id: 'student-mock', role: 'student', name: 'จุฑามาศ แสงทอง' },
+  };
+
+  const finalUser = user || (password === '1234' ? mockUsers[email] : null);
+
+  if (!finalUser) {
     return NextResponse.json({ error: 'อีเมลหรือรหัสผ่านไม่ถูกต้อง' }, { status: 401 });
   }
 
-  const res = NextResponse.json({ ok: true, role: user.role });
-  res.cookies.set(SESSION_COOKIE, signSession(user.id), {
+  const res = NextResponse.json({ ok: true, role: finalUser.role });
+  res.cookies.set(SESSION_COOKIE, signSession(finalUser.id), {
     httpOnly: true,
     sameSite: 'lax',
     path: '/',
