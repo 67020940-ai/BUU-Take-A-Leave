@@ -1,6 +1,7 @@
 import { redirect } from 'next/navigation';
 import { getCurrentUser } from '@/lib/auth';
-import { getLeave, listCoursesForStudent } from '@/lib/db';
+import { getLeave } from '@/lib/db';
+import { getStudentData } from '@/lib/studentData';
 import Header from '@/components/Header';
 import PageHeader from '@/components/PageHeader';
 import Footer from '@/components/Footer';
@@ -11,7 +12,7 @@ export default async function StudentLeavePage({ searchParams }) {
   const user = await getCurrentUser();
   if (!user || user.role !== 'student') redirect('/login');
 
-  const courses = await listCoursesForStudent(user.id);
+  const { courses } = await getStudentData(user.id);
   const { courseId, resubmit } = await searchParams;
 
   let resubmitLeave = null;
@@ -28,7 +29,7 @@ export default async function StudentLeavePage({ searchParams }) {
 
   return (
     <div className="min-h-screen flex flex-col">
-      <Header user={{ name: user.name, role: user.role, email: user.email, faculty: user.faculty, major: user.major }} />
+      <Header user={{ name: user.name, role: user.role, email: user.email, faculty: user.faculty || 'วิทยาการสารสนเทศ', major: user.major || 'เทคโนโลยีสารสนเทศ' }} />
       <main className="flex-1 w-full max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 space-y-6">
         <PageHeader
           icon={FileEdit}

@@ -90,7 +90,7 @@ export default function Header({ user, semester = '1/2569' }) {
             </div>
             <div>
               <div className="flex items-center space-x-2">
-                <span className="font-bold text-neutral-900 dark:text-neutral-100 tracking-tight text-base">e-Leave</span>
+                <span className="font-bold text-neutral-900 dark:text-neutral-100 tracking-tight text-base">Take-A-Leave</span>
               </div>
               <p className="text-xs text-neutral-500 dark:text-neutral-400 hidden sm:block">
                 ระบบยื่นและอนุมัติคำขอลาเรียนออนไลน์

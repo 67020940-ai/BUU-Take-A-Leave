@@ -57,6 +57,25 @@ export async function POST(request) {
   if (typeof body.reason !== 'string' || body.reason.trim().length === 0 || body.reason.length > REASON_LIMIT) {
     return NextResponse.json({ error: 'เหตุผลไม่ถูกต้อง' }, { status: 400 });
   }
+  if (user.id.includes('-mock') || String(body.courseId).startsWith('mock-')) {
+    const mockCreated = {
+      id: Math.floor(Math.random() * 9000) + 1000,
+      studentId: user.id,
+      courseId: body.courseId,
+      type: body.type,
+      period: body.period,
+      startDate: body.startDate,
+      endDate: body.endDate,
+      reason: body.reason,
+      attachment: body.attachment || null,
+      status: 'รออนุมัติ',
+      teacherComment: null,
+      createdAt: new Date().toISOString(),
+      courseName: 'รายวิชาที่ลงทะเบียน',
+    };
+    return NextResponse.json({ leave: mockCreated }, { status: 201 });
+  }
+
   if (!(await getCourse(body.courseId))) {
     return NextResponse.json({ error: 'ไม่พบรายวิชาที่เลือก' }, { status: 400 });
   }

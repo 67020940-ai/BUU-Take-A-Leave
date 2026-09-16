@@ -9,7 +9,7 @@ export default function Footer({ role, semester = '1/2569' }) {
     <footer className="mt-auto border-t border-neutral-200/80 dark:border-slate-800 bg-white/70 dark:bg-slate-900/70 backdrop-blur-xl">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-3 flex flex-col sm:flex-row items-center justify-between gap-1.5 text-xs text-neutral-500 dark:text-neutral-400">
         <div className="flex items-center gap-1.5">
-          <span className="font-bold text-neutral-800 dark:text-neutral-200">BUU e-Leave</span>
+          <span className="font-bold text-neutral-800 dark:text-neutral-200">BUU Take-A-Leave</span>
           <span>·</span>
           <span>ระบบลาเรียนออนไลน์ มหาวิทยาลัยบูรพา</span>
         </div>

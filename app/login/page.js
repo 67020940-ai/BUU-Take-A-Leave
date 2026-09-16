@@ -73,7 +73,7 @@ export default function LoginPage() {
         <div className="bg-white dark:bg-slate-900">
           <div className="px-6 pt-8 pb-5 text-center md:hidden">
             <div className="inline-flex items-center justify-center px-4 py-2 rounded-2xl border-2 border-[#7749BC] bg-purple-50/70 dark:bg-purple-950/40 text-[#7749BC] dark:text-purple-300 font-extrabold text-xl tracking-wider shadow-xs mb-3">
-              BUU e-Leave
+              BUU Take-A-Leave
             </div>
             <div className="flex items-center justify-center space-x-2 text-neutral-500 dark:text-neutral-400 text-xs font-medium">
               <span className="h-px w-6 bg-neutral-300 dark:bg-slate-700" />
