@@ -15,7 +15,7 @@ import {
 import { ATTACHMENT_FILENAME_RE } from '@/lib/uploads';
 
 const LEAVE_TYPES = ['ลาป่วย', 'ลากิจส่วนตัว', 'ลากิจกรรม', 'เหตุฉุกเฉิน', 'อื่นๆ'];
-const LEAVE_PERIODS = ['เต็มคาบเรียน 3 ชั่วโมง', 'ครึ่งคาบแรก 1.5 ชั่วโมง', 'ครึ่งคาบหลัง 1.5 ชั่วโมง'];
+const LEAVE_PERIODS = ['เต็มคาบเรียน 3 ชั่วโมง'];
 const DATE_RE = /^\d{4}-\d{2}-\d{2}$/;
 const REASON_LIMIT = 300;
 
@@ -103,7 +103,9 @@ export async function POST(request) {
 export async function PATCH(request) {
   const user = await getCurrentUser();
   if (!user) return NextResponse.json({ error: 'ยังไม่ได้เข้าสู่ระบบ' }, { status: 401 });
-  if (user.role !== 'teacher') return NextResponse.json({ error: 'ไม่มีสิทธิ์อนุมัติคำร้อง' }, { status: 403 });
+  if (user.role !== 'teacher' && user.role !== 'admin') {
+    return NextResponse.json({ error: 'ไม่มีสิทธิ์อนุมัติคำร้อง' }, { status: 403 });
+  }
 
   const { id, status, comment } = await request.json();
   if (!id || !['อนุมัติ', 'ไม่อนุมัติ', 'รออนุมัติ'].includes(status)) {
@@ -116,19 +118,11 @@ export async function PATCH(request) {
   const existing = await getLeave(id);
   if (!existing) return NextResponse.json({ error: 'ไม่พบคำร้อง' }, { status: 404 });
 
-  const course = await getCourse(existing.courseId);
-  if (!course || course.teacherId !== user.id) {
-    return NextResponse.json({ error: 'ไม่มีสิทธิ์อนุมัติคำร้องนี้' }, { status: 403 });
-  }
-
-  // อนุมัติ/ไม่อนุมัติ ทำได้เฉพาะตอนยังรออนุมัติอยู่ ส่วนการ "ยกเลิกการอนุมัติ" (กลับเป็นรออนุมัติ)
-  // ทำได้เฉพาะตอนที่เคยตัดสินใจไปแล้ว (อาจารย์คนเดิมที่เป็นเจ้าของวิชาเท่านั้น เช็คสิทธิ์ไปแล้วด้านบน)
-  if (status === 'รออนุมัติ') {
-    if (existing.status === 'รออนุมัติ') {
-      return NextResponse.json({ error: 'คำร้องนี้ยังไม่ได้พิจารณา ไม่มีการอนุมัติให้ยกเลิก' }, { status: 400 });
+  if (user.role === 'teacher') {
+    const course = await getCourse(existing.courseId);
+    if (!course || course.teacherId !== user.id) {
+      return NextResponse.json({ error: 'ไม่มีสิทธิ์อนุมัติคำร้องนี้' }, { status: 403 });
     }
-  } else if (existing.status !== 'รออนุมัติ') {
-    return NextResponse.json({ error: 'คำร้องนี้ถูกดำเนินการไปแล้ว' }, { status: 400 });
   }
 
   const leave = await setLeaveStatus(id, status, comment);

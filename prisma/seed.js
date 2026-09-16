@@ -231,7 +231,7 @@ async function main() {
 
   // ---------- ใบลาตัวอย่าง (สำหรับทดสอบคิวอนุมัติ + ประวัติการอนุมัติ) ----------
   const LEAVE_TYPES = ['ลาป่วย', 'ลากิจส่วนตัว', 'ลากิจกรรม', 'อื่นๆ'];
-  const PERIODS = ['เต็มคาบเรียน 3 ชั่วโมง', 'ครึ่งคาบแรก 1.5 ชั่วโมง', 'ครึ่งคาบหลัง 1.5 ชั่วโมง'];
+  const PERIODS = ['เต็มคาบเรียน 3 ชั่วโมง'];
   const REASONS = [
     'มีนัดพบแพทย์ตามใบนัด',
     'ป่วยเป็นไข้หวัดใหญ่ พักรักษาตัวที่บ้าน',
@@ -241,12 +241,12 @@ async function main() {
 
   const leaveSpecs = [
     { student: students[0], courseKey: '24543164#01', type: 0, period: 0, reason: 1, date: '2026-08-20', status: 'อนุมัติ', comment: 'อนุมัติการลาตามระเบียบเรียบร้อย' },
-    { student: students[1], courseKey: '24545164#01', type: 1, period: 1, reason: 2, date: '2026-08-25', status: 'รออนุมัติ' },
+    { student: students[1], courseKey: '24545164#01', type: 1, period: 0, reason: 2, date: '2026-08-25', status: 'รออนุมัติ' },
     { student: students[8], courseKey: '24527664#01', type: 0, period: 0, reason: 0, date: '2026-08-18', status: 'ไม่อนุมัติ', comment: 'เอกสารประกอบไม่ครบถ้วนตามเกณฑ์' },
-    { student: students[9], courseKey: '24535164#01', type: 2, period: 2, reason: 3, date: '2026-08-22', status: 'อนุมัติ', comment: 'อนุมัติเนื่องจากเป็นตัวแทนเข้าร่วมกิจกรรมมหาวิทยาลัย' },
+    { student: students[9], courseKey: '24535164#01', type: 2, period: 0, reason: 3, date: '2026-08-22', status: 'อนุมัติ', comment: 'อนุมัติเนื่องจากเป็นตัวแทนเข้าร่วมกิจกรรมมหาวิทยาลัย' },
     { student: students[16], courseKey: '24534164#01', type: 0, period: 0, reason: 1, date: '2026-08-27', status: 'รออนุมัติ' },
     { student: students[17], courseKey: '24534164#02', type: 1, period: 0, reason: 2, date: '2026-08-19', status: 'อนุมัติ', comment: 'อนุมัติการลาตามระเบียบเรียบร้อย' },
-    { student: students[24], courseKey: '24514169#01', type: 3, period: 1, reason: 0, date: '2026-08-21', status: 'ไม่อนุมัติ', comment: 'เหตุผลไม่เข้าเกณฑ์การลาตามระเบียบ' },
+    { student: students[24], courseKey: '24514169#01', type: 3, period: 0, reason: 0, date: '2026-08-21', status: 'ไม่อนุมัติ', comment: 'เหตุผลไม่เข้าเกณฑ์การลาตามระเบียบ' },
     { student: students[25], courseKey: '24516269#01', type: 0, period: 0, reason: 1, date: '2026-08-28', status: 'รออนุมัติ' },
   ];
 
