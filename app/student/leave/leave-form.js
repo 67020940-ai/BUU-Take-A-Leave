@@ -13,45 +13,36 @@ import {
   HeartPulse,
   User,
   Users,
-  AlertTriangle,
   MoreHorizontal,
   ChevronDown,
   ImagePlus,
   Loader2,
   Lock,
   RotateCcw,
-  Clock,
   HelpCircle,
 } from 'lucide-react';
 import AttachmentPreview from '@/components/AttachmentPreview';
-
-const emptyForm = {
-  courseId: '',
-  type: 'ลาป่วย',
-  otherTypeDetail: '',
-  period: 'เต็มคาบเรียน 3 ชั่วโมง',
-  startDate: '',
-  endDate: '',
-  reason: '',
-};
+import { DAY_LABEL_TH } from '@/lib/ui';
 
 const inputCls =
   'w-full px-3.5 py-2.5 rounded-xl border border-neutral-300 dark:border-slate-700 bg-white dark:bg-slate-800/90 text-sm font-medium text-neutral-900 dark:text-neutral-100 placeholder:text-neutral-400 focus:outline-none focus:border-[#7749BC] focus:ring-2 focus:ring-[#7749BC]/20 transition-all shadow-xs';
 const inputErrorCls =
-  'w-full px-3.5 py-2.5 rounded-xl border border-rose-400 dark:border-rose-700 bg-rose-50/60 dark:bg-rose-950/30 text-sm font-medium text-neutral-900 dark:text-neutral-100 placeholder:text-neutral-400 focus:outline-none focus:border-rose-500 focus:ring-2 focus:ring-rose-500/20 transition-all shadow-xs';
+  'w-full px-3.5 py-2.5 rounded-xl border-2 border-rose-500 dark:border-rose-600 bg-rose-50/70 dark:bg-rose-950/40 text-sm font-medium text-neutral-900 dark:text-neutral-100 placeholder:text-neutral-400 focus:outline-none focus:border-rose-600 focus:ring-2 focus:ring-rose-500/20 transition-all shadow-xs';
 const selectCls = `${inputCls} appearance-none pr-10 cursor-pointer`;
+
 function fieldCls(hasError) {
   return hasError ? inputErrorCls : inputCls;
 }
+
 const labelCls = 'text-xs font-semibold text-neutral-800 dark:text-neutral-200 mb-1.5 flex items-center gap-1.5';
 const sectionTitleCls = 'text-xs font-bold text-[#7749BC] dark:text-purple-300 uppercase tracking-wide mb-3';
 
+// รายการประเภทการลา: ลบเหตุฉุกเฉินออก, คำว่า "อื่น ๆ" เว้นวรรคไม้ยมก
 const LEAVE_TYPES = [
   { value: 'ลาป่วย', icon: HeartPulse },
   { value: 'ลากิจส่วนตัว', icon: User },
   { value: 'ลากิจกรรม', icon: Users },
-  { value: 'เหตุฉุกเฉิน', icon: AlertTriangle },
-  { value: 'อื่นๆ', icon: MoreHorizontal },
+  { value: 'อื่น ๆ', icon: MoreHorizontal },
 ];
 
 const REASON_LIMIT = 300;
@@ -62,12 +53,12 @@ export default function LeaveForm({ courses, initialCourseId, lockCourse, initia
 
   const [form, setForm] = useState({
     courseId: initialCourseId || courses[0]?.id || '',
-    type: initialValues?.type || emptyForm.type,
+    type: initialValues?.type === 'อื่นๆ' ? 'อื่น ๆ' : initialValues?.type || 'ลาป่วย',
     otherTypeDetail: '',
-    period: 'เต็มคาบเรียน 3 ชั่วโมง',
-    startDate: initialValues?.startDate || emptyForm.startDate,
-    endDate: initialValues?.endDate || emptyForm.endDate,
-    reason: initialValues?.reason || emptyForm.reason,
+    period: initialValues?.period || 'เต็มคาบเรียน 3 ชั่วโมง',
+    startDate: initialValues?.startDate || '',
+    endDate: initialValues?.endDate || '',
+    reason: initialValues?.reason || '',
   });
 
   const [attachment, setAttachment] = useState(
@@ -81,6 +72,12 @@ export default function LeaveForm({ courses, initialCourseId, lockCourse, initia
   const [success, setSuccess] = useState('');
   const [saving, setSaving] = useState(false);
   const [fieldErrors, setFieldErrors] = useState({});
+  const [touched, setTouched] = useState({});
+
+  // รายวิชาที่เลือกในปัจจุบัน
+  const currentCourse = useMemo(() => {
+    return courses.find((c) => c.id === form.courseId) || courses[0] || null;
+  }, [courses, form.courseId]);
 
   async function handleFileChange(e) {
     const file = e.target.files?.[0];
@@ -103,9 +100,42 @@ export default function LeaveForm({ courses, initialCourseId, lockCourse, initia
     }
   }
 
+  // ตรวจสอบความถูกต้องของแต่ละฟิลด์ทันที
+  function validateSingleField(field, value, currentForm = form) {
+    let errMsg = '';
+    if (field === 'startDate') {
+      if (!value) errMsg = 'กรุณากรอกวันที่เริ่มลา';
+    } else if (field === 'endDate') {
+      if (!value) errMsg = 'กรุณากรอกวันที่สิ้นสุด';
+      else if (currentForm.startDate && value < currentForm.startDate) {
+        errMsg = 'วันที่สิ้นสุดต้องไม่ก่อนวันที่เริ่มลา';
+      }
+    } else if (field === 'reason') {
+      if (!String(value || '').trim()) {
+        errMsg = 'กรุณากรอกเหตุผลการลา (เช่น อุบัติเหตุ, ป่วยเป็นไข้)';
+      }
+    } else if (field === 'otherTypeDetail') {
+      if (currentForm.type === 'อื่น ๆ' && !String(value || '').trim()) {
+        errMsg = 'กรุณาระบุประเภทการลาเพิ่มเติม';
+      }
+    }
+    setFieldErrors((prev) => ({ ...prev, [field]: errMsg }));
+    return errMsg;
+  }
+
+  // เมื่อผู้ใช้แตะออกจากช่อง (onBlur) แล้วยังไม่ได้ใส่ข้อมูล ให้ขึ้น error สีแดงทันที
+  function handleBlur(field) {
+    setTouched((prev) => ({ ...prev, [field]: true }));
+    validateSingleField(field, form[field]);
+  }
+
   function update(field, value) {
-    setForm((prev) => ({ ...prev, [field]: value }));
-    if (fieldErrors[field]) setFieldErrors((prev) => ({ ...prev, [field]: '' }));
+    const nextForm = { ...form, [field]: value };
+    setForm(nextForm);
+    // ลบ error ทันทีเมื่อผู้ใช้กรอกข้อมูล
+    if (touched[field] || fieldErrors[field]) {
+      validateSingleField(field, value, nextForm);
+    }
   }
 
   const dateError = useMemo(() => {
@@ -126,17 +156,27 @@ export default function LeaveForm({ courses, initialCourseId, lockCourse, initia
     setError('');
     setSuccess('');
 
+    // สั่ง mark touched ทุกช่องที่มี * ทันที
+    setTouched({
+      startDate: true,
+      endDate: true,
+      reason: true,
+      otherTypeDetail: true,
+    });
+
     const nextFieldErrors = {};
     if (!form.startDate) nextFieldErrors.startDate = 'กรุณากรอกวันที่เริ่มลา';
     if (!form.endDate) nextFieldErrors.endDate = 'กรุณากรอกวันที่สิ้นสุด';
-    if (form.type === 'อื่นๆ' && !form.otherTypeDetail.trim()) {
+    if (form.type === 'อื่น ๆ' && !form.otherTypeDetail.trim()) {
       nextFieldErrors.otherTypeDetail = 'กรุณาระบุประเภทการลาเพิ่มเติม';
     }
-    if (!form.reason.trim()) nextFieldErrors.reason = 'กรุณากรอกเหตุผลการลา';
+    if (!form.reason.trim()) {
+      nextFieldErrors.reason = 'กรุณากรอกเหตุผลการลา (เช่น อุบัติเหตุ, ป่วยเป็นไข้)';
+    }
 
     if (Object.keys(nextFieldErrors).length > 0) {
       setFieldErrors(nextFieldErrors);
-      setError('กรุณากรอกข้อมูลในช่องที่ทำเครื่องหมายสีแดงให้ครบถ้วน');
+      setError('กรุณากรอกข้อมูลในช่องที่มีเครื่องหมายดอกจัน (*) สีแดงให้ครบถ้วน');
       return;
     }
     setFieldErrors({});
@@ -149,7 +189,7 @@ export default function LeaveForm({ courses, initialCourseId, lockCourse, initia
     setSaving(true);
     try {
       const finalReason =
-        form.type === 'อื่นๆ' && form.otherTypeDetail.trim()
+        form.type === 'อื่น ๆ' && form.otherTypeDetail.trim()
           ? `[ประเภท: ${form.otherTypeDetail.trim()}] ${form.reason.trim()}`
           : form.reason.trim();
 
@@ -172,11 +212,20 @@ export default function LeaveForm({ courses, initialCourseId, lockCourse, initia
         setError(data.error || 'บันทึกไม่สำเร็จ');
         return;
       }
-      setForm({ ...emptyForm, courseId: courses[0]?.id || '' });
+      setForm({
+        courseId: courses[0]?.id || '',
+        type: 'ลาป่วย',
+        otherTypeDetail: '',
+        period: 'เต็มคาบเรียน 3 ชั่วโมง',
+        startDate: '',
+        endDate: '',
+        reason: '',
+      });
       setAttachment(null);
-      setSuccess('ส่งใบลาเรียบร้อยแล้ว รอการอนุมัติจากอาจารย์ผู้สอน กำลังกลับไปหน้าหลัก...');
+      setTouched({});
+      setSuccess('ส่งใบลาเรียบร้อยแล้ว รอการอนุมัติจากอาจารย์ผู้สอน กำลังไปยังหน้าประวัติการลา...');
       setTimeout(() => {
-        router.push('/student');
+        router.push('/student/history');
         router.refresh();
       }, 1200);
     } finally {
@@ -197,14 +246,16 @@ export default function LeaveForm({ courses, initialCourseId, lockCourse, initia
         </div>
       )}
 
-      {/* SECTION 1: Course & Leave Type & Reason */}
+      {/* SECTION 1: Course, Time Period & Leave Type & Reason */}
       <section>
         <p className={sectionTitleCls}>1. รายละเอียดการลา (Leave Details)</p>
-        <div className="space-y-4">
+        <div className="space-y-5">
+          {/* 1.1 รายวิชาที่ต้องการลา */}
           <div>
             <label className={labelCls}>
               <BookOpen className="w-3.5 h-3.5 text-[#7749BC] dark:text-purple-400" />
               <span>รายวิชาที่ต้องการลา</span>
+              <span className="text-rose-500">*</span>
             </label>
             {lockedCourse ? (
               <div className="flex items-center gap-2 w-full px-3.5 py-2.5 rounded-xl border border-purple-200 dark:border-purple-800 bg-purple-50/60 dark:bg-purple-950/30 text-sm font-medium text-neutral-900 dark:text-neutral-100">
@@ -215,7 +266,11 @@ export default function LeaveForm({ courses, initialCourseId, lockCourse, initia
               </div>
             ) : (
               <div className="relative">
-                <select value={form.courseId} onChange={(e) => update('courseId', e.target.value)} className={selectCls}>
+                <select
+                  value={form.courseId}
+                  onChange={(e) => update('courseId', e.target.value)}
+                  className={selectCls}
+                >
                   {courses.map((c) => (
                     <option key={c.id} value={c.id}>
                       {c.code} {c.name} {c.group ? `(กลุ่ม ${c.group})` : ''}
@@ -225,11 +280,32 @@ export default function LeaveForm({ courses, initialCourseId, lockCourse, initia
                 <ChevronDown className="w-4 h-4 text-neutral-400 absolute right-3.5 top-1/2 -translate-y-1/2 pointer-events-none" />
               </div>
             )}
+
+            {/* แสดงช่วงเวลาเรียนและรายละเอียดกลุ่มของวิชานี้ */}
+            {currentCourse && (
+              <div className="mt-2.5 p-3 rounded-2xl bg-neutral-50 dark:bg-slate-800/60 border border-neutral-200/70 dark:border-slate-700/70 space-y-1">
+                <div className="flex flex-wrap items-center gap-2 text-xs">
+                  <span className="text-neutral-500 dark:text-neutral-400">ช่วงเวลาเรียน:</span>
+                  <span className="font-bold text-neutral-900 dark:text-neutral-100">
+                    {currentCourse.day ? `วัน${DAY_LABEL_TH[currentCourse.day] || currentCourse.day} ` : ''}
+                    {currentCourse.time ? `${currentCourse.time} น.` : '13:00 - 15:50 น.'}
+                  </span>
+                </div>
+                <p className="text-xs text-neutral-500 dark:text-neutral-400 font-normal">
+                  กลุ่ม {currentCourse.group || '01'} • ห้อง {currentCourse.room || '-'} • ผู้สอน:{' '}
+                  {currentCourse.teacherName || currentCourse.teacher?.name || '-'}
+                </p>
+              </div>
+            )}
           </div>
 
+          {/* 1.2 ประเภทการลา */}
           <div>
-            <label className={labelCls}>ประเภทการลา (Leave Type)</label>
-            <div className="grid grid-cols-2 sm:grid-cols-3 gap-2">
+            <label className={labelCls}>
+              <span>ประเภทการลา (Leave Type)</span>
+              <span className="text-rose-500">*</span>
+            </label>
+            <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
               {LEAVE_TYPES.map(({ value, icon: Icon }) => {
                 const active = form.type === value;
                 return (
@@ -237,10 +313,10 @@ export default function LeaveForm({ courses, initialCourseId, lockCourse, initia
                     key={value}
                     type="button"
                     onClick={() => update('type', value)}
-                    className={`flex items-center gap-1.5 px-3 py-2.5 rounded-xl border text-xs font-semibold transition-all cursor-pointer ${
+                    className={`flex items-center justify-center gap-1.5 px-3 py-2.5 rounded-xl border text-xs font-semibold transition-all cursor-pointer ${
                       active
                         ? 'bg-[#7749BC] border-[#7749BC] text-white shadow-sm shadow-purple-800/25'
-                        : 'bg-white dark:bg-slate-800/90 border-neutral-300 dark:border-slate-700 text-neutral-600 dark:text-neutral-300 hover:border-[#7749BC]/60'
+                        : 'bg-white dark:bg-slate-800/90 border-neutral-300 dark:border-slate-700 text-neutral-700 dark:text-neutral-300 hover:border-[#7749BC]/60'
                     }`}
                   >
                     <Icon className="w-3.5 h-3.5 shrink-0" />
@@ -250,8 +326,8 @@ export default function LeaveForm({ courses, initialCourseId, lockCourse, initia
               })}
             </div>
 
-            {/* Enhanced 'Others' Specification Input */}
-            {form.type === 'อื่นๆ' && (
+            {/* ช่องระบุเมื่อเลือก "อื่น ๆ" */}
+            {form.type === 'อื่น ๆ' && (
               <div className="mt-3 p-3.5 rounded-2xl bg-purple-50/70 dark:bg-purple-950/30 border border-purple-200 dark:border-purple-800/80 transition-all">
                 <label className="text-xs font-semibold text-neutral-800 dark:text-neutral-200 mb-1.5 flex items-center gap-1.5">
                   <HelpCircle className="w-3.5 h-3.5 text-[#7749BC] dark:text-purple-400" />
@@ -262,18 +338,22 @@ export default function LeaveForm({ courses, initialCourseId, lockCourse, initia
                   type="text"
                   value={form.otherTypeDetail}
                   onChange={(e) => update('otherTypeDetail', e.target.value)}
-                  placeholder="เช่น ไปต่อใบขับขี่, สอบคัดเลือก, เข้าร่วมงานอบรมวิชาการภายนอก..."
+                  onBlur={() => handleBlur('otherTypeDetail')}
+                  placeholder="เช่น อุบัติเหตุ, ไปต่อใบขับขี่, สอบคัดเลือก, เข้าร่วมงานอบรมวิชาการภายนอก..."
                   className={fieldCls(!!fieldErrors.otherTypeDetail)}
                   autoFocus
                 />
                 {fieldErrors.otherTypeDetail && (
-                  <p className="text-[11px] text-rose-600 dark:text-rose-400 mt-1">{fieldErrors.otherTypeDetail}</p>
+                  <p className="text-xs font-semibold text-rose-600 dark:text-rose-400 mt-1.5 flex items-center gap-1">
+                    <AlertCircle className="w-3.5 h-3.5 shrink-0" />
+                    <span>{fieldErrors.otherTypeDetail}</span>
+                  </p>
                 )}
               </div>
             )}
           </div>
 
-          {/* Repositioned Reason Textarea (Immediately after Leave Type) */}
+          {/* 1.3 เหตุผลการลา (Reason for Leave) */}
           <div>
             <label className={labelCls}>
               <MessageSquareText className="w-3.5 h-3.5 text-[#7749BC] dark:text-purple-400" />
@@ -284,14 +364,18 @@ export default function LeaveForm({ courses, initialCourseId, lockCourse, initia
               rows={3}
               value={form.reason}
               onChange={(e) => update('reason', e.target.value.slice(0, REASON_LIMIT))}
-              placeholder="อธิบายเหตุผลและความจำเป็นในการลาโดยสังเขป..."
+              onBlur={() => handleBlur('reason')}
+              placeholder="ระบุเหตุผลการลา เช่น อุบัติเหตุ..."
               className={fieldCls(!!fieldErrors.reason)}
             />
             <div className="flex items-center justify-between mt-1">
               {fieldErrors.reason ? (
-                <p className="text-[11px] text-rose-600 dark:text-rose-400">{fieldErrors.reason}</p>
+                <p className="text-xs font-semibold text-rose-600 dark:text-rose-400 flex items-center gap-1">
+                  <AlertCircle className="w-3.5 h-3.5 shrink-0" />
+                  <span>{fieldErrors.reason}</span>
+                </p>
               ) : (
-                <span className="text-[11px] text-neutral-400">กรอกเหตุผลให้ชัดเจนเพื่อให้อาจารย์พิจารณา</span>
+                <div />
               )}
               <p className="text-[11px] text-neutral-400 text-right">
                 {form.reason.length}/{REASON_LIMIT}
@@ -301,32 +385,10 @@ export default function LeaveForm({ courses, initialCourseId, lockCourse, initia
         </div>
       </section>
 
-      {/* SECTION 2: Time Period (Only Full Period) & Dates */}
+      {/* SECTION 2: Dates (มีแค่ วันที่เริ่มลา และ วันที่สิ้นสุด) */}
       <section>
-        <p className={sectionTitleCls}>2. ช่วงเวลาและวันที่ลา (Time Period & Dates)</p>
+        <p className={sectionTitleCls}>2. วันที่ลา (Leave Dates)</p>
         <div className="space-y-4">
-          <div>
-            <label className={labelCls}>
-              <Clock className="w-3.5 h-3.5 text-[#7749BC] dark:text-purple-400" />
-              <span>ช่วงเวลาการลา (Time Period)</span>
-            </label>
-            {/* Only Full Period is available */}
-            <div className="flex items-center justify-between px-4 py-3 rounded-2xl border border-purple-200 dark:border-purple-800 bg-purple-50/70 dark:bg-purple-950/40 text-xs font-semibold text-[#7749BC] dark:text-purple-300 shadow-xs">
-              <div className="flex items-center gap-2.5">
-                <div className="w-6 h-6 rounded-lg bg-[#7749BC] text-white flex items-center justify-center font-bold text-xs">
-                  ✓
-                </div>
-                <div>
-                  <p className="font-bold text-neutral-900 dark:text-neutral-100 text-xs sm:text-sm">เต็มคาบเรียน 3 ชั่วโมง</p>
-                  <p className="text-[11px] text-neutral-500 dark:text-neutral-400 font-normal">Full Period (3 Hours)</p>
-                </div>
-              </div>
-              <span className="px-2.5 py-1 rounded-full text-[10px] font-bold bg-[#7749BC] text-white">
-                เต็มคาบ
-              </span>
-            </div>
-          </div>
-
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
             <div>
               <label className={labelCls}>
@@ -337,10 +399,26 @@ export default function LeaveForm({ courses, initialCourseId, lockCourse, initia
               <input
                 type="date"
                 value={form.startDate}
+                onClick={(e) => {
+                  try {
+                    e.currentTarget.showPicker?.();
+                  } catch {}
+                }}
+                onFocus={(e) => {
+                  try {
+                    e.currentTarget.showPicker?.();
+                  } catch {}
+                }}
                 onChange={(e) => update('startDate', e.target.value)}
-                className={fieldCls(!!fieldErrors.startDate)}
+                onBlur={() => handleBlur('startDate')}
+                className={`${fieldCls(!!fieldErrors.startDate)} cursor-pointer`}
               />
-              {fieldErrors.startDate && <p className="text-[11px] text-rose-600 dark:text-rose-400 mt-1.5">{fieldErrors.startDate}</p>}
+              {fieldErrors.startDate && (
+                <p className="text-xs font-semibold text-rose-600 dark:text-rose-400 mt-1.5 flex items-center gap-1">
+                  <AlertCircle className="w-3.5 h-3.5 shrink-0" />
+                  <span>{fieldErrors.startDate}</span>
+                </p>
+              )}
             </div>
             <div>
               <label className={labelCls}>
@@ -351,16 +429,35 @@ export default function LeaveForm({ courses, initialCourseId, lockCourse, initia
               <input
                 type="date"
                 value={form.endDate}
+                onClick={(e) => {
+                  try {
+                    e.currentTarget.showPicker?.();
+                  } catch {}
+                }}
+                onFocus={(e) => {
+                  try {
+                    e.currentTarget.showPicker?.();
+                  } catch {}
+                }}
                 onChange={(e) => update('endDate', e.target.value)}
-                className={fieldCls(!!fieldErrors.endDate)}
+                onBlur={() => handleBlur('endDate')}
+                className={`${fieldCls(!!fieldErrors.endDate)} cursor-pointer`}
               />
-              {fieldErrors.endDate && <p className="text-[11px] text-rose-600 dark:text-rose-400 mt-1.5">{fieldErrors.endDate}</p>}
+              {fieldErrors.endDate && (
+                <p className="text-xs font-semibold text-rose-600 dark:text-rose-400 mt-1.5 flex items-center gap-1">
+                  <AlertCircle className="w-3.5 h-3.5 shrink-0" />
+                  <span>{fieldErrors.endDate}</span>
+                </p>
+              )}
             </div>
           </div>
           {dateError ? (
-            <p className="text-[11px] text-rose-600 dark:text-rose-400 mt-1.5">{dateError}</p>
+            <p className="text-xs font-semibold text-rose-600 dark:text-rose-400 mt-1 flex items-center gap-1">
+              <AlertCircle className="w-3.5 h-3.5 shrink-0" />
+              <span>{dateError}</span>
+            </p>
           ) : (
-            dayCount && <p className="text-[11px] text-neutral-500 dark:text-neutral-400 mt-1.5">รวม {dayCount} วัน</p>
+            dayCount && <p className="text-xs text-neutral-500 dark:text-neutral-400 mt-1 font-medium">รวมระยะเวลา {dayCount} วัน</p>
           )}
         </div>
       </section>
@@ -413,13 +510,13 @@ export default function LeaveForm({ courses, initialCourseId, lockCourse, initia
       {error && (
         <div className="p-3.5 rounded-2xl bg-rose-50 dark:bg-rose-950/40 border border-rose-200 dark:border-rose-800 text-rose-700 dark:text-rose-300 text-xs flex items-center space-x-2.5">
           <AlertCircle className="w-4 h-4 shrink-0" />
-          <span className="font-medium">{error}</span>
+          <span className="font-semibold">{error}</span>
         </div>
       )}
       {success && (
         <div className="p-3.5 rounded-2xl bg-emerald-50 dark:bg-emerald-950/40 border border-emerald-200 dark:border-emerald-800 text-emerald-700 dark:text-emerald-300 text-xs flex items-center space-x-2.5">
           <CheckCircle2 className="w-4 h-4 shrink-0" />
-          <span className="font-medium">{success}</span>
+          <span className="font-semibold">{success}</span>
         </div>
       )}
 

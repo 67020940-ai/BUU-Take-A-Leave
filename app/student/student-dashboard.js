@@ -38,8 +38,7 @@ const LEAVE_CATEGORIES = [
   { key: 'ลาป่วย', label: 'ลาป่วย', icon: HeartPulse },
   { key: 'ลากิจส่วนตัว', label: 'ลากิจส่วนตัว', icon: User },
   { key: 'ลากิจกรรม', label: 'ลากิจกรรม', icon: Users },
-  { key: 'เหตุฉุกเฉิน', label: 'เหตุฉุกเฉิน', icon: AlertTriangle },
-  { key: 'อื่นๆ', label: 'อื่นๆ', icon: HelpCircle },
+  { key: 'อื่น ๆ', label: 'อื่น ๆ', icon: HelpCircle },
 ];
 
 export default function StudentDashboard({ summaries = [], leaves: initialLeaves = [] }) {
@@ -83,8 +82,14 @@ export default function StudentDashboard({ summaries = [], leaves: initialLeaves
       // 2. Status filter
       if (selectedStatus !== 'all' && l.status !== selectedStatus) return false;
 
-      // 3. Type filter
-      if (selectedType !== 'all' && l.type !== selectedType) return false;
+      // 3. Type filter (รองรับทั้ง อื่น ๆ และ อื่นๆ)
+      if (selectedType !== 'all') {
+        if (selectedType === 'อื่น ๆ' || selectedType === 'อื่นๆ') {
+          if (l.type !== 'อื่น ๆ' && l.type !== 'อื่นๆ' && l.type !== 'เหตุฉุกเฉิน') return false;
+        } else if (l.type !== selectedType) {
+          return false;
+        }
+      }
 
       // 4. Search query
       if (searchQuery.trim()) {
@@ -114,8 +119,7 @@ export default function StudentDashboard({ summaries = [], leaves: initialLeaves
     const sick = relevantLeaves.filter((l) => l.type === 'ลาป่วย').length;
     const personal = relevantLeaves.filter((l) => l.type === 'ลากิจส่วนตัว').length;
     const activity = relevantLeaves.filter((l) => l.type === 'ลากิจกรรม').length;
-    const emergency = relevantLeaves.filter((l) => l.type === 'เหตุฉุกเฉิน').length;
-    const others = relevantLeaves.filter((l) => l.type === 'อื่นๆ').length;
+    const others = relevantLeaves.filter((l) => l.type === 'อื่น ๆ' || l.type === 'อื่นๆ' || l.type === 'เหตุฉุกเฉิน').length;
 
     const avgAttendance = filteredSummaries.length
       ? Math.round(filteredSummaries.reduce((acc, s) => acc + s.percentage, 0) / filteredSummaries.length)
@@ -130,12 +134,44 @@ export default function StudentDashboard({ summaries = [], leaves: initialLeaves
       sick,
       personal,
       activity,
-      emergency,
       others,
       avgAttendance,
       courseCount: filteredSummaries.length,
     };
   }, [leaves, filteredSummaries, selectedTerm, summaries]);
+
+  // สถิติการลาของนิสิตแยกตามแต่ละภาคเรียน (เพื่อให้นิสิตดูสถิติในภาคเรียนอื่นได้สะดวก)
+  const semesterBreakdown = useMemo(() => {
+    return academicTerms.map((term) => {
+      const termCourses = summaries.filter((s) => s.course?.term === term);
+      const termLeaves = leaves.filter((l) => {
+        const leaveTerm = l.courseTerm || summaries.find((s) => s.course?.id === l.courseId)?.course?.term;
+        return leaveTerm === term;
+      });
+      const avgAtt = termCourses.length
+        ? Math.round(termCourses.reduce((acc, s) => acc + s.percentage, 0) / termCourses.length)
+        : 100;
+      const approvedCount = termLeaves.filter((l) => l.status === 'อนุมัติ').length;
+      const pendingCount = termLeaves.filter((l) => l.status === 'รออนุมัติ').length;
+      return {
+        term,
+        courseCount: termCourses.length,
+        totalLeaves: termLeaves.length,
+        approvedLeaves: approvedCount,
+        pendingLeaves: pendingCount,
+        avgAttendance: avgAtt,
+      };
+    });
+  }, [academicTerms, summaries, leaves]);
+
+  function handleCategoryClick(type) {
+    const nextType = selectedType === type ? 'all' : type;
+    setSelectedType(nextType);
+    setTimeout(() => {
+      const el = document.getElementById('leave-history-section');
+      if (el) el.scrollIntoView({ behavior: 'smooth' });
+    }, 60);
+  }
 
   function openDetailModal(leave) {
     setDetailModal({ isOpen: true, leave });
@@ -286,7 +322,7 @@ export default function StudentDashboard({ summaries = [], leaves: initialLeaves
         {/* Categorized Leave Counts Strip */}
         <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 pt-2">
           <div
-            onClick={() => setSelectedType(selectedType === 'ลาป่วย' ? 'all' : 'ลาป่วย')}
+            onClick={() => handleCategoryClick('ลาป่วย')}
             className={`p-3.5 rounded-2xl border transition-all cursor-pointer flex items-center justify-between ${
               selectedType === 'ลาป่วย'
                 ? 'bg-sky-50 dark:bg-sky-950/40 border-sky-500 ring-2 ring-sky-500/20'
@@ -301,7 +337,7 @@ export default function StudentDashboard({ summaries = [], leaves: initialLeaves
           </div>
 
           <div
-            onClick={() => setSelectedType(selectedType === 'ลากิจส่วนตัว' ? 'all' : 'ลากิจส่วนตัว')}
+            onClick={() => handleCategoryClick('ลากิจส่วนตัว')}
             className={`p-3.5 rounded-2xl border transition-all cursor-pointer flex items-center justify-between ${
               selectedType === 'ลากิจส่วนตัว'
                 ? 'bg-purple-50 dark:bg-purple-950/40 border-[#7749BC] ring-2 ring-[#7749BC]/20'
@@ -316,7 +352,7 @@ export default function StudentDashboard({ summaries = [], leaves: initialLeaves
           </div>
 
           <div
-            onClick={() => setSelectedType(selectedType === 'ลากิจกรรม' ? 'all' : 'ลากิจกรรม')}
+            onClick={() => handleCategoryClick('ลากิจกรรม')}
             className={`p-3.5 rounded-2xl border transition-all cursor-pointer flex items-center justify-between ${
               selectedType === 'ลากิจกรรม'
                 ? 'bg-indigo-50 dark:bg-indigo-950/40 border-indigo-500 ring-2 ring-indigo-500/20'
@@ -331,18 +367,72 @@ export default function StudentDashboard({ summaries = [], leaves: initialLeaves
           </div>
 
           <div
-            onClick={() => setSelectedType(selectedType === 'อื่นๆ' ? 'all' : 'อื่นๆ')}
+            onClick={() => handleCategoryClick('อื่น ๆ')}
             className={`p-3.5 rounded-2xl border transition-all cursor-pointer flex items-center justify-between ${
-              selectedType === 'อื่นๆ'
+              selectedType === 'อื่น ๆ' || selectedType === 'อื่นๆ'
                 ? 'bg-amber-50 dark:bg-amber-950/40 border-amber-500 ring-2 ring-amber-500/20'
                 : 'bg-white/70 dark:bg-slate-900/70 border-neutral-200/80 dark:border-slate-800 hover:border-amber-400'
             }`}
           >
             <div className="flex items-center gap-2">
               <HelpCircle className="w-4 h-4 text-amber-500" />
-              <span className="text-xs font-semibold text-neutral-700 dark:text-neutral-300">อื่นๆ / ฉุกเฉิน</span>
+              <span className="text-xs font-semibold text-neutral-700 dark:text-neutral-300">อื่น ๆ</span>
             </div>
-            <span className="text-sm font-bold text-amber-600 dark:text-amber-400">{stats.emergency + stats.others} ครั้ง</span>
+            <span className="text-sm font-bold text-amber-600 dark:text-amber-400">{stats.others} ครั้ง</span>
+          </div>
+        </div>
+
+        {/* สถิติการลาของนิสิตในภาคเรียนอื่น (Multi-Semester Comparison) */}
+        <div className="pt-3 border-t border-neutral-100 dark:border-slate-800">
+          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-1.5 mb-2.5">
+            <h4 className="text-xs font-bold text-neutral-800 dark:text-neutral-200 flex items-center gap-1.5">
+              <Calendar className="w-3.5 h-3.5 text-[#7749BC] dark:text-purple-400" />
+              <span>สถิติการลาของนิสิตในภาคเรียนอื่น (All Academic Semesters)</span>
+            </h4>
+            <span className="text-[11px] text-neutral-400">คลิกที่การ์ดภาคเรียนเพื่อสลับดูรายละเอียด</span>
+          </div>
+          <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+            {semesterBreakdown.map((sb) => {
+              const isCurrent = selectedTerm === sb.term;
+              return (
+                <div
+                  key={sb.term}
+                  onClick={() => setSelectedTerm(sb.term)}
+                  className={`p-3.5 rounded-2xl border transition-all cursor-pointer ${
+                    isCurrent
+                      ? 'bg-purple-50 dark:bg-purple-950/40 border-[#7749BC] ring-2 ring-[#7749BC]/20'
+                      : 'bg-white/70 dark:bg-slate-900/70 border-neutral-200/80 dark:border-slate-800 hover:border-[#7749BC]/40'
+                  }`}
+                >
+                  <div className="flex items-center justify-between mb-1.5">
+                    <span className="text-xs font-bold text-neutral-900 dark:text-neutral-100">
+                      ภาคเรียนที่ {sb.term}
+                    </span>
+                    {isCurrent ? (
+                      <span className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-[#7749BC] text-white">
+                        กำลังแสดง
+                      </span>
+                    ) : (
+                      <span className="text-[10px] text-[#7749BC] dark:text-purple-300 font-semibold hover:underline">
+                        เลือกดู →
+                      </span>
+                    )}
+                  </div>
+                  <div className="flex items-baseline justify-between text-xs text-neutral-600 dark:text-neutral-400 mt-2">
+                    <span>เวลาเรียนเฉลี่ย:</span>
+                    <span className="font-bold text-emerald-600 dark:text-emerald-400">{sb.avgAttendance}%</span>
+                  </div>
+                  <div className="flex items-baseline justify-between text-xs text-neutral-600 dark:text-neutral-400 mt-1">
+                    <span>คำขอลา:</span>
+                    <span className="font-semibold text-neutral-900 dark:text-neutral-100">{sb.totalLeaves} ครั้ง (อนุมัติ {sb.approvedLeaves})</span>
+                  </div>
+                  <div className="flex items-baseline justify-between text-[11px] text-neutral-400 mt-1">
+                    <span>วิชาที่ลงทะเบียน:</span>
+                    <span>{sb.courseCount} วิชา</span>
+                  </div>
+                </div>
+              );
+            })}
           </div>
         </div>
       </section>
@@ -436,15 +526,29 @@ export default function StudentDashboard({ summaries = [], leaves: initialLeaves
       </section>
 
       {/* 4. Leave History with Details Button & Details Modal */}
-      <section className="space-y-4">
+      <section id="leave-history-section" className="space-y-4">
         <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
           <div>
-            <h2 className="text-base sm:text-lg font-bold text-neutral-900 dark:text-neutral-100 tracking-tight flex items-center gap-2">
+            <h2 className="text-base sm:text-lg font-bold text-neutral-900 dark:text-neutral-100 tracking-tight flex items-center gap-2 flex-wrap">
               <History className="w-4 h-4 text-[#7749BC] dark:text-purple-400" />
               <span>ประวัติและรายละเอียดการลา</span>
+              {selectedType !== 'all' && (
+                <span className="text-xs font-semibold px-2.5 py-0.5 rounded-full bg-purple-100 dark:bg-purple-950 text-[#7749BC] dark:text-purple-300 flex items-center gap-1.5">
+                  <span>กำลังแสดงเฉพาะ: {selectedType}</span>
+                  <button
+                    onClick={() => setSelectedType('all')}
+                    className="hover:text-rose-500 font-bold ml-1 cursor-pointer text-sm leading-none"
+                    title="ล้างตัวกรองเพื่อดูทุกประเภท"
+                  >
+                    ×
+                  </button>
+                </span>
+              )}
             </h2>
             <p className="text-xs text-neutral-500 dark:text-neutral-400 mt-0.5">
-              แสดง {filteredLeaves.length} รายการ (คลิก &quot;ดูรายละเอียด&quot; เพื่อดูข้อความตอบกลับจากอาจารย์และหลักฐานแนบ)
+              {selectedType !== 'all'
+                ? `แสดงเฉพาะคำขอลาประเภท "${selectedType}" จำนวน ${filteredLeaves.length} รายการ`
+                : `แสดง ${filteredLeaves.length} รายการ (คลิก "ดูรายละเอียด" เพื่อดูข้อความตอบกลับจากอาจารย์และหลักฐานแนบ)`}
             </p>
           </div>
 

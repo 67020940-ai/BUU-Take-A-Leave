@@ -51,8 +51,7 @@ const LEAVE_CATEGORIES = [
   { key: 'ลาป่วย', label: 'ลาป่วย', icon: HeartPulse },
   { key: 'ลากิจส่วนตัว', label: 'ลากิจส่วนตัว', icon: User },
   { key: 'ลากิจกรรม', label: 'ลากิจกรรม', icon: Users },
-  { key: 'เหตุฉุกเฉิน', label: 'เหตุฉุกเฉิน', icon: AlertTriangle },
-  { key: 'อื่นๆ', label: 'อื่นๆ', icon: HelpCircle },
+  { key: 'อื่น ๆ', label: 'อื่น ๆ', icon: HelpCircle },
 ];
 
 export default function TeacherDashboard({ courses, initialLeaves, rosterByCourse, usingMock = false }) {
@@ -104,8 +103,12 @@ export default function TeacherDashboard({ courses, initialLeaves, rosterByCours
       }
 
       // 3. Category/Type filter
-      if (typeFilter !== 'all' && leave.type !== typeFilter) {
-        return false;
+      if (typeFilter !== 'all') {
+        if (typeFilter === 'อื่น ๆ' || typeFilter === 'อื่นๆ') {
+          if (leave.type !== 'อื่น ๆ' && leave.type !== 'อื่นๆ' && leave.type !== 'เหตุฉุกเฉิน') return false;
+        } else if (leave.type !== typeFilter) {
+          return false;
+        }
       }
 
       // 4. Status filter
@@ -154,8 +157,7 @@ export default function TeacherDashboard({ courses, initialLeaves, rosterByCours
     const sick = filteredLeaves.filter((l) => l.type === 'ลาป่วย').length;
     const personal = filteredLeaves.filter((l) => l.type === 'ลากิจส่วนตัว').length;
     const activity = filteredLeaves.filter((l) => l.type === 'ลากิจกรรม').length;
-    const emergency = filteredLeaves.filter((l) => l.type === 'เหตุฉุกเฉิน').length;
-    const others = filteredLeaves.filter((l) => l.type === 'อื่นๆ').length;
+    const others = filteredLeaves.filter((l) => l.type === 'อื่น ๆ' || l.type === 'อื่นๆ' || l.type === 'เหตุฉุกเฉิน').length;
 
     // Unique students who took leave
     const uniqueStudentCodes = new Set(filteredLeaves.map((l) => l.studentCode || l.studentId));
@@ -178,7 +180,6 @@ export default function TeacherDashboard({ courses, initialLeaves, rosterByCours
       sick,
       personal,
       activity,
-      emergency,
       others,
       totalStudentsLeave,
       approvedStudentsCount,
@@ -363,19 +364,19 @@ export default function TeacherDashboard({ courses, initialLeaves, rosterByCours
         </div>
 
         <div
-          onClick={() => { setTypeFilter('ลากิจส่วนตัว'); setStatusFilter('all'); }}
+          onClick={() => { setTypeFilter(typeFilter === 'อื่น ๆ' ? 'all' : 'อื่น ๆ'); setStatusFilter('all'); }}
           className={`p-4 rounded-2xl border transition-all cursor-pointer ${
-            typeFilter === 'ลากิจส่วนตัว'
-              ? 'bg-purple-50 dark:bg-purple-950/40 border-purple-500 ring-2 ring-purple-500/20'
-              : 'bg-white/80 dark:bg-slate-900/80 border-neutral-200/80 dark:border-slate-800 hover:border-purple-400'
+            typeFilter === 'อื่น ๆ' || typeFilter === 'อื่นๆ'
+              ? 'bg-amber-50 dark:bg-amber-950/40 border-amber-500 ring-2 ring-amber-500/20'
+              : 'bg-white/80 dark:bg-slate-900/80 border-neutral-200/80 dark:border-slate-800 hover:border-amber-400'
           }`}
         >
-          <div className="flex items-center justify-between text-xs text-purple-600 dark:text-purple-400 mb-1">
-            <span>ลากิจ / อื่นๆ</span>
-            <User className="w-3.5 h-3.5 text-[#7749BC]" />
+          <div className="flex items-center justify-between text-xs text-amber-600 dark:text-amber-400 mb-1">
+            <span>อื่น ๆ</span>
+            <HelpCircle className="w-3.5 h-3.5 text-amber-500" />
           </div>
-          <div className="text-xl sm:text-2xl font-bold text-neutral-900 dark:text-neutral-100">{stats.personal + stats.activity + stats.emergency + stats.others} <span className="text-xs font-normal text-neutral-400">ครั้ง</span></div>
-          <p className="text-[10px] text-purple-600 dark:text-purple-300 mt-0.5 font-medium">กิจ {stats.personal} • กิจกรรม {stats.activity} • อื่นๆ {stats.emergency + stats.others}</p>
+          <div className="text-xl sm:text-2xl font-bold text-neutral-900 dark:text-neutral-100">{stats.others} <span className="text-xs font-normal text-neutral-400">ครั้ง</span></div>
+          <p className="text-[10px] text-amber-600 dark:text-amber-400 mt-0.5 font-medium">สถิติการลาประเภทอื่น ๆ</p>
         </div>
       </div>
 
@@ -439,132 +440,25 @@ export default function TeacherDashboard({ courses, initialLeaves, rosterByCours
         </div>
       </div>
 
-      {/* FILTER CONTROLS BAR (Historical Archive & Daily Overview & Status Management) */}
-      <div className="bg-white/80 dark:bg-slate-900/80 backdrop-blur-xl rounded-3xl border border-neutral-200/80 dark:border-slate-800 p-4 space-y-3 shadow-xs">
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3">
-          {/* 1. Academic Year & Semester Filter */}
-          <div>
-            <label className="block text-[11px] font-semibold text-neutral-500 dark:text-neutral-400 mb-1">
-              ปีการศึกษา / ภาคเรียน (Archive Lookup)
-            </label>
-            <div className="relative">
-              <select
-                value={selectedTerm}
-                onChange={(e) => setSelectedTerm(e.target.value)}
-                className="w-full px-3 py-2 rounded-xl border border-neutral-300 dark:border-slate-700 bg-white dark:bg-slate-800 text-xs font-medium text-neutral-900 dark:text-neutral-100 focus:outline-none focus:border-[#7749BC] appearance-none pr-8 cursor-pointer"
-              >
-                <option value="all">ทุกภาคการศึกษา (All Semesters)</option>
-                {academicTerms.map((t) => (
-                  <option key={t} value={t}>
-                    ภาคเรียนที่ {t}
-                  </option>
-                ))}
-              </select>
-              <ChevronDown className="w-3.5 h-3.5 text-neutral-400 absolute right-3 top-1/2 -translate-y-1/2 pointer-events-none" />
-            </div>
-          </div>
-
-          {/* 2. Course Filter */}
-          <div>
-            <label className="block text-[11px] font-semibold text-neutral-500 dark:text-neutral-400 mb-1">
-              เลือกรายวิชา (Course)
-            </label>
-            <div className="relative">
-              <select
-                value={selectedCourseId}
-                onChange={(e) => setSelectedCourseId(e.target.value)}
-                className="w-full px-3 py-2 rounded-xl border border-neutral-300 dark:border-slate-700 bg-white dark:bg-slate-800 text-xs font-medium text-neutral-900 dark:text-neutral-100 focus:outline-none focus:border-[#7749BC] appearance-none pr-8 cursor-pointer"
-              >
-                <option value="all">ทุกรายวิชา ({courses.length} วิชา)</option>
-                {courses.map((c) => (
-                  <option key={c.id} value={c.id}>
-                    {c.code} {c.name} {c.group ? `(กลุ่ม ${c.group})` : ''}
-                  </option>
-                ))}
-              </select>
-              <ChevronDown className="w-3.5 h-3.5 text-neutral-400 absolute right-3 top-1/2 -translate-y-1/2 pointer-events-none" />
-            </div>
-          </div>
-
-          {/* 3. Search Query */}
-          <div className="lg:col-span-2">
-            <label className="block text-[11px] font-semibold text-neutral-500 dark:text-neutral-400 mb-1">
-              ค้นหาข้อมูล (Search)
-            </label>
-            <div className="relative">
-              <Search className="w-4 h-4 text-neutral-400 absolute left-3 top-1/2 -translate-y-1/2" />
-              <input
-                type="text"
-                value={searchQuery}
-                onChange={(e) => setSearchQuery(e.target.value)}
-                placeholder="ค้นหาชื่อนิสิต, รหัสนิสิต, รหัสวิชา, หรือเหตุผล..."
-                className="w-full pl-9 pr-3 py-2 rounded-xl border border-neutral-300 dark:border-slate-700 bg-white dark:bg-slate-800 text-xs text-neutral-900 dark:text-neutral-100 placeholder:text-neutral-400 focus:outline-none focus:border-[#7749BC] focus:ring-2 focus:ring-[#7749BC]/20 shadow-xs"
-              />
-            </div>
-          </div>
-        </div>
-
-        {/* Filter Quick Pills */}
-        <div className="pt-2 border-t border-neutral-100 dark:border-slate-800 flex flex-wrap items-center justify-between gap-2">
-          {/* Left: Daily Overview Toggle + Category Filter */}
-          <div className="flex flex-wrap items-center gap-1.5">
-            {/* Daily Overview Button */}
-            <button
-              onClick={() => setIsTodayOnly(!isTodayOnly)}
-              className={`px-3 py-1.5 rounded-xl text-xs font-bold transition-all flex items-center gap-1.5 cursor-pointer ${
-                isTodayOnly
-                  ? 'bg-amber-500 text-white shadow-sm ring-2 ring-amber-400/30'
-                  : 'bg-amber-50 dark:bg-amber-950/50 text-amber-800 dark:text-amber-300 border border-amber-200 dark:border-amber-800 hover:bg-amber-100'
-              }`}
-            >
-              <CalendarDays className="w-3.5 h-3.5" />
-              <span>คำขอลาวันนี้ ({todayLeavesCount})</span>
-            </button>
-
-            {/* Status pills */}
-            {['all', 'รออนุมัติ', 'อนุมัติ', 'ไม่อนุมัติ'].map((st) => (
-              <button
-                key={st}
-                onClick={() => setStatusFilter(st)}
-                className={`px-3 py-1.5 rounded-xl text-xs font-semibold transition-all cursor-pointer ${
-                  statusFilter === st
-                    ? 'bg-[#7749BC] text-white shadow-xs'
-                    : 'bg-neutral-100 dark:bg-slate-800 text-neutral-600 dark:text-neutral-300 hover:bg-neutral-200'
-                }`}
-              >
-                {st === 'all' ? 'ทุกสถานะ' : st}
-              </button>
-            ))}
-          </div>
-
-          {/* Right: Leave Type Pills */}
-          <div className="flex flex-wrap items-center gap-1">
-            {LEAVE_CATEGORIES.map(({ key, label }) => (
-              <button
-                key={key}
-                onClick={() => setTypeFilter(key)}
-                className={`px-2.5 py-1 rounded-lg text-[11px] font-semibold transition-all cursor-pointer ${
-                  typeFilter === key
-                    ? 'bg-[#7749BC] text-white'
-                    : 'text-neutral-500 hover:text-neutral-900 dark:hover:text-neutral-100'
-                }`}
-              >
-                {label}
-              </button>
-            ))}
-          </div>
-        </div>
-      </div>
-
       {/* TAB 1: Leave Requests List & Status Management */}
       {activeTab === 'requests' && (
         <section className="space-y-4">
-          <div className="flex items-center justify-between">
-            <h3 className="text-base font-bold text-neutral-900 dark:text-neutral-100">
-              รายการคำขอลาเรียน ({filteredLeaves.length} รายการ)
-            </h3>
+          {/* SECTION HEADER: รายการคำขอลาเรียน */}
+          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2.5 pt-1">
+            <div>
+              <h3 className="text-base sm:text-lg font-bold text-neutral-900 dark:text-neutral-100 flex items-center gap-2">
+                <span>รายการคำขอลาเรียน</span>
+                <span className="text-xs font-semibold px-2.5 py-0.5 rounded-full bg-purple-100 dark:bg-purple-950 text-[#7749BC] dark:text-purple-300">
+                  {filteredLeaves.length} รายการ
+                </span>
+              </h3>
+              <p className="text-xs text-neutral-500 dark:text-neutral-400">
+                พิจารณาอนุมัติหรือปฏิเสธคำร้องขอลาเรียนของนิสิตในรายวิชาที่สอน
+              </p>
+            </div>
+
             {isTodayOnly && (
-              <span className="text-xs font-semibold text-amber-600 dark:text-amber-400 bg-amber-50 dark:bg-amber-950/60 px-3 py-1 rounded-full border border-amber-200 dark:border-amber-800 flex items-center gap-1.5">
+              <span className="text-xs font-semibold text-amber-600 dark:text-amber-400 bg-amber-50 dark:bg-amber-950/60 px-3 py-1 rounded-full border border-amber-200 dark:border-amber-800 flex items-center gap-1.5 self-start sm:self-auto">
                 <CalendarDays className="w-3.5 h-3.5" />
                 <span>กำลังแสดงเฉพาะคำขอของวันนี้ ({formatThaiDate(todayStr)})</span>
               </span>
@@ -576,7 +470,7 @@ export default function TeacherDashboard({ courses, initialLeaves, rosterByCours
               <UserCheck className="w-10 h-10 text-emerald-500 mx-auto mb-2" />
               <h4 className="text-sm font-semibold text-neutral-800 dark:text-neutral-200">ไม่พบรายการคำขอลา</h4>
               <p className="text-xs text-neutral-500 dark:text-neutral-400 mt-1">
-                ลองปรับเปลี่ยนตัวกรองวันที่ ภาคการศึกษา หรือคำค้นหา
+                ลองปรับเปลี่ยนตัวกรองวันที่ ภาคการศึกษา หรือคำค้นหาด้านล่าง
               </p>
             </div>
           ) : (
@@ -761,6 +655,133 @@ export default function TeacherDashboard({ courses, initialLeaves, rosterByCours
               </div>
             </div>
           )}
+
+          {/* FILTER CONTROLS BAR (สลับลงมาอยู่ด้านล่างตามรูป S__9027595.jpg) */}
+          <div className="bg-white/80 dark:bg-slate-900/80 backdrop-blur-xl rounded-3xl border border-neutral-200/80 dark:border-slate-800 p-4 space-y-3 shadow-xs mt-6">
+            <div className="flex items-center justify-between pb-1 border-b border-neutral-100 dark:border-slate-800">
+              <span className="text-xs font-bold text-neutral-700 dark:text-neutral-300 flex items-center gap-1.5">
+                <Layers className="w-3.5 h-3.5 text-[#7749BC] dark:text-purple-400" />
+                <span>ตัวกรองและค้นหาคำขอลาเรียน (Filters & Search)</span>
+              </span>
+              <span className="text-[11px] text-neutral-400">
+                ผลการกรอง: {filteredLeaves.length} รายการ
+              </span>
+            </div>
+
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3">
+              {/* 1. Academic Year & Semester Filter */}
+              <div>
+                <label className="block text-[11px] font-semibold text-neutral-500 dark:text-neutral-400 mb-1">
+                  ปีการศึกษา / ภาคเรียน (Archive Lookup)
+                </label>
+                <div className="relative">
+                  <select
+                    value={selectedTerm}
+                    onChange={(e) => setSelectedTerm(e.target.value)}
+                    className="w-full px-3 py-2 rounded-xl border border-neutral-300 dark:border-slate-700 bg-white dark:bg-slate-800 text-xs font-medium text-neutral-900 dark:text-neutral-100 focus:outline-none focus:border-[#7749BC] appearance-none pr-8 cursor-pointer"
+                  >
+                    <option value="all">ทุกภาคการศึกษา (All Semesters)</option>
+                    {academicTerms.map((t) => (
+                      <option key={t} value={t}>
+                        ภาคเรียนที่ {t}
+                      </option>
+                    ))}
+                  </select>
+                  <ChevronDown className="w-3.5 h-3.5 text-neutral-400 absolute right-3 top-1/2 -translate-y-1/2 pointer-events-none" />
+                </div>
+              </div>
+
+              {/* 2. Course Filter */}
+              <div>
+                <label className="block text-[11px] font-semibold text-neutral-500 dark:text-neutral-400 mb-1">
+                  เลือกรายวิชา (Course)
+                </label>
+                <div className="relative">
+                  <select
+                    value={selectedCourseId}
+                    onChange={(e) => setSelectedCourseId(e.target.value)}
+                    className="w-full px-3 py-2 rounded-xl border border-neutral-300 dark:border-slate-700 bg-white dark:bg-slate-800 text-xs font-medium text-neutral-900 dark:text-neutral-100 focus:outline-none focus:border-[#7749BC] appearance-none pr-8 cursor-pointer"
+                  >
+                    <option value="all">ทุกรายวิชา ({courses.length} วิชา)</option>
+                    {courses.map((c) => (
+                      <option key={c.id} value={c.id}>
+                        {c.code} {c.name} {c.group ? `(กลุ่ม ${c.group})` : ''}
+                      </option>
+                    ))}
+                  </select>
+                  <ChevronDown className="w-3.5 h-3.5 text-neutral-400 absolute right-3 top-1/2 -translate-y-1/2 pointer-events-none" />
+                </div>
+              </div>
+
+              {/* 3. Search Query */}
+              <div className="lg:col-span-2">
+                <label className="block text-[11px] font-semibold text-neutral-500 dark:text-neutral-400 mb-1">
+                  ค้นหาข้อมูล (Search)
+                </label>
+                <div className="relative">
+                  <Search className="w-4 h-4 text-neutral-400 absolute left-3 top-1/2 -translate-y-1/2" />
+                  <input
+                    type="text"
+                    value={searchQuery}
+                    onChange={(e) => setSearchQuery(e.target.value)}
+                    placeholder="ค้นหาชื่อนิสิต, รหัสนิสิต, รหัสวิชา, หรือเหตุผล..."
+                    className="w-full pl-9 pr-3 py-2 rounded-xl border border-neutral-300 dark:border-slate-700 bg-white dark:bg-slate-800 text-xs text-neutral-900 dark:text-neutral-100 placeholder:text-neutral-400 focus:outline-none focus:border-[#7749BC] focus:ring-2 focus:ring-[#7749BC]/20 shadow-xs"
+                  />
+                </div>
+              </div>
+            </div>
+
+            {/* Filter Quick Pills */}
+            <div className="pt-2 border-t border-neutral-100 dark:border-slate-800 flex flex-wrap items-center justify-between gap-2">
+              {/* Left: Daily Overview Toggle + Category Filter */}
+              <div className="flex flex-wrap items-center gap-1.5">
+                {/* Daily Overview Button */}
+                <button
+                  onClick={() => setIsTodayOnly(!isTodayOnly)}
+                  className={`px-3 py-1.5 rounded-xl text-xs font-bold transition-all flex items-center gap-1.5 cursor-pointer ${
+                    isTodayOnly
+                      ? 'bg-amber-500 text-white shadow-sm ring-2 ring-amber-400/30'
+                      : 'bg-amber-50 dark:bg-amber-950/50 text-amber-800 dark:text-amber-300 border border-amber-200 dark:border-amber-800 hover:bg-amber-100'
+                  }`}
+                >
+                  <CalendarDays className="w-3.5 h-3.5" />
+                  <span>คำขอลาวันนี้ ({todayLeavesCount})</span>
+                </button>
+
+                {/* Status pills */}
+                {['all', 'รออนุมัติ', 'อนุมัติ', 'ไม่อนุมัติ'].map((st) => (
+                  <button
+                    key={st}
+                    onClick={() => setStatusFilter(st)}
+                    className={`px-3 py-1.5 rounded-xl text-xs font-semibold transition-all cursor-pointer ${
+                      statusFilter === st
+                        ? 'bg-[#7749BC] text-white shadow-xs'
+                        : 'bg-neutral-100 dark:bg-slate-800 text-neutral-600 dark:text-neutral-300 hover:bg-neutral-200'
+                    }`}
+                  >
+                    {st === 'all' ? 'ทุกสถานะ' : st}
+                  </button>
+                ))}
+              </div>
+
+              {/* Right: Leave Type Pills */}
+              <div className="flex flex-wrap items-center gap-1">
+                {LEAVE_CATEGORIES.map(({ key, label }) => (
+                  <button
+                    key={key}
+                    onClick={() => setTypeFilter(key)}
+                    className={`px-2.5 py-1 rounded-lg text-[11px] font-semibold transition-all cursor-pointer ${
+                      typeFilter === key
+                        ? 'bg-[#7749BC] text-white'
+                        : 'text-neutral-500 hover:text-neutral-900 dark:hover:text-neutral-100'
+                    }`}
+                  >
+                    {label}
+                  </button>
+                ))}
+              </div>
+            </div>
+          </div>
         </section>
       )}
 

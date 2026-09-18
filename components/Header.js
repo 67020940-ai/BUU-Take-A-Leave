@@ -5,7 +5,7 @@ import Link from 'next/link';
 import { usePathname, useRouter } from 'next/navigation';
 import {
   Bell,
-  Settings,
+  MessageSquareWarning,
   ChevronDown,
   ChevronRight,
   Calendar,
@@ -17,13 +17,18 @@ import {
   FileEdit,
   ClipboardCheck,
   History,
+  CalendarDays,
+  BarChart3,
 } from 'lucide-react';
 import { formatThaiDate } from '@/lib/ui';
 
 const NAV = {
   student: [
-    { href: '/student', label: 'ภาพรวม', icon: LayoutDashboard },
+    { href: '/student', label: 'หน้าหลัก', icon: LayoutDashboard },
     { href: '/student/leave', label: 'ยื่นใบลา', icon: FileEdit },
+    { href: '/student/history', label: 'ประวัติการลา', icon: History },
+    { href: '/student/schedule', label: 'ตารางเรียน', icon: CalendarDays },
+    { href: '/student/stats', label: 'สถิติการลา', icon: BarChart3 },
   ],
   teacher: [
     { href: '/teacher', label: 'คำร้องรออนุมัติ', icon: ClipboardCheck },
@@ -84,19 +89,27 @@ export default function Header({ user, semester = '1/2569' }) {
     <header className="sticky top-0 z-40 bg-white/80 dark:bg-slate-900/85 backdrop-blur-xl border-b border-neutral-200/80 dark:border-slate-800 shadow-xs">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="flex items-center justify-between h-16">
-          <div className="flex items-center space-x-3">
-            <div className="w-10 h-10 rounded-2xl bg-[#7749BC] text-white flex items-center justify-center font-extrabold text-sm shadow-md shadow-purple-900/20 ring-2 ring-purple-300/30">
-              BUU
+          <Link
+            href={user.role === 'teacher' ? '/teacher' : user.role === 'admin' ? '/admin' : '/student'}
+            className="flex items-center space-x-3 group"
+          >
+            <div className="flex flex-col items-center shrink-0">
+              <div className="w-10 h-10 rounded-2xl bg-[#7749BC] text-white flex items-center justify-center font-extrabold text-sm shadow-md shadow-purple-900/20 ring-2 ring-purple-300/30 group-hover:scale-105 transition-transform">
+                BUU
+              </div>
+              <span className="text-[9px] font-bold text-[#7749BC] dark:text-purple-300 leading-tight mt-0.5 tracking-tight text-center">
+                Take A Leave
+              </span>
             </div>
             <div>
               <div className="flex items-center space-x-2">
-                <span className="font-bold text-neutral-900 dark:text-neutral-100 tracking-tight text-base">Take-A-Leave</span>
+                <span className="font-bold text-neutral-900 dark:text-neutral-100 tracking-tight text-base">Take A Leave</span>
               </div>
               <p className="text-xs text-neutral-500 dark:text-neutral-400 hidden sm:block">
                 ระบบยื่นและอนุมัติคำขอลาเรียนออนไลน์
               </p>
             </div>
-          </div>
+          </Link>
 
           <div className="flex items-center space-x-2 sm:space-x-3">
             <div className="hidden lg:flex items-center space-x-1.5 text-xs text-neutral-700 dark:text-neutral-300 bg-white/70 dark:bg-slate-800/70 backdrop-blur-md px-3 py-1.5 rounded-xl border border-neutral-200/80 dark:border-slate-700 shadow-xs">
@@ -107,9 +120,9 @@ export default function Header({ user, semester = '1/2569' }) {
             <Link
               href="/support"
               title="แจ้งข้อผิดพลาดของระบบ / ติดต่อฝ่ายสนับสนุน"
-              className="p-2 text-neutral-600 dark:text-neutral-300 hover:text-neutral-900 dark:hover:text-white hover:bg-neutral-100 dark:hover:bg-slate-800 rounded-xl transition-colors border border-transparent hover:border-neutral-200 dark:hover:border-slate-700"
+              className="p-2 text-neutral-600 dark:text-neutral-300 hover:text-[#7749BC] dark:hover:text-purple-300 hover:bg-neutral-100 dark:hover:bg-slate-800 rounded-xl transition-colors border border-transparent hover:border-neutral-200 dark:hover:border-slate-700"
             >
-              <Settings className="w-5 h-5" />
+              <MessageSquareWarning className="w-5 h-5" />
             </Link>
 
             <div className="relative">
@@ -244,12 +257,21 @@ export default function Header({ user, semester = '1/2569' }) {
         {links.length > 0 && (
           <nav className="flex items-center gap-1.5 sm:gap-2 py-2.5 border-t border-neutral-100 dark:border-slate-800/80 overflow-x-auto">
             {links.map((l) => {
-              const active = pathname === l.href;
+              const isHashLink = l.href.includes('#');
+              const active = isHashLink ? false : pathname === l.href;
               const Icon = l.icon;
               return (
                 <Link
                   key={l.href}
                   href={l.href}
+                  onClick={(e) => {
+                    if (isHashLink && pathname === '/student') {
+                      e.preventDefault();
+                      const targetId = l.href.split('#')[1];
+                      const el = document.getElementById(targetId);
+                      if (el) el.scrollIntoView({ behavior: 'smooth' });
+                    }
+                  }}
                   className={`flex items-center gap-1.5 px-3.5 py-2 rounded-xl text-xs font-semibold whitespace-nowrap transition-all shrink-0 ${
                     active
                       ? 'bg-[#7749BC] text-white shadow-sm shadow-purple-800/25'

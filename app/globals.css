@@ -57,6 +57,14 @@
   border-color: #7749bc;
 }
 
+.font-cursive {
+  font-family: 'Caveat', 'Dancing Script', cursive;
+}
+
+.font-dancing {
+  font-family: 'Dancing Script', cursive;
+}
+
 @media print {
   .no-print {
     display: none !important;
