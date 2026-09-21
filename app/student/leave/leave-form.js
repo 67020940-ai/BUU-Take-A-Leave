@@ -48,7 +48,7 @@ const LEAVE_TYPES = [
 const REASON_LIMIT = 300;
 
 export default function LeaveForm({ courses, initialCourseId, lockCourse, initialValues, resubmitId }) {
-  const lockedCourse = lockCourse ? courses.find((c) => c.id === initialCourseId) : null;
+  const [isLocked, setIsLocked] = useState(lockCourse);
   const router = useRouter();
 
   const [form, setForm] = useState({
@@ -60,6 +60,8 @@ export default function LeaveForm({ courses, initialCourseId, lockCourse, initia
     endDate: initialValues?.endDate || '',
     reason: initialValues?.reason || '',
   });
+
+  const lockedCourse = isLocked ? courses.find((c) => c.id === form.courseId || c.id === initialCourseId) : null;
 
   const [attachment, setAttachment] = useState(
     initialValues?.attachment
@@ -258,11 +260,25 @@ export default function LeaveForm({ courses, initialCourseId, lockCourse, initia
               <span className="text-rose-500">*</span>
             </label>
             {lockedCourse ? (
-              <div className="flex items-center gap-2 w-full px-3.5 py-2.5 rounded-xl border border-purple-200 dark:border-purple-800 bg-purple-50/60 dark:bg-purple-950/30 text-sm font-medium text-neutral-900 dark:text-neutral-100">
-                <Lock className="w-3.5 h-3.5 text-[#7749BC] dark:text-purple-400 shrink-0" />
-                <span className="truncate">
-                  {lockedCourse.code} {lockedCourse.name}
-                </span>
+              <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2.5 w-full px-4 py-3 rounded-2xl border border-purple-200 dark:border-purple-800 bg-purple-50/70 dark:bg-purple-950/30 text-sm font-medium text-neutral-900 dark:text-neutral-100 shadow-xs">
+                <div className="flex items-center gap-2.5 min-w-0">
+                  <Lock className="w-4 h-4 text-[#7749BC] dark:text-purple-400 shrink-0" />
+                  <span className="truncate font-bold text-neutral-900 dark:text-neutral-100">
+                    {lockedCourse.code} {lockedCourse.name} {lockedCourse.group ? `(กลุ่ม ${lockedCourse.group})` : ''}
+                  </span>
+                </div>
+                <div className="flex items-center gap-2 shrink-0 self-end sm:self-auto">
+                  <span className="text-[11px] font-semibold text-[#7749BC] dark:text-purple-300 bg-white/80 dark:bg-slate-900/80 px-2.5 py-1 rounded-xl border border-purple-200/60 shadow-2xs">
+                    ตรงตามตารางเรียน
+                  </span>
+                  <button
+                    type="button"
+                    onClick={() => setIsLocked(false)}
+                    className="text-xs text-neutral-500 hover:text-[#7749BC] dark:hover:text-purple-300 underline cursor-pointer"
+                  >
+                    เปลี่ยนวิชา
+                  </button>
+                </div>
               </div>
             ) : (
               <div className="relative">

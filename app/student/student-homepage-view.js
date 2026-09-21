@@ -40,13 +40,15 @@ export default function StudentHomepageView({ user, summaries = [], leaves = [] 
     return { total, approved, pending, rejected };
   }, [leaves]);
 
-  // Weekly Timetable Data exactly matching user's screenshot
+  // Weekly Timetable Data matching user's schedule with IDs
   const timetableSchedule = [
     {
       dayEn: 'Monday',
       dayTh: 'จันทร์',
+      dayColor: 'border-l-4 border-l-amber-400',
       slots: [
         {
+          id: 'mock-sc1',
           start: '09:00',
           end: '11:50',
           colSpan: 3, // 9:00-10:00, 10:00-11:00, 11:00-12:00
@@ -60,6 +62,7 @@ export default function StudentHomepageView({ user, summaries = [], leaves = [] 
         },
         { isBreak: true, colSpan: 1 }, // 12:00-13:00
         {
+          id: 'mock-sc2',
           start: '13:00',
           end: '16:50',
           colSpan: 4, // 13:00-14:00, 14:00-15:00, 15:00-16:00, 16:00-17:00
@@ -77,9 +80,11 @@ export default function StudentHomepageView({ user, summaries = [], leaves = [] 
     {
       dayEn: 'Tuesday',
       dayTh: 'อังคาร',
+      dayColor: 'border-l-4 border-l-pink-400',
       slots: [
         { isEmpty: true, colSpan: 8 }, // 9:00-17:00
         {
+          id: 'mock-sc3',
           start: '17:00',
           end: '19:50',
           colSpan: 3, // 17:00-18:00, 18:00-19:00, 19:00-20:00
@@ -96,6 +101,7 @@ export default function StudentHomepageView({ user, summaries = [], leaves = [] 
     {
       dayEn: 'Wednesday',
       dayTh: 'พุธ',
+      dayColor: 'border-l-4 border-l-emerald-400',
       slots: [
         { isEmpty: true, colSpan: 11, label: 'ไม่มีการเรียนการสอนในวันนี้' },
       ],
@@ -103,9 +109,11 @@ export default function StudentHomepageView({ user, summaries = [], leaves = [] 
     {
       dayEn: 'Thursday',
       dayTh: 'พฤหัสบดี',
+      dayColor: 'border-l-4 border-l-orange-400',
       slots: [
         { isEmpty: true, colSpan: 7 }, // 9:00-16:00
         {
+          id: 'mock-sc4',
           start: '16:00',
           end: '18:50',
           colSpan: 3, // 16:00-17:00, 17:00-18:00, 18:00-19:00
@@ -123,8 +131,10 @@ export default function StudentHomepageView({ user, summaries = [], leaves = [] 
     {
       dayEn: 'Friday',
       dayTh: 'ศุกร์',
+      dayColor: 'border-l-4 border-l-sky-400',
       slots: [
         {
+          id: 'mock-sc5',
           start: '09:00',
           end: '11:50',
           colSpan: 3, // 9:00-10:00, 10:00-11:00, 11:00-12:00
@@ -138,6 +148,7 @@ export default function StudentHomepageView({ user, summaries = [], leaves = [] 
         },
         { isBreak: true, colSpan: 1 }, // 12:00-13:00
         {
+          id: 'mock-sc6',
           start: '13:00',
           end: '15:50',
           colSpan: 3, // 13:00-14:00, 14:00-15:00, 15:00-16:00
@@ -156,7 +167,7 @@ export default function StudentHomepageView({ user, summaries = [], leaves = [] 
 
   return (
     <div className="min-h-screen flex flex-col bg-slate-50/60 dark:bg-slate-950 font-sans text-neutral-800 dark:text-neutral-100">
-      {/* ================= TOP NAVBAR (Menu at the top) ================= */}
+      {/* ================= TOP NAVBAR ================= */}
       <Header
         user={{
           name: user?.name,
@@ -170,11 +181,11 @@ export default function StudentHomepageView({ user, summaries = [], leaves = [] 
 
       {/* ================= MAIN CONTENT ================= */}
       <main className="flex-1 w-full max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6 sm:py-8 space-y-6">
-        {/* ================= TOP CONTROLS: SEMESTER & PURPLE SEARCH BAR ================= */}
+        {/* ================= TOP CONTROLS: SEMESTER & SEARCH BAR ================= */}
         <div className="flex flex-col md:flex-row items-center justify-between gap-4">
           {/* Semester Selector */}
           <div className="flex items-center gap-3 self-start md:self-auto">
-            <span className="font-bold text-base text-neutral-800 dark:text-neutral-200">
+            <span className="font-bold text-sm sm:text-base text-neutral-800 dark:text-neutral-200">
               ภาคเรียนที่
             </span>
             <div className="flex items-center gap-2 bg-white dark:bg-slate-900 px-3 py-1.5 rounded-2xl border border-neutral-200/80 dark:border-slate-800 shadow-xs">
@@ -198,7 +209,7 @@ export default function StudentHomepageView({ user, summaries = [], leaves = [] 
             </div>
           </div>
 
-          {/* Purple Pill Search Bar (Style matching S__29433861.jpg) */}
+          {/* Purple Pill Search Bar */}
           <div className="w-full md:max-w-lg relative">
             <input
               type="text"
@@ -213,113 +224,123 @@ export default function StudentHomepageView({ user, summaries = [], leaves = [] 
           </div>
         </div>
 
-        {/* ================= 4 STATUS SUMMARY CARDS IN 1 ROW ================= */}
-        {/* Style matching sketch S__29433861.jpg */}
-        <section className="bg-white/90 dark:bg-slate-900/90 backdrop-blur-xl rounded-3xl sm:rounded-[32px] border-2 border-neutral-300 dark:border-slate-700 shadow-sm overflow-hidden">
-          <div className="grid grid-cols-2 lg:grid-cols-4 divide-y sm:divide-y-0 sm:divide-x divide-neutral-200 dark:divide-slate-800">
+        {/* ================= 4 STATUS SUMMARY CARDS IN 1 ROW (MINIMAL & CLEAN) ================= */}
+        <section className="bg-white/95 dark:bg-slate-900/95 backdrop-blur-xl rounded-3xl sm:rounded-[28px] border border-neutral-200/90 dark:border-slate-800 shadow-sm overflow-hidden">
+          <div className="grid grid-cols-2 lg:grid-cols-4 divide-y sm:divide-y-0 sm:divide-x divide-neutral-200/80 dark:divide-slate-800">
             {/* Box 1: Total Leaves */}
-            <div className="p-5 sm:p-6 space-y-1 flex flex-col justify-center">
-              <h3 className="font-caveat text-2xl sm:text-3xl text-neutral-800 dark:text-neutral-200 font-bold select-none">
-                คำร้องขอลาทั้งหมด :
-              </h3>
-              <div className="flex items-baseline gap-2 pt-1">
-                <span className="text-3xl sm:text-4xl font-extrabold text-[#7749BC] dark:text-purple-400 font-mono">
+            <div className="p-5 sm:p-6 flex flex-col justify-center space-y-1.5 transition-colors hover:bg-neutral-50/50 dark:hover:bg-slate-800/30">
+              <div className="flex items-center gap-2">
+                <span className="w-2.5 h-2.5 rounded-full bg-[#7749BC]" />
+                <h3 className="font-sans text-xs sm:text-sm font-semibold text-neutral-700 dark:text-neutral-300 select-none">
+                  คำร้องขอลาทั้งหมด :
+                </h3>
+              </div>
+              <div className="flex items-baseline gap-2 pt-0.5">
+                <span className="text-3xl sm:text-4xl font-extrabold text-[#7749BC] dark:text-purple-400 font-sans tracking-tight">
                   {stats.total}
                 </span>
-                <span className="text-xs text-neutral-400">ครั้ง</span>
+                <span className="text-xs text-neutral-400 font-medium">ครั้ง</span>
               </div>
             </div>
 
             {/* Box 2: Approved */}
-            <div className="p-5 sm:p-6 space-y-1 flex flex-col justify-center">
-              <h3 className="font-caveat text-2xl sm:text-3xl text-emerald-700 dark:text-emerald-400 font-bold select-none">
-                อนุมัติ :
-              </h3>
-              <div className="flex items-baseline gap-2 pt-1">
-                <span className="text-3xl sm:text-4xl font-extrabold text-emerald-600 dark:text-emerald-400 font-mono">
+            <div className="p-5 sm:p-6 flex flex-col justify-center space-y-1.5 transition-colors hover:bg-neutral-50/50 dark:hover:bg-slate-800/30">
+              <div className="flex items-center gap-2">
+                <span className="w-2.5 h-2.5 rounded-full bg-emerald-500" />
+                <h3 className="font-sans text-xs sm:text-sm font-semibold text-emerald-700 dark:text-emerald-400 select-none">
+                  อนุมัติ :
+                </h3>
+              </div>
+              <div className="flex items-baseline gap-2 pt-0.5">
+                <span className="text-3xl sm:text-4xl font-extrabold text-emerald-600 dark:text-emerald-400 font-sans tracking-tight">
                   {stats.approved}
                 </span>
-                <span className="text-xs text-neutral-400">ครั้ง</span>
+                <span className="text-xs text-neutral-400 font-medium">ครั้ง</span>
               </div>
             </div>
 
             {/* Box 3: Pending */}
-            <div className="p-5 sm:p-6 space-y-1 flex flex-col justify-center">
-              <h3 className="font-caveat text-2xl sm:text-3xl text-amber-700 dark:text-amber-400 font-bold select-none">
-                รออนุมัติ :
-              </h3>
-              <div className="flex items-baseline gap-2 pt-1">
-                <span className="text-3xl sm:text-4xl font-extrabold text-amber-600 dark:text-amber-400 font-mono">
+            <div className="p-5 sm:p-6 flex flex-col justify-center space-y-1.5 transition-colors hover:bg-neutral-50/50 dark:hover:bg-slate-800/30">
+              <div className="flex items-center gap-2">
+                <span className="w-2.5 h-2.5 rounded-full bg-amber-500" />
+                <h3 className="font-sans text-xs sm:text-sm font-semibold text-amber-700 dark:text-amber-400 select-none">
+                  รออนุมัติ :
+                </h3>
+              </div>
+              <div className="flex items-baseline gap-2 pt-0.5">
+                <span className="text-3xl sm:text-4xl font-extrabold text-amber-600 dark:text-amber-400 font-sans tracking-tight">
                   {stats.pending}
                 </span>
-                <span className="text-xs text-neutral-400">ครั้ง</span>
+                <span className="text-xs text-neutral-400 font-medium">ครั้ง</span>
               </div>
             </div>
 
             {/* Box 4: Rejected */}
-            <div className="p-5 sm:p-6 space-y-1 flex flex-col justify-center">
-              <h3 className="font-caveat text-2xl sm:text-3xl text-rose-700 dark:text-rose-400 font-bold select-none">
-                ไม่อนุมัติ :
-              </h3>
-              <div className="flex items-baseline gap-2 pt-1">
-                <span className="text-3xl sm:text-4xl font-extrabold text-rose-600 dark:text-rose-400 font-mono">
+            <div className="p-5 sm:p-6 flex flex-col justify-center space-y-1.5 transition-colors hover:bg-neutral-50/50 dark:hover:bg-slate-800/30">
+              <div className="flex items-center gap-2">
+                <span className="w-2.5 h-2.5 rounded-full bg-rose-500" />
+                <h3 className="font-sans text-xs sm:text-sm font-semibold text-rose-700 dark:text-rose-400 select-none">
+                  ไม่อนุมัติ :
+                </h3>
+              </div>
+              <div className="flex items-baseline gap-2 pt-0.5">
+                <span className="text-3xl sm:text-4xl font-extrabold text-rose-600 dark:text-rose-400 font-sans tracking-tight">
                   {stats.rejected}
                 </span>
-                <span className="text-xs text-neutral-400">ครั้ง</span>
+                <span className="text-xs text-neutral-400 font-medium">ครั้ง</span>
               </div>
             </div>
           </div>
         </section>
 
-        {/* ================= MAIN WEEKLY TIMETABLE GRID ================= */}
-        {/* Style matching screenshot from /var/folders/... and wireframe S__29433861.jpg */}
-        <section className="bg-white/95 dark:bg-slate-900/95 backdrop-blur-xl rounded-3xl sm:rounded-[32px] border-2 border-neutral-300 dark:border-slate-700 shadow-md overflow-hidden space-y-2">
+        {/* ================= MAIN WEEKLY TIMETABLE GRID (CLEAN MINIMAL TYPOGRAPHY) ================= */}
+        <section className="bg-white/95 dark:bg-slate-900/95 backdrop-blur-xl rounded-3xl sm:rounded-[28px] border border-neutral-200/90 dark:border-slate-800 shadow-sm overflow-hidden space-y-2">
           {/* Timetable Header / Title Bar */}
-          <div className="px-6 py-4 border-b border-neutral-200 dark:border-slate-800 flex items-center justify-between">
+          <div className="px-6 py-4 border-b border-neutral-200/80 dark:border-slate-800 flex items-center justify-between">
             <div className="flex items-center gap-2.5">
               <CalendarDays className="w-5 h-5 text-[#7749BC]" />
-              <h2 className="font-bold text-base sm:text-lg text-neutral-900 dark:text-neutral-100">
+              <h2 className="font-bold text-sm sm:text-base text-neutral-900 dark:text-neutral-100 font-sans">
                 ตารางเรียนประจำสัปดาห์ (Weekly Timetable)
               </h2>
             </div>
             <span className="text-xs text-neutral-400 font-medium hidden sm:inline">
-              คลิกที่รายวิชาเพื่อดูรายละเอียดหรือยื่นใบลา
+              คลิกที่รายวิชาเพื่อยื่นคำขอลาเรียนวิชานั้นโดยตรง
             </span>
           </div>
 
           {/* Grid Table Container */}
           <div className="overflow-x-auto p-3 sm:p-5">
-            <table className="w-full border-collapse min-w-[1050px] text-xs text-center select-none">
+            <table className="w-full border-collapse min-w-[1050px] text-xs text-center select-none font-sans">
               {/* Table Column Headers */}
               <thead>
-                <tr className="bg-[#4D5562] dark:bg-slate-800 text-white font-bold border-b border-neutral-300 dark:border-slate-700">
-                  <th className="py-3 px-3 w-28 text-center border-r border-neutral-400/40 font-serif tracking-tight">
+                <tr className="bg-slate-700 dark:bg-slate-800 text-white font-semibold border-b border-neutral-300 dark:border-slate-700">
+                  <th className="py-3 px-3 w-28 text-center border-r border-slate-600 dark:border-slate-700 text-xs font-semibold tracking-wide">
                     Date / Time
                   </th>
-                  <th className="py-3 px-2 border-r border-neutral-400/40 text-[11px]">9:00-10:00</th>
-                  <th className="py-3 px-2 border-r border-neutral-400/40 text-[11px]">10:00-11:00</th>
-                  <th className="py-3 px-2 border-r border-neutral-400/40 text-[11px]">11:00-12:00</th>
-                  <th className="py-3 px-2 border-r border-neutral-400/40 text-[11px] bg-[#3E4550]">12:00-13:00</th>
-                  <th className="py-3 px-2 border-r border-neutral-400/40 text-[11px]">13:00-14:00</th>
-                  <th className="py-3 px-2 border-r border-neutral-400/40 text-[11px]">14:00-15:00</th>
-                  <th className="py-3 px-2 border-r border-neutral-400/40 text-[11px]">15:00-16:00</th>
-                  <th className="py-3 px-2 border-r border-neutral-400/40 text-[11px]">16:00-17:00</th>
-                  <th className="py-3 px-2 border-r border-neutral-400/40 text-[11px]">17:00-18:00</th>
-                  <th className="py-3 px-2 border-r border-neutral-400/40 text-[11px]">18:00-19:00</th>
-                  <th className="py-3 px-2 text-[11px]">19:00-20:00</th>
+                  <th className="py-3 px-2 border-r border-slate-600 dark:border-slate-700 text-[11px] font-medium">9:00-10:00</th>
+                  <th className="py-3 px-2 border-r border-slate-600 dark:border-slate-700 text-[11px] font-medium">10:00-11:00</th>
+                  <th className="py-3 px-2 border-r border-slate-600 dark:border-slate-700 text-[11px] font-medium">11:00-12:00</th>
+                  <th className="py-3 px-2 border-r border-slate-600 dark:border-slate-700 text-[11px] font-medium bg-slate-800/80">12:00-13:00</th>
+                  <th className="py-3 px-2 border-r border-slate-600 dark:border-slate-700 text-[11px] font-medium">13:00-14:00</th>
+                  <th className="py-3 px-2 border-r border-slate-600 dark:border-slate-700 text-[11px] font-medium">14:00-15:00</th>
+                  <th className="py-3 px-2 border-r border-slate-600 dark:border-slate-700 text-[11px] font-medium">15:00-16:00</th>
+                  <th className="py-3 px-2 border-r border-slate-600 dark:border-slate-700 text-[11px] font-medium">16:00-17:00</th>
+                  <th className="py-3 px-2 border-r border-slate-600 dark:border-slate-700 text-[11px] font-medium">17:00-18:00</th>
+                  <th className="py-3 px-2 border-r border-slate-600 dark:border-slate-700 text-[11px] font-medium">18:00-19:00</th>
+                  <th className="py-3 px-2 text-[11px] font-medium">19:00-20:00</th>
                 </tr>
               </thead>
 
               {/* Table Body */}
               <tbody className="divide-y divide-neutral-200 dark:divide-slate-800">
                 {timetableSchedule.map((row) => (
-                  <tr key={row.dayEn} className="h-24 hover:bg-neutral-50/50 dark:hover:bg-slate-800/30 transition-colors">
-                    {/* Day Column Header */}
-                    <td className="bg-[#9CA3AF]/40 dark:bg-slate-800/80 font-serif font-bold text-neutral-900 dark:text-neutral-100 text-sm border-r border-neutral-200 dark:border-slate-800 p-2">
-                      <div className="font-caveat text-2xl font-bold text-neutral-800 dark:text-neutral-200">
+                  <tr key={row.dayEn} className="h-24 hover:bg-neutral-50/40 dark:hover:bg-slate-800/20 transition-colors">
+                    {/* Day Column Header (Clean modern sans-serif typography) */}
+                    <td className={`bg-slate-100/80 dark:bg-slate-800/60 font-sans border-r border-neutral-200 dark:border-slate-800 p-2.5 ${row.dayColor || ''}`}>
+                      <div className="font-bold text-sm text-neutral-900 dark:text-neutral-100">
                         {row.dayEn}
                       </div>
-                      <div className="text-[10px] text-neutral-500 font-sans">
+                      <div className="text-[11px] text-neutral-500 dark:text-neutral-400 font-medium mt-0.5">
                         วัน{row.dayTh}
                       </div>
                     </td>
@@ -331,7 +352,7 @@ export default function StudentHomepageView({ user, summaries = [], leaves = [] 
                           <td
                             key={sIdx}
                             colSpan={slot.colSpan}
-                            className="border-r border-neutral-200 dark:border-slate-800/60 bg-neutral-50/30 dark:bg-slate-900/20 text-neutral-300 dark:text-slate-700 text-[10px]"
+                            className="border-r border-neutral-200 dark:border-slate-800/60 bg-neutral-50/20 dark:bg-slate-900/10 text-neutral-300 dark:text-slate-700 text-[10px]"
                           >
                             {slot.label || ''}
                           </td>
@@ -343,7 +364,7 @@ export default function StudentHomepageView({ user, summaries = [], leaves = [] 
                           <td
                             key={sIdx}
                             colSpan={slot.colSpan}
-                            className="border-r border-neutral-200 dark:border-slate-800/60 bg-neutral-100/50 dark:bg-slate-800/40 text-neutral-400 text-[10px] italic font-medium"
+                            className="border-r border-neutral-200 dark:border-slate-800/60 bg-neutral-100/60 dark:bg-slate-800/40 text-neutral-400 text-[11px] font-medium"
                           >
                             พักกลางวัน
                           </td>
@@ -359,7 +380,8 @@ export default function StudentHomepageView({ user, summaries = [], leaves = [] 
                         >
                           <div
                             onClick={() => setSelectedCourse(slot)}
-                            className="w-full h-full min-h-[76px] rounded-2xl bg-[#C8B8E8]/70 dark:bg-purple-950/70 hover:bg-[#BCA9E4] dark:hover:bg-purple-900/80 border border-[#A790D6]/60 dark:border-purple-700 p-2.5 flex flex-col items-center justify-center cursor-pointer shadow-xs hover:shadow-md transition-all hover:scale-[1.01] group"
+                            className="w-full h-full min-h-[76px] rounded-2xl bg-[#C8B8E8]/70 dark:bg-purple-950/70 hover:bg-[#BCA9E4] dark:hover:bg-purple-900/80 border border-[#A790D6]/60 dark:border-purple-700 p-2.5 flex flex-col items-center justify-center cursor-pointer shadow-xs hover:shadow-md transition-all hover:scale-[1.01] group relative"
+                            title="คลิกเพื่อดูรายละเอียดและยื่นใบลาวิชานี้"
                           >
                             <span className="font-bold text-xs text-[#1E40AF] dark:text-sky-300 group-hover:underline underline-offset-2">
                               {slot.code}
@@ -397,7 +419,7 @@ export default function StudentHomepageView({ user, summaries = [], leaves = [] 
         </section>
       </main>
 
-      {/* ================= MODAL: COURSE DETAIL & LEAVE ACTION ================= */}
+      {/* ================= MODAL: COURSE DETAIL & DEDICATED LEAVE ACTION ================= */}
       {selectedCourse && (
         <div className="fixed inset-0 z-50 bg-slate-900/50 backdrop-blur-md flex items-center justify-center p-4">
           <div className="bg-white dark:bg-slate-900 rounded-3xl shadow-2xl border border-neutral-200 dark:border-slate-800 w-full max-w-md p-6 space-y-5">
@@ -444,11 +466,11 @@ export default function StudentHomepageView({ user, summaries = [], leaves = [] 
                 ปิด
               </button>
               <Link
-                href={`/student/leave?courseCode=${selectedCourse.fullCode}`}
+                href={`/student/leave?courseId=${selectedCourse.id || ''}&courseCode=${selectedCourse.fullCode}`}
                 className="px-4 py-2 rounded-xl bg-[#7749BC] hover:bg-[#653ba6] text-white text-xs font-semibold shadow-xs flex items-center gap-1.5 cursor-pointer"
               >
                 <FileEdit className="w-3.5 h-3.5" />
-                <span>ยื่นใบลาวิชานี้</span>
+                <span>ยื่นใบลาวิชานี้ (ตามตารางเรียน)</span>
               </Link>
             </div>
           </div>

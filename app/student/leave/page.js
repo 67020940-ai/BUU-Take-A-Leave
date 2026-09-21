@@ -13,7 +13,10 @@ export default async function StudentLeavePage({ searchParams }) {
   if (!user || user.role !== 'student') redirect('/login');
 
   const { courses } = await getStudentData(user.id);
-  const { courseId, resubmit } = await searchParams;
+  const params = await searchParams;
+  const rawCourseId = params?.courseId;
+  const rawCourseCode = params?.courseCode || params?.code;
+  const resubmit = params?.resubmit;
 
   let resubmitLeave = null;
   if (resubmit) {
@@ -23,9 +26,20 @@ export default async function StudentLeavePage({ searchParams }) {
     }
   }
 
-  const effectiveCourseId = resubmitLeave?.courseId || courseId;
-  const lockCourse = courses.some((c) => c.id === effectiveCourseId);
-  const initialCourseId = lockCourse ? effectiveCourseId : courses[0]?.id || '';
+  // Find matching course by courseId or courseCode
+  let targetCourse = null;
+  if (resubmitLeave?.courseId) {
+    targetCourse = courses.find((c) => c.id === resubmitLeave.courseId || c.code === resubmitLeave.courseId);
+  }
+  if (!targetCourse && rawCourseId) {
+    targetCourse = courses.find((c) => c.id === rawCourseId || c.code === rawCourseId);
+  }
+  if (!targetCourse && rawCourseCode) {
+    targetCourse = courses.find((c) => c.code === rawCourseCode || c.id === rawCourseCode);
+  }
+
+  const lockCourse = Boolean(targetCourse);
+  const initialCourseId = targetCourse ? targetCourse.id : (courses[0]?.id || '');
 
   return (
     <div className="min-h-screen flex flex-col">
