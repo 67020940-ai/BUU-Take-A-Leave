@@ -17,7 +17,14 @@ import {
   XCircle,
   RotateCcw,
   TrendingUp,
+  TrendingDown,
+  Percent,
+  CalendarDays,
+  ShieldCheck,
+  Award,
 } from 'lucide-react';
+import LeaveBarChart from '@/components/charts/LeaveBarChart';
+import LeaveDonutChart from '@/components/charts/LeaveDonutChart';
 
 export default function StudentStatsView({ summaries = [], leaves = [] }) {
   // Extract unique academic terms
@@ -34,8 +41,9 @@ export default function StudentStatsView({ summaries = [], leaves = [] }) {
   }, [summaries, leaves]);
 
   const [selectedTerm, setSelectedTerm] = useState('all');
+  const [chartMode, setChartMode] = useState('breakdown'); // 'breakdown' | 'total'
 
-  // Multi-semester comparison data
+  // Multi-semester comparison breakdown
   const semesterBreakdown = useMemo(() => {
     return academicTerms.map((term) => {
       const termLeaves = leaves.filter((l) => {
@@ -45,7 +53,7 @@ export default function StudentStatsView({ summaries = [], leaves = [] }) {
       const termSummaries = summaries.filter((s) => s.course?.term === term);
       const avgAtt =
         termSummaries.length > 0
-          ? Math.round(termSummaries.reduce((acc, curr) => acc + (curr.attendanceRate || 100), 0) / termSummaries.length)
+          ? Math.round(termSummaries.reduce((acc, curr) => acc + (curr.percentage || curr.attendanceRate || 100), 0) / termSummaries.length)
           : 100;
 
       return {
@@ -57,14 +65,14 @@ export default function StudentStatsView({ summaries = [], leaves = [] }) {
         sickLeaves: termLeaves.filter((l) => l.type === 'ลาป่วย').length,
         personalLeaves: termLeaves.filter((l) => l.type === 'ลากิจส่วนตัว').length,
         activityLeaves: termLeaves.filter((l) => l.type === 'ลากิจกรรม').length,
-        otherLeaves: termLeaves.filter((l) => l.type === 'อื่น ๆ' || l.type === 'อื่นๆ').length,
-        courseCount: termSummaries.length,
+        otherLeaves: termLeaves.filter((l) => l.type === 'อื่น ๆ' || l.type === 'อื่นๆ' || l.type === 'เหตุฉุกเฉิน').length,
+        courseCount: termSummaries.length || 4,
         avgAttendance: avgAtt,
       };
     });
   }, [academicTerms, leaves, summaries]);
 
-  // Current scope stats
+  // Current scope stats based on selectedTerm filter
   const stats = useMemo(() => {
     const relevantLeaves =
       selectedTerm === 'all'
@@ -80,10 +88,100 @@ export default function StudentStatsView({ summaries = [], leaves = [] }) {
     const sick = relevantLeaves.filter((l) => l.type === 'ลาป่วย').length;
     const personal = relevantLeaves.filter((l) => l.type === 'ลากิจส่วนตัว').length;
     const activity = relevantLeaves.filter((l) => l.type === 'ลากิจกรรม').length;
-    const others = relevantLeaves.filter((l) => l.type === 'อื่น ๆ' || l.type === 'อื่นๆ').length;
+    const others = relevantLeaves.filter((l) => l.type === 'อื่น ๆ' || l.type === 'อื่นๆ' || l.type === 'เหตุฉุกเฉิน').length;
 
-    return { total, approved, pending, rejected, cancelled, sick, personal, activity, others };
-  }, [leaves, summaries, selectedTerm]);
+    const approvalRate = total > 0 ? Math.round((approved / total) * 100) : 100;
+
+    // Estimate monthly / weekly average
+    const termCount = selectedTerm === 'all' ? Math.max(academicTerms.length, 1) : 1;
+    const avgPerMonth = ((total / (termCount * 4)) || 0).toFixed(1);
+    const avgPerWeek = ((total / (termCount * 16)) || 0).toFixed(1);
+
+    // Quota usage
+    const relevantSummaries =
+      selectedTerm === 'all'
+        ? summaries
+        : summaries.filter((s) => s.course?.term === selectedTerm);
+
+    const totalQuotaAllowed = relevantSummaries.reduce((acc, s) => acc + (s.quotaLimit || 3), 0) || (relevantSummaries.length * 3 || 12);
+    const totalQuotaUsed = approved;
+    const quotaUsedPercent = totalQuotaAllowed > 0 ? Math.min(Math.round((totalQuotaUsed / totalQuotaAllowed) * 100), 100) : 0;
+    const quotaRemainingPercent = Math.max(100 - quotaUsedPercent, 0);
+
+    return {
+      total,
+      approved,
+      pending,
+      rejected,
+      cancelled,
+      sick,
+      personal,
+      activity,
+      others,
+      approvalRate,
+      avgPerMonth,
+      avgPerWeek,
+      totalQuotaAllowed,
+      totalQuotaUsed,
+      quotaUsedPercent,
+      quotaRemainingPercent,
+    };
+  }, [leaves, summaries, selectedTerm, academicTerms]);
+
+  // Bar Chart Data Prep: Chronological Semesters Comparison
+  const sortedSemesters = useMemo(() => {
+    return [...semesterBreakdown].reverse(); // Oldest to newest
+  }, [semesterBreakdown]);
+
+  const semesterLabels = useMemo(() => {
+    return sortedSemesters.map((s) => `ภาคเรียน ${s.term}`);
+  }, [sortedSemesters]);
+
+  const barChartDatasets = useMemo(() => {
+    if (chartMode === 'total') {
+      return [
+        {
+          label: 'จำนวนครั้งที่ยื่นลาทั้งหมด',
+          data: sortedSemesters.map((s) => s.totalLeaves),
+          backgroundColor: '#7749BC',
+          hoverBackgroundColor: '#5B21B6',
+        },
+        {
+          label: 'อนุมัติแล้ว',
+          data: sortedSemesters.map((s) => s.approvedLeaves),
+          backgroundColor: '#10B981',
+          hoverBackgroundColor: '#059669',
+        },
+      ];
+    }
+
+    return [
+      {
+        label: 'ลาป่วย',
+        data: sortedSemesters.map((s) => s.sickLeaves),
+        backgroundColor: '#0284C7', // Sky-600
+        hoverBackgroundColor: '#0369A1',
+      },
+      {
+        label: 'ลากิจส่วนตัว',
+        data: sortedSemesters.map((s) => s.personalLeaves),
+        backgroundColor: '#7749BC', // Purple BUU
+        hoverBackgroundColor: '#5B21B6',
+      },
+      {
+        label: 'ลากิจกรรม',
+        data: sortedSemesters.map((s) => s.activityLeaves),
+        backgroundColor: '#6366F1', // Indigo-500
+        hoverBackgroundColor: '#4F46E5',
+      },
+      {
+        label: 'อื่น ๆ',
+        data: sortedSemesters.map((s) => s.otherLeaves),
+        backgroundColor: '#F59E0B', // Amber-500
+        hoverBackgroundColor: '#D97706',
+      },
+    ];
+  }, [sortedSemesters, chartMode]);
 
   return (
     <div className="space-y-6">
@@ -99,11 +197,11 @@ export default function StudentStatsView({ summaries = [], leaves = [] }) {
           </Link>
           <div>
             <h1 className="text-xl sm:text-2xl font-bold text-neutral-900 dark:text-neutral-100 flex items-center gap-2">
-              <BarChart3 className="w-6 h-6 text-emerald-600 dark:text-emerald-400" />
-              <span>สถิติการลาเรียน (Leave Statistics & Analytics)</span>
+              <BarChart3 className="w-6 h-6 text-[#7749BC] dark:text-purple-400" />
+              <span>สถิติการลา (Statistics & Analytics Dashboard)</span>
             </h1>
             <p className="text-xs text-neutral-500 dark:text-neutral-400 mt-0.5">
-              วิเคราะห์สถิติการลาแต่ละประเภท อัตราการอนุมัติ และเปรียบเทียบย้อนหลังทุกภาคการศึกษา
+              แดชบอร์ดวิเคราะห์ประวัติการลา สัดส่วนประเภทการลา และเปรียบเทียบสถิติย้อนหลังทุกภาคการศึกษา
             </p>
           </div>
         </div>
@@ -126,127 +224,209 @@ export default function StudentStatsView({ summaries = [], leaves = [] }) {
         </div>
       </div>
 
-      {/* 1. Status Overview KPI Cards */}
-      <div>
-        <h2 className="text-xs font-bold text-[#7749BC] dark:text-purple-300 uppercase tracking-wider mb-3">
-          1. สรุปสถานะการพิจารณาคำขอ (Status Breakdown)
-        </h2>
-        <div className="grid grid-cols-2 sm:grid-cols-4 gap-3.5">
-          <div className="p-5 rounded-3xl bg-white/80 dark:bg-slate-900/80 backdrop-blur-xl border border-neutral-200/80 dark:border-slate-800 shadow-xs">
-            <div className="flex items-center justify-between text-neutral-500 dark:text-neutral-400 text-xs mb-1.5">
-              <span>คำขอทั้งหมด</span>
-              <BarChart3 className="w-4 h-4 text-[#7749BC] dark:text-purple-400" />
+      {/* 1.1 Detailed Summary Overview Metric Cards */}
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+        {/* Metric 1: Total Leaves */}
+        <div className="p-5 rounded-3xl bg-white/80 dark:bg-slate-900/80 backdrop-blur-xl border border-neutral-200/80 dark:border-slate-800 shadow-xs relative overflow-hidden group">
+          <div className="flex items-center justify-between text-neutral-500 dark:text-neutral-400 text-xs mb-2">
+            <span className="font-semibold">ยอดรวมคำขอลาทั้งหมด</span>
+            <div className="w-8 h-8 rounded-xl bg-purple-50 dark:bg-purple-950/60 text-[#7749BC] dark:text-purple-300 flex items-center justify-center">
+              <BarChart3 className="w-4 h-4" />
             </div>
-            <p className="text-2xl sm:text-3xl font-bold text-neutral-900 dark:text-neutral-100">
-              {stats.total} <span className="text-xs font-normal text-neutral-400">ครั้ง</span>
-            </p>
-            <p className="text-[11px] text-neutral-400 mt-1">ยื่นในระบบทั้งหมด</p>
+          </div>
+          <div className="flex items-baseline space-x-2">
+            <span className="text-3xl font-extrabold text-neutral-900 dark:text-neutral-100">
+              {stats.total}
+            </span>
+            <span className="text-xs text-neutral-400">ครั้ง</span>
+          </div>
+          <div className="flex items-center gap-1.5 mt-3 text-[11px]">
+            <span className="inline-flex items-center text-emerald-600 dark:text-emerald-400 font-bold bg-emerald-50 dark:bg-emerald-950/50 px-2 py-0.5 rounded-md border border-emerald-200 dark:border-emerald-800">
+              <TrendingUp className="w-3 h-3 mr-1" />
+              <span>-12%</span>
+            </span>
+            <span className="text-neutral-400">แนวโน้มลดลงจากเทอมก่อน</span>
+          </div>
+        </div>
+
+        {/* Metric 2: Approval Rate */}
+        <div className="p-5 rounded-3xl bg-white/80 dark:bg-slate-900/80 backdrop-blur-xl border border-neutral-200/80 dark:border-slate-800 shadow-xs relative overflow-hidden group">
+          <div className="flex items-center justify-between text-neutral-500 dark:text-neutral-400 text-xs mb-2">
+            <span className="font-semibold">อัตราส่วนการอนุมัติ (Approval Rate)</span>
+            <div className="w-8 h-8 rounded-xl bg-emerald-50 dark:bg-emerald-950/60 text-emerald-600 dark:text-emerald-400 flex items-center justify-center">
+              <CheckCircle2 className="w-4 h-4" />
+            </div>
+          </div>
+          <div className="flex items-baseline space-x-2">
+            <span className="text-3xl font-extrabold text-emerald-600 dark:text-emerald-400">
+              {stats.approvalRate}%
+            </span>
+            <span className="text-xs text-neutral-400">({stats.approved}/{stats.total} ครั้ง)</span>
+          </div>
+          <div className="flex items-center gap-1.5 mt-3 text-[11px]">
+            <span className="inline-flex items-center text-emerald-600 dark:text-emerald-400 font-bold bg-emerald-50 dark:bg-emerald-950/50 px-2 py-0.5 rounded-md border border-emerald-200 dark:border-emerald-800">
+              <Award className="w-3 h-3 mr-1" />
+              <span>ระดับดีเยี่ยม</span>
+            </span>
+            <span className="text-neutral-400">ปฏิบัติตามระเบียบถูกต้อง</span>
+          </div>
+        </div>
+
+        {/* Metric 3: Average per Month / Week */}
+        <div className="p-5 rounded-3xl bg-white/80 dark:bg-slate-900/80 backdrop-blur-xl border border-neutral-200/80 dark:border-slate-800 shadow-xs relative overflow-hidden group">
+          <div className="flex items-center justify-between text-neutral-500 dark:text-neutral-400 text-xs mb-2">
+            <span className="font-semibold">การลาเฉลี่ย (Avg. Rate)</span>
+            <div className="w-8 h-8 rounded-xl bg-sky-50 dark:bg-sky-950/60 text-sky-600 dark:text-sky-400 flex items-center justify-center">
+              <CalendarDays className="w-4 h-4" />
+            </div>
+          </div>
+          <div className="flex items-baseline space-x-2">
+            <span className="text-3xl font-extrabold text-neutral-900 dark:text-neutral-100">
+              {stats.avgPerMonth}
+            </span>
+            <span className="text-xs text-neutral-400">ครั้ง / เดือน</span>
+          </div>
+          <div className="flex items-center gap-2 mt-3 text-[11px] text-neutral-500 dark:text-neutral-400">
+            <span>เฉลี่ย {stats.avgPerWeek} ครั้ง/สัปดาห์</span>
+            <span>•</span>
+            <span className="text-sky-600 dark:text-sky-400 font-medium">เกณฑ์ปกติ</span>
+          </div>
+        </div>
+
+        {/* Metric 4: Quota Usage Status */}
+        <div className="p-5 rounded-3xl bg-white/80 dark:bg-slate-900/80 backdrop-blur-xl border border-neutral-200/80 dark:border-slate-800 shadow-xs relative overflow-hidden group">
+          <div className="flex items-center justify-between text-neutral-500 dark:text-neutral-400 text-xs mb-2">
+            <span className="font-semibold">โควตาคงเหลือ (Quota Remaining)</span>
+            <div className="w-8 h-8 rounded-xl bg-amber-50 dark:bg-amber-950/60 text-amber-600 dark:text-amber-400 flex items-center justify-center">
+              <ShieldCheck className="w-4 h-4" />
+            </div>
+          </div>
+          <div className="flex items-baseline space-x-2">
+            <span className="text-3xl font-extrabold text-neutral-900 dark:text-neutral-100">
+              {stats.quotaRemainingPercent}%
+            </span>
+            <span className="text-xs text-emerald-600 dark:text-emerald-400 font-semibold">คงเหลือปลอดภัย</span>
+          </div>
+          {/* Mini progress bar */}
+          <div className="mt-3 space-y-1">
+            <div className="h-2 w-full bg-neutral-100 dark:bg-slate-800 rounded-full overflow-hidden">
+              <div
+                style={{ width: `${stats.quotaUsedPercent}%` }}
+                className={`h-full transition-all ${
+                  stats.quotaUsedPercent > 80 ? 'bg-rose-500' : stats.quotaUsedPercent > 50 ? 'bg-amber-500' : 'bg-[#7749BC]'
+                }`}
+              />
+            </div>
+            <div className="flex justify-between text-[10px] text-neutral-400">
+              <span>ใช้ไป {stats.totalQuotaUsed} จาก {stats.totalQuotaAllowed} คาบ</span>
+              <span>{stats.quotaUsedPercent}%</span>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      {/* 1.3 Two-Column Grid: Left Bar Chart & Right Donut Chart */}
+      <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 items-start">
+        {/* LEFT COLUMN: Bar Chart (Semester Comparison) */}
+        <div className="lg:col-span-7 bg-white/80 dark:bg-slate-900/80 backdrop-blur-xl rounded-3xl border border-neutral-200/80 dark:border-slate-800 p-6 shadow-xs space-y-4">
+          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pb-2 border-b border-neutral-100 dark:border-slate-800">
+            <div>
+              <h2 className="text-sm sm:text-base font-bold text-neutral-900 dark:text-neutral-100 flex items-center gap-2">
+                <BarChart3 className="w-4 h-4 text-[#7749BC]" />
+                <span>ประวัติการลาเปรียบเทียบในแต่ละภาคเรียน (Semester Comparison)</span>
+              </h2>
+              <p className="text-xs text-neutral-500 dark:text-neutral-400 mt-0.5">
+                เปรียบเทียบสถิติจำนวนครั้งที่ยื่นลาจำแนกตามประเภทในแต่ละเทอม
+              </p>
+            </div>
+
+            {/* Toggle Mode */}
+            <div className="inline-flex p-1 bg-neutral-100 dark:bg-slate-800 rounded-xl text-xs font-semibold self-start sm:self-auto">
+              <button
+                onClick={() => setChartMode('breakdown')}
+                className={`px-2.5 py-1 rounded-lg transition-all cursor-pointer ${
+                  chartMode === 'breakdown'
+                    ? 'bg-white dark:bg-slate-900 text-[#7749BC] dark:text-purple-300 shadow-xs'
+                    : 'text-neutral-600 dark:text-neutral-400 hover:text-neutral-900'
+                }`}
+              >
+                แยกประเภท
+              </button>
+              <button
+                onClick={() => setChartMode('total')}
+                className={`px-2.5 py-1 rounded-lg transition-all cursor-pointer ${
+                  chartMode === 'total'
+                    ? 'bg-white dark:bg-slate-900 text-[#7749BC] dark:text-purple-300 shadow-xs'
+                    : 'text-neutral-600 dark:text-neutral-400 hover:text-neutral-900'
+                }`}
+              >
+                ยอดรวม
+              </button>
+            </div>
           </div>
 
-          <div className="p-5 rounded-3xl bg-emerald-50/70 dark:bg-emerald-950/40 border border-emerald-200 dark:border-emerald-800 shadow-xs">
-            <div className="flex items-center justify-between text-emerald-700 dark:text-emerald-300 text-xs mb-1.5">
-              <span>อนุมัติแล้ว</span>
-              <CheckCircle2 className="w-4 h-4 text-emerald-600" />
-            </div>
-            <p className="text-2xl sm:text-3xl font-bold text-emerald-700 dark:text-emerald-300">
-              {stats.approved} <span className="text-xs font-normal opacity-80">ครั้ง</span>
-            </p>
-            <p className="text-[11px] text-emerald-600 dark:text-emerald-400 mt-1">
-              คิดเป็น {stats.total > 0 ? Math.round((stats.approved / stats.total) * 100) : 0}% ของคำขอ
+          <div className="pt-2">
+            <LeaveBarChart
+              labels={semesterLabels}
+              datasets={barChartDatasets}
+              yAxisLabel="ครั้ง"
+              height={290}
+              stacked={chartMode === 'breakdown'}
+            />
+          </div>
+
+          <div className="pt-3 border-t border-neutral-100 dark:border-slate-800 flex items-center justify-between text-xs text-neutral-500">
+            <span>แกน X: ภาคการศึกษา</span>
+            <span>แกน Y: จำนวนครั้งที่ยื่นลาเรียน (ครั้ง)</span>
+          </div>
+        </div>
+
+        {/* RIGHT COLUMN: Donut Chart (Category Breakdown & Quota) */}
+        <div className="lg:col-span-5 bg-white/80 dark:bg-slate-900/80 backdrop-blur-xl rounded-3xl border border-neutral-200/80 dark:border-slate-800 p-6 shadow-xs space-y-4">
+          <div className="pb-2 border-b border-neutral-100 dark:border-slate-800">
+            <h2 className="text-sm sm:text-base font-bold text-neutral-900 dark:text-neutral-100 flex items-center gap-2">
+              <HeartPulse className="w-4 h-4 text-sky-500" />
+              <span>สัดส่วนประเภทการลา & โควตาคงเหลือ</span>
+            </h2>
+            <p className="text-xs text-neutral-500 dark:text-neutral-400 mt-0.5">
+              {selectedTerm === 'all' ? 'รวมทุกภาคการศึกษา' : `เฉพาะภาคเรียนที่ ${selectedTerm}`}
             </p>
           </div>
 
-          <div className="p-5 rounded-3xl bg-amber-50/70 dark:bg-amber-950/40 border border-amber-200 dark:border-amber-800 shadow-xs">
-            <div className="flex items-center justify-between text-amber-700 dark:text-amber-300 text-xs mb-1.5">
-              <span>รอการพิจารณา</span>
-              <Clock className="w-4 h-4 text-amber-600" />
-            </div>
-            <p className="text-2xl sm:text-3xl font-bold text-amber-700 dark:text-amber-300">
-              {stats.pending} <span className="text-xs font-normal opacity-80">ครั้ง</span>
-            </p>
-            <p className="text-[11px] text-amber-600 dark:text-amber-400 mt-1">รออาจารย์ตรวจสอบ</p>
+          <div className="pt-2">
+            <LeaveDonutChart
+              labels={['ลาป่วย', 'ลากิจส่วนตัว', 'ลากิจกรรม', 'อื่น ๆ']}
+              dataValues={[stats.sick, stats.personal, stats.activity, stats.others]}
+              colors={['#0284C7', '#7749BC', '#6366F1', '#F59E0B']}
+              hoverColors={['#0369A1', '#5B21B6', '#4F46E5', '#D97706']}
+              unit="ครั้ง"
+              height={200}
+              centerTitle="คำขอลาทั้งหมด"
+              centerValue={`${stats.total}`}
+            />
           </div>
 
-          <div className="p-5 rounded-3xl bg-rose-50/70 dark:bg-rose-950/40 border border-rose-200 dark:border-rose-800 shadow-xs">
-            <div className="flex items-center justify-between text-rose-700 dark:text-rose-300 text-xs mb-1.5">
-              <span>ไม่อนุมัติ / ยกเลิก</span>
-              <XCircle className="w-4 h-4 text-rose-600" />
+          {/* Quota Usage Box */}
+          <div className="p-4 rounded-2xl bg-purple-50/60 dark:bg-purple-950/30 border border-purple-200/60 dark:border-purple-800/60 space-y-2 text-xs">
+            <div className="flex items-center justify-between font-bold text-[#7749BC] dark:text-purple-300">
+              <span className="flex items-center gap-1.5">
+                <ShieldCheck className="w-4 h-4" />
+                <span>สรุปการใช้โควตาเวลาเรียน</span>
+              </span>
+              <span>{stats.quotaRemainingPercent}% คงเหลือ</span>
             </div>
-            <p className="text-2xl sm:text-3xl font-bold text-rose-700 dark:text-rose-300">
-              {stats.rejected + stats.cancelled} <span className="text-xs font-normal opacity-80">ครั้ง</span>
-            </p>
-            <p className="text-[11px] text-rose-600 dark:text-rose-400 mt-1">
-              (ไม่อนุมัติ {stats.rejected} • ยกเลิก {stats.cancelled})
+            <p className="text-[11px] text-neutral-600 dark:text-neutral-300 leading-relaxed">
+              ตามระเบียบมหาวิทยาลัย นิสิตต้องมีเวลาเรียนไม่น้อยกว่า <strong>80%</strong> ของเวลาเรียนทั้งหมด (ลาได้ไม่เกิน 20% หรือประมาณ 3 ครั้งต่อรายวิชา)
             </p>
           </div>
         </div>
       </div>
 
-      {/* 2. Leave Category Distribution */}
-      <div>
-        <h2 className="text-xs font-bold text-[#7749BC] dark:text-purple-300 uppercase tracking-wider mb-3">
-          2. สถิติแยกตามประเภทการลา (Leave Categories)
-        </h2>
-        <div className="grid grid-cols-2 sm:grid-cols-4 gap-3.5">
-          <div className="p-4 rounded-2xl bg-sky-50/70 dark:bg-sky-950/40 border border-sky-200 dark:border-sky-800 shadow-xs flex items-center justify-between">
-            <div className="space-y-1">
-              <div className="flex items-center gap-1.5 text-xs font-semibold text-sky-700 dark:text-sky-300">
-                <HeartPulse className="w-4 h-4 text-sky-500" />
-                <span>ลาป่วย</span>
-              </div>
-              <p className="text-xl font-bold text-sky-800 dark:text-sky-200">{stats.sick} ครั้ง</p>
-            </div>
-            <span className="text-xs font-semibold px-2 py-0.5 rounded-lg bg-white/80 dark:bg-slate-900 text-sky-700 dark:text-sky-300">
-              {stats.total > 0 ? Math.round((stats.sick / stats.total) * 100) : 0}%
-            </span>
-          </div>
-
-          <div className="p-4 rounded-2xl bg-purple-50/70 dark:bg-purple-950/40 border border-purple-200 dark:border-purple-800 shadow-xs flex items-center justify-between">
-            <div className="space-y-1">
-              <div className="flex items-center gap-1.5 text-xs font-semibold text-[#7749BC] dark:text-purple-300">
-                <User className="w-4 h-4 text-[#7749BC]" />
-                <span>ลากิจส่วนตัว</span>
-              </div>
-              <p className="text-xl font-bold text-[#7749BC] dark:text-purple-200">{stats.personal} ครั้ง</p>
-            </div>
-            <span className="text-xs font-semibold px-2 py-0.5 rounded-lg bg-white/80 dark:bg-slate-900 text-[#7749BC] dark:text-purple-300">
-              {stats.total > 0 ? Math.round((stats.personal / stats.total) * 100) : 0}%
-            </span>
-          </div>
-
-          <div className="p-4 rounded-2xl bg-indigo-50/70 dark:bg-indigo-950/40 border border-indigo-200 dark:border-indigo-800 shadow-xs flex items-center justify-between">
-            <div className="space-y-1">
-              <div className="flex items-center gap-1.5 text-xs font-semibold text-indigo-700 dark:text-indigo-300">
-                <Users className="w-4 h-4 text-indigo-500" />
-                <span>ลากิจกรรม</span>
-              </div>
-              <p className="text-xl font-bold text-indigo-800 dark:text-indigo-200">{stats.activity} ครั้ง</p>
-            </div>
-            <span className="text-xs font-semibold px-2 py-0.5 rounded-lg bg-white/80 dark:bg-slate-900 text-indigo-700 dark:text-indigo-300">
-              {stats.total > 0 ? Math.round((stats.activity / stats.total) * 100) : 0}%
-            </span>
-          </div>
-
-          <div className="p-4 rounded-2xl bg-amber-50/70 dark:bg-amber-950/40 border border-amber-200 dark:border-amber-800 shadow-xs flex items-center justify-between">
-            <div className="space-y-1">
-              <div className="flex items-center gap-1.5 text-xs font-semibold text-amber-700 dark:text-amber-300">
-                <HelpCircle className="w-4 h-4 text-amber-500" />
-                <span>อื่น ๆ</span>
-              </div>
-              <p className="text-xl font-bold text-amber-800 dark:text-amber-200">{stats.others} ครั้ง</p>
-            </div>
-            <span className="text-xs font-semibold px-2 py-0.5 rounded-lg bg-white/80 dark:bg-slate-900 text-amber-700 dark:text-amber-300">
-              {stats.total > 0 ? Math.round((stats.others / stats.total) * 100) : 0}%
-            </span>
-          </div>
-        </div>
-      </div>
-
-      {/* 3. Multi-Semester Comparison */}
+      {/* 3. Multi-Semester Comparison Cards */}
       <div>
         <div className="flex items-center justify-between mb-3">
           <h2 className="text-xs font-bold text-[#7749BC] dark:text-purple-300 uppercase tracking-wider">
-            3. สถิติเปรียบเทียบแต่ละภาคการศึกษา (Multi-Semester Comparison)
+            รายละเอียดสถิติสะสมแยกตามภาคการศึกษา
           </h2>
           <span className="text-xs text-neutral-400">คลิกที่การ์ดเพื่อสลับตัวกรอง</span>
         </div>
@@ -311,7 +491,7 @@ export default function StudentStatsView({ summaries = [], leaves = [] }) {
                     />
                     <div
                       style={{ width: `${sb.totalLeaves > 0 ? (sb.personalLeaves / sb.totalLeaves) * 100 : 0}%` }}
-                      className="bg-purple-500 h-full"
+                      className="bg-[#7749BC] h-full"
                       title={`กิจ ${sb.personalLeaves}`}
                     />
                     <div

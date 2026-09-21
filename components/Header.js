@@ -32,6 +32,7 @@ const NAV = {
   ],
   teacher: [
     { href: '/teacher', label: 'คำร้องรออนุมัติ', icon: ClipboardCheck },
+    { href: '/teacher/stats', label: 'สถิติการลา', icon: BarChart3 },
     { href: '/teacher/history', label: 'ประวัติการอนุมัติ', icon: History },
   ],
   admin: [{ href: '/admin', label: 'ภาพรวมระบบ', icon: ShieldCheck }],

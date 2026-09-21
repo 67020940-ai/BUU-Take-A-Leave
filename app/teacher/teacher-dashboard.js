@@ -1,6 +1,7 @@
 'use client';
 
 import { useMemo, useState } from 'react';
+import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import {
   Check,
@@ -30,9 +31,13 @@ import {
   Layers,
   BarChart3,
   HelpCircle,
+  CheckCircle2,
+  XCircle,
+  ArrowRight,
 } from 'lucide-react';
 import { LEAVE_TYPE_DETAILS, LEAVE_TYPE_DEFAULT, STATUS_DETAILS, formatThaiDate, formatThaiDateTime } from '@/lib/ui';
 import AttachmentPreview from '@/components/AttachmentPreview';
+import TeacherStatsView from './stats/teacher-stats-view';
 
 function initials(name) {
   return (name || '?').trim().charAt(0).toUpperCase();
@@ -57,15 +62,17 @@ const LEAVE_CATEGORIES = [
 export default function TeacherDashboard({ courses, initialLeaves, rosterByCourse, usingMock = false }) {
   const router = useRouter();
   const [leaves, setLeaves] = useState(initialLeaves);
-  const [activeTab, setActiveTab] = useState('requests'); // 'requests' | 'roster' | 'archive'
+  const [activeTab, setActiveTab] = useState('requests'); // 'requests' | 'analytics' | 'roster' | 'archive'
 
   // Filters
-  const [selectedTerm, setSelectedTerm] = useState('all'); // 'all' | '1/2569' | etc.
+  const [selectedTerm, setSelectedTerm] = useState('all');
   const [selectedCourseId, setSelectedCourseId] = useState('all');
   const [typeFilter, setTypeFilter] = useState('all');
-  const [statusFilter, setStatusFilter] = useState('all'); // 'all' | 'รออนุมัติ' | 'อนุมัติ' | 'ไม่อนุมัติ'
   const [isTodayOnly, setIsTodayOnly] = useState(false);
   const [searchQuery, setSearchQuery] = useState('');
+
+  // Toast Notification for state transition feedback
+  const [toast, setToast] = useState(null);
 
   // Modals
   const [actionModal, setActionModal] = useState({ isOpen: false, type: 'approve', leave: null, comment: '' });
@@ -88,32 +95,45 @@ export default function TeacherDashboard({ courses, initialLeaves, rosterByCours
     return Array.from(terms).sort().reverse();
   }, [courses, leaves]);
 
-  // Filtered leaves according to all criteria
-  const filteredLeaves = useMemo(() => {
+  // Total pending leaves count across entire system
+  const totalPendingCount = useMemo(() => {
+    return leaves.filter((l) => l.status === 'รออนุมัติ').length;
+  }, [leaves]);
+
+  const totalApprovedCount = useMemo(() => {
+    return leaves.filter((l) => l.status === 'อนุมัติ').length;
+  }, [leaves]);
+
+  const totalRejectedCount = useMemo(() => {
+    return leaves.filter((l) => l.status === 'ไม่อนุมัติ').length;
+  }, [leaves]);
+
+  // PENDING ONLY LEAVES for the Pending Requests Tab (Requirement 2.1)
+  const pendingFilteredLeaves = useMemo(() => {
     return leaves.filter((leave) => {
-      // 1. Term filter (Historical archive)
+      // 1. STRICT REQUIREMENT: Only Pending requests in this tab
+      if (leave.status !== 'รออนุมัติ') {
+        return false;
+      }
+
+      // 2. Term filter
       if (selectedTerm !== 'all') {
         const leaveTerm = leave.courseTerm || courses.find((c) => c.id === leave.courseId)?.term;
         if (leaveTerm && leaveTerm !== selectedTerm) return false;
       }
 
-      // 2. Course filter
+      // 3. Course filter
       if (selectedCourseId !== 'all' && leave.courseId !== selectedCourseId) {
         return false;
       }
 
-      // 3. Category/Type filter
+      // 4. Category/Type filter
       if (typeFilter !== 'all') {
         if (typeFilter === 'อื่น ๆ' || typeFilter === 'อื่นๆ') {
           if (leave.type !== 'อื่น ๆ' && leave.type !== 'อื่นๆ' && leave.type !== 'เหตุฉุกเฉิน') return false;
         } else if (leave.type !== typeFilter) {
           return false;
         }
-      }
-
-      // 4. Status filter
-      if (statusFilter !== 'all' && leave.status !== statusFilter) {
-        return false;
       }
 
       // 5. Today overview filter
@@ -136,57 +156,17 @@ export default function TeacherDashboard({ courses, initialLeaves, rosterByCours
 
       return true;
     });
-  }, [leaves, courses, selectedTerm, selectedCourseId, typeFilter, statusFilter, isTodayOnly, searchQuery, todayStr]);
+  }, [leaves, courses, selectedTerm, selectedCourseId, typeFilter, isTodayOnly, searchQuery, todayStr]);
 
   // Today's count
   const todayLeavesCount = useMemo(() => {
     return leaves.filter((l) => {
+      if (l.status !== 'รออนุมัติ') return false;
       const start = l.startDate;
       const end = l.endDate || l.startDate;
       return todayStr >= start && todayStr <= end;
     }).length;
   }, [leaves, todayStr]);
-
-  // Statistics summaries
-  const stats = useMemo(() => {
-    const total = filteredLeaves.length;
-    const pending = filteredLeaves.filter((l) => l.status === 'รออนุมัติ').length;
-    const approved = filteredLeaves.filter((l) => l.status === 'อนุมัติ').length;
-    const rejected = filteredLeaves.filter((l) => l.status === 'ไม่อนุมัติ').length;
-
-    const sick = filteredLeaves.filter((l) => l.type === 'ลาป่วย').length;
-    const personal = filteredLeaves.filter((l) => l.type === 'ลากิจส่วนตัว').length;
-    const activity = filteredLeaves.filter((l) => l.type === 'ลากิจกรรม').length;
-    const others = filteredLeaves.filter((l) => l.type === 'อื่น ๆ' || l.type === 'อื่นๆ' || l.type === 'เหตุฉุกเฉิน').length;
-
-    // Unique students who took leave
-    const uniqueStudentCodes = new Set(filteredLeaves.map((l) => l.studentCode || l.studentId));
-    const totalStudentsLeave = uniqueStudentCodes.size;
-
-    const approvedStudentCodes = new Set(filteredLeaves.filter((l) => l.status === 'อนุมัติ').map((l) => l.studentCode || l.studentId));
-    const approvedStudentsCount = approvedStudentCodes.size;
-
-    const pendingStudentCodes = new Set(filteredLeaves.filter((l) => l.status === 'รออนุมัติ').map((l) => l.studentCode || l.studentId));
-    const pendingStudentsCount = pendingStudentCodes.size;
-
-    const rejectedStudentCodes = new Set(filteredLeaves.filter((l) => l.status === 'ไม่อนุมัติ').map((l) => l.studentCode || l.studentId));
-    const rejectedStudentsCount = rejectedStudentCodes.size;
-
-    return {
-      total,
-      pending,
-      approved,
-      rejected,
-      sick,
-      personal,
-      activity,
-      others,
-      totalStudentsLeave,
-      approvedStudentsCount,
-      pendingStudentsCount,
-      rejectedStudentsCount,
-    };
-  }, [filteredLeaves]);
 
   // Flat roster of all students across all teacher courses
   const allStudentsRoster = useMemo(() => {
@@ -209,26 +189,48 @@ export default function TeacherDashboard({ courses, initialLeaves, rosterByCours
     return Array.from(studentMap.values());
   }, [rosterByCourse, courses]);
 
-  // API Call to Update Status
+  // API Call to Update Status & Trigger State Transition
   async function decideLeave(leave, status, comment) {
+    const previousLeaves = [...leaves];
+    // Optimistically update
+    setLeaves((prev) =>
+      prev.map((l) => (l.id === leave.id ? { ...l, status, teacherComment: comment || null } : l))
+    );
+
+    // Show Toast
+    setToast({
+      message:
+        status === 'อนุมัติ'
+          ? `อนุมัติคำขอของ ${leave.studentName} เรียบร้อยแล้ว (ย้ายไปที่ประวัติการอนุมัติ)`
+          : status === 'ไม่อนุมัติ'
+          ? `ไม่อนุมัติคำขอของ ${leave.studentName} (ย้ายไปที่ประวัติการอนุมัติ)`
+          : `นำคำขอของ ${leave.studentName} กลับมารออนุมัติ`,
+      type: status === 'อนุมัติ' ? 'success' : status === 'ไม่อนุมัติ' ? 'danger' : 'info',
+    });
+    setTimeout(() => setToast(null), 5000);
+
     if (String(leave.id).startsWith('mock-')) {
-      setLeaves((prev) => prev.map((l) => (l.id === leave.id ? { ...l, status, teacherComment: comment || null } : l)));
       return true;
     }
 
-    const res = await fetch('/api/leaves', {
-      method: 'PATCH',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ id: leave.id, status, comment }),
-    });
-    const data = await res.json();
-    if (!res.ok) {
-      setErrors((prev) => ({ ...prev, [leave.id]: data.error || 'ดำเนินการไม่สำเร็จ' }));
-      router.refresh();
+    try {
+      const res = await fetch('/api/leaves', {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ id: leave.id, status, comment }),
+      });
+      const data = await res.json();
+      if (!res.ok) {
+        setLeaves(previousLeaves);
+        setErrors((prev) => ({ ...prev, [leave.id]: data.error || 'ดำเนินการไม่สำเร็จ' }));
+        router.refresh();
+        return false;
+      }
+      return true;
+    } catch (err) {
+      setLeaves(previousLeaves);
       return false;
     }
-    setLeaves((prev) => prev.map((l) => (l.id === leave.id ? { ...l, status: data.leave.status, teacherComment: comment || null } : l)));
-    return true;
   }
 
   function openActionModal(leave, type) {
@@ -281,118 +283,71 @@ export default function TeacherDashboard({ courses, initialLeaves, rosterByCours
         </div>
       )}
 
-      {/* SECTION: Categorized Statistics Cards */}
-      <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-3">
-        <div
-          onClick={() => { setTypeFilter('all'); setStatusFilter('all'); }}
-          className={`p-4 rounded-2xl border transition-all cursor-pointer ${
-            typeFilter === 'all' && statusFilter === 'all'
-              ? 'bg-purple-50 dark:bg-purple-950/40 border-[#7749BC] ring-2 ring-[#7749BC]/20'
-              : 'bg-white/80 dark:bg-slate-900/80 border-neutral-200/80 dark:border-slate-800 hover:border-[#7749BC]/40'
-          }`}
-        >
-          <div className="flex items-center justify-between text-xs text-neutral-500 dark:text-neutral-400 mb-1">
-            <span>คำร้องทั้งหมด</span>
-            <Layers className="w-3.5 h-3.5 text-[#7749BC]" />
+      {/* Floating Toast Notification for State Transitions */}
+      {toast && (
+        <div className="fixed bottom-6 right-6 z-50 animate-bounce sm:animate-none">
+          <div
+            className={`flex items-center gap-3 px-4 py-3 rounded-2xl shadow-xl border text-xs font-semibold backdrop-blur-md ${
+              toast.type === 'success'
+                ? 'bg-emerald-900/90 text-white border-emerald-700'
+                : toast.type === 'danger'
+                ? 'bg-rose-900/90 text-white border-rose-700'
+                : 'bg-slate-900/90 text-white border-slate-700'
+            }`}
+          >
+            {toast.type === 'success' ? (
+              <CheckCircle2 className="w-4 h-4 text-emerald-300 shrink-0" />
+            ) : toast.type === 'danger' ? (
+              <XCircle className="w-4 h-4 text-rose-300 shrink-0" />
+            ) : (
+              <Clock className="w-4 h-4 text-amber-300 shrink-0" />
+            )}
+            <span>{toast.message}</span>
+            <Link
+              href="/teacher/history"
+              className="ml-2 px-2.5 py-1 rounded-lg bg-white/20 hover:bg-white/30 text-white text-[11px] underline flex items-center gap-1 transition-colors"
+            >
+              <span>ดูประวัติ</span>
+              <ArrowRight className="w-3 h-3" />
+            </Link>
           </div>
-          <div className="text-xl sm:text-2xl font-bold text-neutral-900 dark:text-neutral-100">{stats.total} <span className="text-xs font-normal text-neutral-500">คำขอ</span></div>
-          <p className="text-[11px] text-[#7749BC] dark:text-purple-300 font-semibold mt-0.5">นิสิตลา {stats.totalStudentsLeave} คน</p>
         </div>
-
-        <div
-          onClick={() => { setStatusFilter('อนุมัติ'); }}
-          className={`p-4 rounded-2xl border transition-all cursor-pointer ${
-            statusFilter === 'อนุมัติ'
-              ? 'bg-emerald-50 dark:bg-emerald-950/40 border-emerald-500 ring-2 ring-emerald-500/20'
-              : 'bg-white/80 dark:bg-slate-900/80 border-neutral-200/80 dark:border-slate-800 hover:border-emerald-400'
-          }`}
-        >
-          <div className="flex items-center justify-between text-xs text-emerald-600 dark:text-emerald-400 mb-1">
-            <span>อนุมัติแล้ว</span>
-            <Check className="w-3.5 h-3.5 text-emerald-500" />
-          </div>
-          <div className="text-xl sm:text-2xl font-bold text-emerald-600 dark:text-emerald-400">{stats.approved} <span className="text-xs font-normal text-emerald-700 dark:text-emerald-300">คำขอ</span></div>
-          <p className="text-[11px] text-emerald-600 dark:text-emerald-400 font-semibold mt-0.5">นิสิต {stats.approvedStudentsCount} คน</p>
-        </div>
-
-        <div
-          onClick={() => { setStatusFilter('รออนุมัติ'); }}
-          className={`p-4 rounded-2xl border transition-all cursor-pointer ${
-            statusFilter === 'รออนุมัติ'
-              ? 'bg-amber-50 dark:bg-amber-950/40 border-amber-500 ring-2 ring-amber-500/20'
-              : 'bg-white/80 dark:bg-slate-900/80 border-neutral-200/80 dark:border-slate-800 hover:border-amber-400'
-          }`}
-        >
-          <div className="flex items-center justify-between text-xs text-amber-600 dark:text-amber-400 mb-1">
-            <span>ยังไม่อนุมัติ/รอ</span>
-            <Clock className="w-3.5 h-3.5 text-amber-500" />
-          </div>
-          <div className="text-xl sm:text-2xl font-bold text-amber-600 dark:text-amber-400">{stats.pending} <span className="text-xs font-normal text-amber-700 dark:text-amber-300">คำขอ</span></div>
-          <p className="text-[11px] text-amber-600 dark:text-amber-400 font-semibold mt-0.5">นิสิต {stats.pendingStudentsCount} คน</p>
-        </div>
-
-        <div
-          onClick={() => { setStatusFilter('ไม่อนุมัติ'); }}
-          className={`p-4 rounded-2xl border transition-all cursor-pointer ${
-            statusFilter === 'ไม่อนุมัติ'
-              ? 'bg-rose-50 dark:bg-rose-950/40 border-rose-500 ring-2 ring-rose-500/20'
-              : 'bg-white/80 dark:bg-slate-900/80 border-neutral-200/80 dark:border-slate-800 hover:border-rose-400'
-          }`}
-        >
-          <div className="flex items-center justify-between text-xs text-rose-600 dark:text-rose-400 mb-1">
-            <span>ไม่อนุมัติ</span>
-            <X className="w-3.5 h-3.5 text-rose-500" />
-          </div>
-          <div className="text-xl sm:text-2xl font-bold text-rose-600 dark:text-rose-400">{stats.rejected} <span className="text-xs font-normal text-rose-700 dark:text-rose-300">คำขอ</span></div>
-          <p className="text-[11px] text-rose-600 dark:text-rose-400 font-semibold mt-0.5">นิสิต {stats.rejectedStudentsCount} คน</p>
-        </div>
-
-        <div
-          onClick={() => { setTypeFilter('ลาป่วย'); setStatusFilter('all'); }}
-          className={`p-4 rounded-2xl border transition-all cursor-pointer ${
-            typeFilter === 'ลาป่วย'
-              ? 'bg-sky-50 dark:bg-sky-950/40 border-sky-500 ring-2 ring-sky-500/20'
-              : 'bg-white/80 dark:bg-slate-900/80 border-neutral-200/80 dark:border-slate-800 hover:border-sky-400'
-          }`}
-        >
-          <div className="flex items-center justify-between text-xs text-sky-600 dark:text-sky-400 mb-1">
-            <span>ลาป่วย (Sick)</span>
-            <HeartPulse className="w-3.5 h-3.5 text-sky-500" />
-          </div>
-          <div className="text-xl sm:text-2xl font-bold text-neutral-900 dark:text-neutral-100">{stats.sick} <span className="text-xs font-normal text-neutral-400">ครั้ง</span></div>
-          <p className="text-[10px] text-sky-600 dark:text-sky-400 mt-0.5 font-medium">สถิติลาป่วย</p>
-        </div>
-
-        <div
-          onClick={() => { setTypeFilter(typeFilter === 'อื่น ๆ' ? 'all' : 'อื่น ๆ'); setStatusFilter('all'); }}
-          className={`p-4 rounded-2xl border transition-all cursor-pointer ${
-            typeFilter === 'อื่น ๆ' || typeFilter === 'อื่นๆ'
-              ? 'bg-amber-50 dark:bg-amber-950/40 border-amber-500 ring-2 ring-amber-500/20'
-              : 'bg-white/80 dark:bg-slate-900/80 border-neutral-200/80 dark:border-slate-800 hover:border-amber-400'
-          }`}
-        >
-          <div className="flex items-center justify-between text-xs text-amber-600 dark:text-amber-400 mb-1">
-            <span>อื่น ๆ</span>
-            <HelpCircle className="w-3.5 h-3.5 text-amber-500" />
-          </div>
-          <div className="text-xl sm:text-2xl font-bold text-neutral-900 dark:text-neutral-100">{stats.others} <span className="text-xs font-normal text-neutral-400">ครั้ง</span></div>
-          <p className="text-[10px] text-amber-600 dark:text-amber-400 mt-0.5 font-medium">สถิติการลาประเภทอื่น ๆ</p>
-        </div>
-      </div>
+      )}
 
       {/* Navigation View Tabs */}
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 border-b border-neutral-200 dark:border-slate-800 pb-3">
-        <div className="flex items-center gap-1.5 p-1 bg-neutral-100 dark:bg-slate-800 rounded-2xl w-fit">
+        <div className="flex flex-wrap items-center gap-1.5 p-1 bg-neutral-100 dark:bg-slate-800 rounded-2xl w-fit">
           <button
             onClick={() => setActiveTab('requests')}
-            className={`px-4 py-2 rounded-xl text-xs font-bold transition-all cursor-pointer flex items-center gap-1.5 ${
+            className={`px-4 py-2 rounded-xl text-xs font-bold transition-all cursor-pointer flex items-center gap-2 ${
               activeTab === 'requests'
                 ? 'bg-white dark:bg-slate-900 text-[#7749BC] dark:text-purple-300 shadow-xs'
                 : 'text-neutral-600 dark:text-neutral-400 hover:text-neutral-900'
             }`}
           >
-            <Layers className="w-3.5 h-3.5" />
-            <span>คำร้องและสถิติการลา ({filteredLeaves.length})</span>
+            <Clock className="w-3.5 h-3.5 text-amber-500" />
+            <span>คำร้องรออนุมัติ</span>
+            <span
+              className={`px-2 py-0.5 rounded-full text-[10px] font-bold ${
+                totalPendingCount > 0
+                  ? 'bg-amber-500 text-white'
+                  : 'bg-neutral-200 dark:bg-slate-700 text-neutral-600 dark:text-neutral-300'
+              }`}
+            >
+              {totalPendingCount}
+            </span>
+          </button>
+
+          <button
+            onClick={() => setActiveTab('analytics')}
+            className={`px-4 py-2 rounded-xl text-xs font-bold transition-all cursor-pointer flex items-center gap-1.5 ${
+              activeTab === 'analytics'
+                ? 'bg-white dark:bg-slate-900 text-[#7749BC] dark:text-purple-300 shadow-xs'
+                : 'text-neutral-600 dark:text-neutral-400 hover:text-neutral-900'
+            }`}
+          >
+            <BarChart3 className="w-3.5 h-3.5 text-[#7749BC]" />
+            <span>สถิติและการวิเคราะห์</span>
           </button>
 
           <button
@@ -403,7 +358,7 @@ export default function TeacherDashboard({ courses, initialLeaves, rosterByCours
                 : 'text-neutral-600 dark:text-neutral-400 hover:text-neutral-900'
             }`}
           >
-            <Users className="w-3.5 h-3.5" />
+            <Users className="w-3.5 h-3.5 text-sky-500" />
             <span>ประวัตินิสิตรายบุคคล ({allStudentsRoster.length})</span>
           </button>
 
@@ -415,12 +370,19 @@ export default function TeacherDashboard({ courses, initialLeaves, rosterByCours
                 : 'text-neutral-600 dark:text-neutral-400 hover:text-neutral-900'
             }`}
           >
-            <History className="w-3.5 h-3.5" />
+            <History className="w-3.5 h-3.5 text-purple-500" />
             <span>คลังสถิติย้อนหลัง (Archive)</span>
           </button>
         </div>
 
         <div className="flex items-center gap-2">
+          <Link
+            href="/teacher/history"
+            className="flex items-center space-x-1.5 text-xs font-semibold text-neutral-700 dark:text-neutral-200 bg-white/80 dark:bg-slate-800 hover:bg-neutral-100 border border-neutral-200/80 dark:border-slate-700 px-3.5 py-2 rounded-xl shadow-xs transition-colors"
+          >
+            <History className="w-3.5 h-3.5 text-[#7749BC]" />
+            <span>ประวัติการอนุมัติ ({totalApprovedCount + totalRejectedCount})</span>
+          </Link>
           <a
             href="/api/export"
             className="flex items-center space-x-1.5 text-xs font-semibold text-[#7749BC] dark:text-purple-300 bg-white/80 dark:bg-purple-950/60 hover:bg-purple-100 border border-purple-200 dark:border-purple-800 px-3.5 py-2 rounded-xl shadow-xs transition-colors"
@@ -440,38 +402,55 @@ export default function TeacherDashboard({ courses, initialLeaves, rosterByCours
         </div>
       </div>
 
-      {/* TAB 1: Leave Requests List & Status Management */}
+      {/* TAB 1: PENDING REQUESTS TAB (Requirement 2.1) */}
       {activeTab === 'requests' && (
         <section className="space-y-4">
-          {/* SECTION HEADER: รายการคำขอลาเรียน */}
+          {/* SECTION HEADER */}
           <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2.5 pt-1">
             <div>
               <h3 className="text-base sm:text-lg font-bold text-neutral-900 dark:text-neutral-100 flex items-center gap-2">
-                <span>รายการคำขอลาเรียน</span>
-                <span className="text-xs font-semibold px-2.5 py-0.5 rounded-full bg-purple-100 dark:bg-purple-950 text-[#7749BC] dark:text-purple-300">
-                  {filteredLeaves.length} รายการ
+                <span>รายการคำขอลาเรียน (รอพิจารณาอนุมัติ)</span>
+                <span className="text-xs font-bold px-2.5 py-0.5 rounded-full bg-amber-100 dark:bg-amber-950 text-amber-800 dark:text-amber-300 border border-amber-200 dark:border-amber-800">
+                  {pendingFilteredLeaves.length} คำร้องรอการตรวจ
                 </span>
               </h3>
               <p className="text-xs text-neutral-500 dark:text-neutral-400">
-                พิจารณาอนุมัติหรือปฏิเสธคำร้องขอลาเรียนของนิสิตในรายวิชาที่สอน
+                แสดงเฉพาะคำร้องที่มีสถานะ &quot;รออนุมัติ&quot; — เมื่อกดอนุมัติหรือไม่อนุมัติ รายการจะถูกย้ายไปยัง{' '}
+                <Link href="/teacher/history" className="text-[#7749BC] dark:text-purple-300 underline font-semibold">
+                  ประวัติการอนุมัติ
+                </Link>{' '}
+                ทันที
               </p>
             </div>
 
             {isTodayOnly && (
               <span className="text-xs font-semibold text-amber-600 dark:text-amber-400 bg-amber-50 dark:bg-amber-950/60 px-3 py-1 rounded-full border border-amber-200 dark:border-amber-800 flex items-center gap-1.5 self-start sm:self-auto">
                 <CalendarDays className="w-3.5 h-3.5" />
-                <span>กำลังแสดงเฉพาะคำขอของวันนี้ ({formatThaiDate(todayStr)})</span>
+                <span>คำขอของวันนี้ ({todayLeavesCount} รายการ)</span>
               </span>
             )}
           </div>
 
-          {filteredLeaves.length === 0 ? (
-            <div className="bg-white/80 dark:bg-slate-900/80 backdrop-blur-xl rounded-3xl border border-neutral-200/80 dark:border-slate-800 p-10 text-center shadow-xs">
-              <UserCheck className="w-10 h-10 text-emerald-500 mx-auto mb-2" />
-              <h4 className="text-sm font-semibold text-neutral-800 dark:text-neutral-200">ไม่พบรายการคำขอลา</h4>
-              <p className="text-xs text-neutral-500 dark:text-neutral-400 mt-1">
-                ลองปรับเปลี่ยนตัวกรองวันที่ ภาคการศึกษา หรือคำค้นหาด้านล่าง
+          {pendingFilteredLeaves.length === 0 ? (
+            <div className="bg-white/80 dark:bg-slate-900/80 backdrop-blur-xl rounded-3xl border border-neutral-200/80 dark:border-slate-800 p-12 text-center shadow-xs space-y-3">
+              <div className="w-14 h-14 rounded-2xl bg-emerald-50 dark:bg-emerald-950/60 text-emerald-600 dark:text-emerald-400 flex items-center justify-center mx-auto shadow-sm">
+                <CheckCircle2 className="w-8 h-8" />
+              </div>
+              <h4 className="text-base font-bold text-neutral-800 dark:text-neutral-200">
+                ไม่มีคำร้องรอพิจารณาในขณะนี้
+              </h4>
+              <p className="text-xs text-neutral-500 dark:text-neutral-400 max-w-md mx-auto">
+                คุณได้พิจารณาอนุมัติคำขอลาเรียนของนิสิตครบถ้วนแล้ว หรือไม่มีคำร้องที่ตรงกับตัวกรองที่เลือก
               </p>
+              <div className="pt-2">
+                <Link
+                  href="/teacher/history"
+                  className="inline-flex items-center gap-1.5 px-4 py-2 rounded-xl bg-[#7749BC] text-white text-xs font-semibold shadow-xs hover:bg-[#5B21B6] transition-colors"
+                >
+                  <History className="w-3.5 h-3.5" />
+                  <span>ดูประวัติคำร้องที่เคยพิจารณาแล้ว ({totalApprovedCount + totalRejectedCount} รายการ)</span>
+                </Link>
+              </div>
             </div>
           ) : (
             <div className="bg-white/80 dark:bg-slate-900/80 backdrop-blur-xl rounded-3xl border border-neutral-200/80 dark:border-slate-800 shadow-xs overflow-hidden">
@@ -485,44 +464,61 @@ export default function TeacherDashboard({ courses, initialLeaves, rosterByCours
                       <th className="py-3.5 px-4">ประเภท & วันที่ลา</th>
                       <th className="py-3.5 px-4">เหตุผลการลา</th>
                       <th className="py-3.5 px-4 text-center">สถานะปัจจุบัน</th>
-                      <th className="py-3.5 px-4 text-center">จัดการสถานะ (Toggle)</th>
+                      <th className="py-3.5 px-4 text-center">จัดการสถานะ (Action Buttons)</th>
                       <th className="py-3.5 px-4 text-right">การจัดการ</th>
                     </tr>
                   </thead>
                   <tbody className="divide-y divide-neutral-100 dark:divide-slate-800">
-                    {filteredLeaves.map((leave) => {
+                    {pendingFilteredLeaves.map((leave) => {
                       const typeCls = LEAVE_TYPE_DETAILS[leave.type] || LEAVE_TYPE_DEFAULT;
-                      const statusDetail = STATUS_DETAILS[leave.status] || STATUS_DETAILS['รออนุมัติ'];
                       return (
-                        <tr key={leave.id} className="hover:bg-neutral-50/70 dark:hover:bg-slate-800/50 transition-colors">
+                        <tr
+                          key={leave.id}
+                          className="hover:bg-neutral-50/70 dark:hover:bg-slate-800/50 transition-colors"
+                        >
+                          {/* Student */}
                           <td className="py-3.5 px-4">
                             <div className="flex items-center space-x-2.5">
                               <div className="w-8 h-8 rounded-xl bg-purple-100 dark:bg-purple-950 text-[#7749BC] dark:text-purple-300 flex items-center justify-center font-bold text-xs shrink-0">
                                 {initials(leave.studentName)}
                               </div>
                               <div>
-                                <p className="font-semibold text-neutral-900 dark:text-neutral-100">{leave.studentName}</p>
-                                <p className="text-[11px] text-neutral-500 dark:text-neutral-400 font-mono">{leave.studentCode}</p>
+                                <p className="font-semibold text-neutral-900 dark:text-neutral-100">
+                                  {leave.studentName}
+                                </p>
+                                <p className="text-[11px] text-neutral-500 dark:text-neutral-400 font-mono">
+                                  {leave.studentCode}
+                                </p>
                               </div>
                             </div>
                           </td>
+
+                          {/* Course */}
                           <td className="py-3.5 px-4">
                             <p className="font-semibold text-neutral-900 dark:text-neutral-100">{leave.courseCode}</p>
                             <p className="text-[11px] text-neutral-500 dark:text-neutral-400 truncate max-w-[180px]">
                               {leave.courseName} {leave.section ? `(กลุ่ม ${leave.section})` : ''}
                             </p>
                           </td>
+
+                          {/* Type & Date */}
                           <td className="py-3.5 px-4">
                             <div className="space-y-1">
-                              <span className={`inline-block px-2 py-0.5 rounded-lg text-[10px] font-semibold border ${typeCls}`}>
+                              <span
+                                className={`inline-block px-2 py-0.5 rounded-lg text-[10px] font-semibold border ${typeCls}`}
+                              >
                                 {leave.type}
                               </span>
                               <p className="text-[11px] text-neutral-600 dark:text-neutral-400">
                                 {formatThaiDate(leave.startDate)}
-                                {leave.endDate && leave.endDate !== leave.startDate ? ` - ${formatThaiDate(leave.endDate)}` : ''}
+                                {leave.endDate && leave.endDate !== leave.startDate
+                                  ? ` - ${formatThaiDate(leave.endDate)}`
+                                  : ''}
                               </p>
                             </div>
                           </td>
+
+                          {/* Reason */}
                           <td className="py-3.5 px-4 max-w-[220px]">
                             <p className="text-xs text-neutral-700 dark:text-neutral-300 truncate" title={leave.reason}>
                               {leave.reason}
@@ -534,50 +530,38 @@ export default function TeacherDashboard({ courses, initialLeaves, rosterByCours
                               </span>
                             )}
                           </td>
+
+                          {/* Status Badge: Consistent Amber Badge */}
                           <td className="py-3.5 px-4 text-center">
-                            <span className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-semibold border ${statusDetail.badge}`}>
-                              <span className={`w-1.5 h-1.5 rounded-full ${statusDetail.dot}`} />
-                              <span>{statusDetail.label}</span>
+                            <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-semibold bg-amber-50 dark:bg-amber-950/60 text-amber-700 dark:text-amber-300 border border-amber-200 dark:border-amber-800 shadow-xs">
+                              <span className="w-1.5 h-1.5 rounded-full bg-amber-500 animate-pulse" />
+                              <span>รออนุมัติ</span>
                             </span>
                           </td>
-                          {/* Quick Status Toggle Buttons */}
+
+                          {/* Quick Action Buttons (อนุมัติ / ไม่อนุมัติ) */}
                           <td className="py-3.5 px-4 text-center">
-                            <div className="inline-flex items-center p-0.5 bg-neutral-100 dark:bg-slate-800 rounded-xl border border-neutral-200 dark:border-slate-700">
+                            <div className="inline-flex items-center gap-1.5">
                               <button
                                 onClick={() => openActionModal(leave, 'approve')}
-                                title="เปลี่ยนเป็น อนุมัติ"
-                                className={`px-2 py-1 rounded-lg text-[11px] font-semibold transition-all cursor-pointer ${
-                                  leave.status === 'อนุมัติ'
-                                    ? 'bg-emerald-600 text-white shadow-xs'
-                                    : 'text-neutral-600 hover:text-emerald-600 dark:text-neutral-300'
-                                }`}
+                                title="อนุมัติคำขอนี้ทันที"
+                                className="inline-flex items-center gap-1 px-3 py-1.5 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white font-semibold text-xs transition-colors shadow-xs cursor-pointer ring-1 ring-white/20"
                               >
-                                อนุมัติ
-                              </button>
-                              <button
-                                onClick={() => openActionModal(leave, 'pending')}
-                                title="เปลี่ยนเป็น รออนุมัติ"
-                                className={`px-2 py-1 rounded-lg text-[11px] font-semibold transition-all cursor-pointer ${
-                                  leave.status === 'รออนุมัติ'
-                                    ? 'bg-amber-500 text-white shadow-xs'
-                                    : 'text-neutral-600 hover:text-amber-500 dark:text-neutral-300'
-                                }`}
-                              >
-                                รอ
+                                <Check className="w-3.5 h-3.5" />
+                                <span>อนุมัติ</span>
                               </button>
                               <button
                                 onClick={() => openActionModal(leave, 'reject')}
-                                title="เปลี่ยนเป็น ไม่อนุมัติ"
-                                className={`px-2 py-1 rounded-lg text-[11px] font-semibold transition-all cursor-pointer ${
-                                  leave.status === 'ไม่อนุมัติ'
-                                    ? 'bg-rose-600 text-white shadow-xs'
-                                    : 'text-neutral-600 hover:text-rose-600 dark:text-neutral-300'
-                                }`}
+                                title="ไม่อนุมัติคำขอนี้"
+                                className="inline-flex items-center gap-1 px-3 py-1.5 rounded-xl bg-rose-50 hover:bg-rose-100 dark:bg-rose-950/60 dark:hover:bg-rose-900/60 text-rose-700 dark:text-rose-300 font-semibold text-xs border border-rose-200 dark:border-rose-800 transition-colors cursor-pointer"
                               >
-                                ไม่อนุมัติ
+                                <X className="w-3.5 h-3.5" />
+                                <span>ไม่อนุมัติ</span>
                               </button>
                             </div>
                           </td>
+
+                          {/* Detail Modal Button */}
                           <td className="py-3.5 px-4 text-right">
                             <button
                               onClick={() => openDetailModal(leave)}
@@ -596,9 +580,8 @@ export default function TeacherDashboard({ courses, initialLeaves, rosterByCours
 
               {/* Mobile / Tablet Responsive Cards */}
               <div className="lg:hidden divide-y divide-neutral-100 dark:divide-slate-800">
-                {filteredLeaves.map((leave) => {
+                {pendingFilteredLeaves.map((leave) => {
                   const typeCls = LEAVE_TYPE_DETAILS[leave.type] || LEAVE_TYPE_DEFAULT;
-                  const statusDetail = STATUS_DETAILS[leave.status] || STATUS_DETAILS['รออนุมัติ'];
                   return (
                     <div key={leave.id} className="p-4 space-y-3">
                       <div className="flex items-start justify-between gap-2">
@@ -607,8 +590,12 @@ export default function TeacherDashboard({ courses, initialLeaves, rosterByCours
                             {initials(leave.studentName)}
                           </div>
                           <div>
-                            <p className="font-semibold text-neutral-900 dark:text-neutral-100 text-sm">{leave.studentName}</p>
-                            <p className="text-[11px] text-neutral-500 dark:text-neutral-400 font-mono">{leave.studentCode}</p>
+                            <p className="font-semibold text-neutral-900 dark:text-neutral-100 text-sm">
+                              {leave.studentName}
+                            </p>
+                            <p className="text-[11px] text-neutral-500 dark:text-neutral-400 font-mono">
+                              {leave.studentCode}
+                            </p>
                           </div>
                         </div>
                         <span className={`px-2.5 py-0.5 rounded-lg text-xs font-semibold border ${typeCls}`}>
@@ -621,17 +608,21 @@ export default function TeacherDashboard({ courses, initialLeaves, rosterByCours
                           {leave.courseCode} {leave.courseName} {leave.section ? `(กลุ่ม ${leave.section})` : ''}
                         </p>
                         <p className="text-neutral-600 dark:text-neutral-400 text-[11px]">
-                          วันที่ลา: {formatThaiDate(leave.startDate)} {leave.endDate && leave.endDate !== leave.startDate ? ` - ${formatThaiDate(leave.endDate)}` : ''} ({leave.period})
+                          วันที่ลา: {formatThaiDate(leave.startDate)}{' '}
+                          {leave.endDate && leave.endDate !== leave.startDate
+                            ? ` - ${formatThaiDate(leave.endDate)}`
+                            : ''}{' '}
+                          ({leave.period})
                         </p>
                         <p className="text-neutral-700 dark:text-neutral-300 pt-1 border-t border-neutral-200/40 dark:border-slate-700/40">
                           <strong>เหตุผล:</strong> {leave.reason}
                         </p>
                       </div>
 
-                      <div className="flex items-center justify-between pt-1 gap-2">
-                        <span className={`inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-xs font-semibold border ${statusDetail.badge}`}>
-                          <span className={`w-1.5 h-1.5 rounded-full ${statusDetail.dot}`} />
-                          <span>{statusDetail.label}</span>
+                      <div className="flex flex-wrap items-center justify-between pt-1 gap-2">
+                        <span className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-xs font-semibold bg-amber-50 dark:bg-amber-950 text-amber-700 dark:text-amber-300 border border-amber-200 dark:border-amber-800">
+                          <span className="w-1.5 h-1.5 rounded-full bg-amber-500 animate-pulse" />
+                          <span>รออนุมัติ</span>
                         </span>
 
                         <div className="flex items-center gap-1.5">
@@ -639,13 +630,19 @@ export default function TeacherDashboard({ courses, initialLeaves, rosterByCours
                             onClick={() => openDetailModal(leave)}
                             className="px-3 py-1.5 rounded-xl bg-neutral-100 dark:bg-slate-800 text-xs font-semibold text-neutral-700 dark:text-neutral-200"
                           >
-                            ดูรายละเอียด
+                            ดูข้อมูล
                           </button>
                           <button
-                            onClick={() => openActionModal(leave, leave.status === 'อนุมัติ' ? 'reject' : 'approve')}
-                            className="px-3 py-1.5 rounded-xl bg-[#7749BC] text-white text-xs font-semibold"
+                            onClick={() => openActionModal(leave, 'reject')}
+                            className="px-3 py-1.5 rounded-xl bg-rose-50 text-rose-700 dark:bg-rose-950/60 dark:text-rose-300 border border-rose-200 dark:border-rose-800 text-xs font-semibold"
                           >
-                            เปลี่ยนสถานะ
+                            ไม่อนุมัติ
+                          </button>
+                          <button
+                            onClick={() => openActionModal(leave, 'approve')}
+                            className="px-3.5 py-1.5 rounded-xl bg-emerald-600 text-white text-xs font-semibold shadow-xs"
+                          >
+                            อนุมัติ
                           </button>
                         </div>
                       </div>
@@ -656,15 +653,15 @@ export default function TeacherDashboard({ courses, initialLeaves, rosterByCours
             </div>
           )}
 
-          {/* FILTER CONTROLS BAR (สลับลงมาอยู่ด้านล่างตามรูป S__9027595.jpg) */}
+          {/* FILTER CONTROLS BAR */}
           <div className="bg-white/80 dark:bg-slate-900/80 backdrop-blur-xl rounded-3xl border border-neutral-200/80 dark:border-slate-800 p-4 space-y-3 shadow-xs mt-6">
             <div className="flex items-center justify-between pb-1 border-b border-neutral-100 dark:border-slate-800">
               <span className="text-xs font-bold text-neutral-700 dark:text-neutral-300 flex items-center gap-1.5">
                 <Layers className="w-3.5 h-3.5 text-[#7749BC] dark:text-purple-400" />
-                <span>ตัวกรองและค้นหาคำขอลาเรียน (Filters & Search)</span>
+                <span>ตัวกรองและค้นหาคำขอลาเรียนรออนุมัติ (Filters & Search)</span>
               </span>
               <span className="text-[11px] text-neutral-400">
-                ผลการกรอง: {filteredLeaves.length} รายการ
+                ผลการกรอง: {pendingFilteredLeaves.length} รายการ
               </span>
             </div>
 
@@ -672,7 +669,7 @@ export default function TeacherDashboard({ courses, initialLeaves, rosterByCours
               {/* 1. Academic Year & Semester Filter */}
               <div>
                 <label className="block text-[11px] font-semibold text-neutral-500 dark:text-neutral-400 mb-1">
-                  ปีการศึกษา / ภาคเรียน (Archive Lookup)
+                  ปีการศึกษา / ภาคเรียน
                 </label>
                 <div className="relative">
                   <select
@@ -733,7 +730,6 @@ export default function TeacherDashboard({ courses, initialLeaves, rosterByCours
 
             {/* Filter Quick Pills */}
             <div className="pt-2 border-t border-neutral-100 dark:border-slate-800 flex flex-wrap items-center justify-between gap-2">
-              {/* Left: Daily Overview Toggle + Category Filter */}
               <div className="flex flex-wrap items-center gap-1.5">
                 {/* Daily Overview Button */}
                 <button
@@ -747,21 +743,6 @@ export default function TeacherDashboard({ courses, initialLeaves, rosterByCours
                   <CalendarDays className="w-3.5 h-3.5" />
                   <span>คำขอลาวันนี้ ({todayLeavesCount})</span>
                 </button>
-
-                {/* Status pills */}
-                {['all', 'รออนุมัติ', 'อนุมัติ', 'ไม่อนุมัติ'].map((st) => (
-                  <button
-                    key={st}
-                    onClick={() => setStatusFilter(st)}
-                    className={`px-3 py-1.5 rounded-xl text-xs font-semibold transition-all cursor-pointer ${
-                      statusFilter === st
-                        ? 'bg-[#7749BC] text-white shadow-xs'
-                        : 'bg-neutral-100 dark:bg-slate-800 text-neutral-600 dark:text-neutral-300 hover:bg-neutral-200'
-                    }`}
-                  >
-                    {st === 'all' ? 'ทุกสถานะ' : st}
-                  </button>
-                ))}
               </div>
 
               {/* Right: Leave Type Pills */}
@@ -785,7 +766,14 @@ export default function TeacherDashboard({ courses, initialLeaves, rosterByCours
         </section>
       )}
 
-      {/* TAB 2: Student Profiles & Leave History */}
+      {/* TAB 2: INSTRUCTOR ANALYTICS & STATISTICS (Requirement 1.2) */}
+      {activeTab === 'analytics' && (
+        <section className="space-y-4">
+          <TeacherStatsView courses={courses} leaves={leaves} rosterByCourse={rosterByCourse} />
+        </section>
+      )}
+
+      {/* TAB 3: STUDENT ROSTER & HISTORY */}
       {activeTab === 'roster' && (
         <section className="space-y-4">
           <div className="flex items-center justify-between">
@@ -822,7 +810,9 @@ export default function TeacherDashboard({ courses, initialLeaves, rosterByCours
                       return s.studentName.toLowerCase().includes(q) || s.studentCode.includes(q);
                     })
                     .map((student) => {
-                      const studentLeaves = leaves.filter((l) => l.studentId === student.studentId || l.studentCode === student.studentCode);
+                      const studentLeaves = leaves.filter(
+                        (l) => l.studentId === student.studentId || l.studentCode === student.studentCode
+                      );
                       const sApproved = studentLeaves.filter((l) => l.status === 'อนุมัติ').length;
                       const sPending = studentLeaves.filter((l) => l.status === 'รออนุมัติ').length;
                       const sRejected = studentLeaves.filter((l) => l.status === 'ไม่อนุมัติ').length;
@@ -832,7 +822,10 @@ export default function TeacherDashboard({ courses, initialLeaves, rosterByCours
                       const sOther = studentLeaves.filter((l) => l.type === 'อื่นๆ' || l.type === 'เหตุฉุกเฉิน').length;
 
                       return (
-                        <tr key={student.studentId} className="hover:bg-neutral-50/70 dark:hover:bg-slate-800/50 transition-colors">
+                        <tr
+                          key={student.studentId}
+                          className="hover:bg-neutral-50/70 dark:hover:bg-slate-800/50 transition-colors"
+                        >
                           <td className="py-3.5 px-4 font-mono font-medium text-neutral-900 dark:text-neutral-100">
                             {student.studentCode}
                           </td>
@@ -848,13 +841,22 @@ export default function TeacherDashboard({ courses, initialLeaves, rosterByCours
                           </td>
                           <td className="py-3.5 px-4 text-center">
                             <div className="inline-flex items-center gap-1.5 text-xs">
-                              <span className="px-2 py-0.5 rounded-md bg-emerald-50 dark:bg-emerald-950/60 text-emerald-700 dark:text-emerald-300 font-semibold border border-emerald-200 dark:border-emerald-800" title="อนุมัติแล้ว">
+                              <span
+                                className="px-2 py-0.5 rounded-md bg-emerald-50 dark:bg-emerald-950/60 text-emerald-700 dark:text-emerald-300 font-semibold border border-emerald-200 dark:border-emerald-800"
+                                title="อนุมัติแล้ว"
+                              >
                                 {sApproved}
                               </span>
-                              <span className="px-2 py-0.5 rounded-md bg-amber-50 dark:bg-amber-950/60 text-amber-700 dark:text-amber-300 font-semibold border border-amber-200 dark:border-amber-800" title="ยังไม่อนุมัติ / รอพิจารณา">
+                              <span
+                                className="px-2 py-0.5 rounded-md bg-amber-50 dark:bg-amber-950/60 text-amber-700 dark:text-amber-300 font-semibold border border-amber-200 dark:border-amber-800"
+                                title="ยังไม่อนุมัติ / รอพิจารณา"
+                              >
                                 {sPending}
                               </span>
-                              <span className="px-2 py-0.5 rounded-md bg-rose-50 dark:bg-rose-950/60 text-rose-700 dark:text-rose-300 font-semibold border border-rose-200 dark:border-rose-800" title="ไม่อนุมัติ">
+                              <span
+                                className="px-2 py-0.5 rounded-md bg-rose-50 dark:bg-rose-950/60 text-rose-700 dark:text-rose-300 font-semibold border border-rose-200 dark:border-rose-800"
+                                title="ไม่อนุมัติ"
+                              >
                                 {sRejected}
                               </span>
                             </div>
@@ -888,7 +890,13 @@ export default function TeacherDashboard({ courses, initialLeaves, rosterByCours
                             )}
                           </td>
                           <td className="py-3.5 px-4 text-center">
-                            <span className={`font-bold ${student.overQuota ? 'text-rose-600 dark:text-rose-400' : 'text-emerald-600 dark:text-emerald-400'}`}>
+                            <span
+                              className={`font-bold ${
+                                student.overQuota
+                                  ? 'text-rose-600 dark:text-rose-400'
+                                  : 'text-emerald-600 dark:text-emerald-400'
+                              }`}
+                            >
                               {student.percentage}%
                             </span>
                           </td>
@@ -924,7 +932,7 @@ export default function TeacherDashboard({ courses, initialLeaves, rosterByCours
         </section>
       )}
 
-      {/* TAB 3: Historical Archive Summary View */}
+      {/* TAB 4: ARCHIVE */}
       {activeTab === 'archive' && (
         <section className="space-y-6">
           <div className="p-6 rounded-3xl bg-gradient-to-br from-purple-900 to-indigo-950 text-white space-y-3">
@@ -932,9 +940,7 @@ export default function TeacherDashboard({ courses, initialLeaves, rosterByCours
               <History className="w-4 h-4" />
               <span>ระบบสืบค้นสถิติย้อนหลัง (Historical Archive)</span>
             </div>
-            <h3 className="text-xl sm:text-2xl font-bold">
-              คลังข้อมูลการลาและสถิติสะสมตามปีการศึกษา
-            </h3>
+            <h3 className="text-xl sm:text-2xl font-bold">คลังข้อมูลการลาและสถิติสะสมตามปีการศึกษา</h3>
             <p className="text-xs sm:text-sm text-purple-200/80 max-w-2xl leading-relaxed">
               สืบค้นข้อมูลการลาเรียนย้อนหลัง สรุปอัตราส่วนการอนุมัติ เปอร์เซ็นต์การเข้าเรียน และเอกสารหลักฐานของทุกภาคการศึกษา
             </p>
@@ -942,7 +948,9 @@ export default function TeacherDashboard({ courses, initialLeaves, rosterByCours
 
           <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
             {academicTerms.map((term) => {
-              const termLeaves = leaves.filter((l) => (l.courseTerm || courses.find((c) => c.id === l.courseId)?.term) === term);
+              const termLeaves = leaves.filter(
+                (l) => (l.courseTerm || courses.find((c) => c.id === l.courseId)?.term) === term
+              );
               const termApproved = termLeaves.filter((l) => l.status === 'อนุมัติ').length;
               const termSick = termLeaves.filter((l) => l.type === 'ลาป่วย').length;
               const termPersonal = termLeaves.filter((l) => l.type === 'ลากิจส่วนตัว').length;
@@ -956,9 +964,7 @@ export default function TeacherDashboard({ courses, initialLeaves, rosterByCours
                     <span className="px-3 py-1 rounded-xl bg-purple-100 dark:bg-purple-950 text-[#7749BC] dark:text-purple-300 font-bold text-xs">
                       ภาคเรียนที่ {term}
                     </span>
-                    <span className="text-xs text-neutral-400 font-mono">
-                      {termLeaves.length} คำร้อง
-                    </span>
+                    <span className="text-xs text-neutral-400 font-mono">{termLeaves.length} คำร้อง</span>
                   </div>
 
                   <div className="space-y-2 text-xs">
@@ -983,7 +989,7 @@ export default function TeacherDashboard({ courses, initialLeaves, rosterByCours
                     }}
                     className="w-full py-2.5 rounded-xl bg-neutral-100 hover:bg-[#7749BC] hover:text-white dark:bg-slate-800 dark:hover:bg-[#7749BC] text-neutral-800 dark:text-neutral-200 text-xs font-semibold transition-colors flex items-center justify-center gap-1.5 cursor-pointer"
                   >
-                    <span>ดูรายการในภาคเรียนนี้</span>
+                    <span>ดูคำร้องรอตรวจในภาคเรียนนี้</span>
                     <ChevronRight className="w-3.5 h-3.5" />
                   </button>
                 </div>
@@ -993,7 +999,7 @@ export default function TeacherDashboard({ courses, initialLeaves, rosterByCours
         </section>
       )}
 
-      {/* MODAL 1: Detailed Request View & Status Management */}
+      {/* MODAL 1: Detail Modal */}
       {detailModal.isOpen && detailModal.leave && (
         <div className="fixed inset-0 z-50 overflow-y-auto bg-slate-900/50 backdrop-blur-md flex items-center justify-center p-4">
           <div className="bg-white dark:bg-slate-900 rounded-3xl shadow-2xl border border-neutral-200 dark:border-slate-800 w-full max-w-lg max-h-[90vh] overflow-y-auto">
@@ -1105,12 +1111,6 @@ export default function TeacherDashboard({ courses, initialLeaves, rosterByCours
             {/* Action Bar */}
             <div className="sticky bottom-0 bg-white dark:bg-slate-900 border-t border-neutral-100 dark:border-slate-800 p-4 flex items-center justify-end gap-2 rounded-b-3xl">
               <button
-                onClick={() => handleDetailDecision('รออนุมัติ')}
-                className="px-3.5 py-2 rounded-xl bg-neutral-100 hover:bg-neutral-200 dark:bg-slate-800 dark:hover:bg-slate-700 text-neutral-700 dark:text-neutral-200 text-xs font-semibold transition-colors cursor-pointer"
-              >
-                คืนสถานะเป็นรออนุมัติ
-              </button>
-              <button
                 onClick={() => handleDetailDecision('ไม่อนุมัติ')}
                 className="px-4 py-2 rounded-xl bg-rose-50 hover:bg-rose-100 dark:bg-rose-950/60 dark:hover:bg-rose-900/60 text-rose-700 dark:text-rose-300 text-xs font-semibold border border-rose-200 dark:border-rose-800 transition-colors flex items-center space-x-1 cursor-pointer"
               >
@@ -1129,7 +1129,7 @@ export default function TeacherDashboard({ courses, initialLeaves, rosterByCours
         </div>
       )}
 
-      {/* MODAL 2: Student Leave History Drill-down */}
+      {/* MODAL 2: Student History Drilldown */}
       {studentHistoryModal.isOpen && studentHistoryModal.student && (
         <div className="fixed inset-0 z-50 overflow-y-auto bg-slate-900/50 backdrop-blur-md flex items-center justify-center p-4">
           <div className="bg-white dark:bg-slate-900 rounded-3xl shadow-2xl border border-neutral-200 dark:border-slate-800 w-full max-w-2xl max-h-[90vh] overflow-y-auto">
@@ -1159,7 +1159,9 @@ export default function TeacherDashboard({ courses, initialLeaves, rosterByCours
               {/* Student Summary Stats */}
               {(() => {
                 const sLeaves = leaves.filter(
-                  (l) => l.studentId === studentHistoryModal.student.studentId || l.studentCode === studentHistoryModal.student.studentCode
+                  (l) =>
+                    l.studentId === studentHistoryModal.student.studentId ||
+                    l.studentCode === studentHistoryModal.student.studentCode
                 );
                 const approvedCount = sLeaves.filter((l) => l.status === 'อนุมัติ').length;
                 const sickCount = sLeaves.filter((l) => l.type === 'ลาป่วย').length;
@@ -1183,7 +1185,9 @@ export default function TeacherDashboard({ courses, initialLeaves, rosterByCours
                       </div>
                       <div className="p-3 rounded-2xl bg-purple-50 dark:bg-purple-950/40 border border-purple-200 dark:border-purple-800">
                         <p className="text-[10px] text-purple-600 dark:text-purple-400">ลากิจ / กิจกรรม</p>
-                        <p className="text-lg font-bold text-purple-700 dark:text-purple-300">{personalCount + activityCount} ครั้ง</p>
+                        <p className="text-lg font-bold text-purple-700 dark:text-purple-300">
+                          {personalCount + activityCount} ครั้ง
+                        </p>
                       </div>
                     </div>
 
@@ -1207,21 +1211,30 @@ export default function TeacherDashboard({ courses, initialLeaves, rosterByCours
                                   <span className="font-semibold text-xs text-neutral-900 dark:text-neutral-100">
                                     {l.courseCode} {l.courseName}
                                   </span>
-                                  <span className={`px-2.5 py-0.5 rounded-full text-[10px] font-semibold border ${statusDetail.badge}`}>
+                                  <span
+                                    className={`px-2.5 py-0.5 rounded-full text-[10px] font-semibold border ${statusDetail.badge}`}
+                                  >
                                     {statusDetail.label}
                                   </span>
                                 </div>
                                 <div className="flex items-center gap-2 text-[11px] text-neutral-500">
-                                  <span className={`px-2 py-0.5 rounded-lg border text-[10px] font-semibold ${typeCls}`}>{l.type}</span>
+                                  <span className={`px-2 py-0.5 rounded-lg border text-[10px] font-semibold ${typeCls}`}>
+                                    {l.type}
+                                  </span>
                                   <span>•</span>
-                                  <span>{formatThaiDate(l.startDate)} ({l.period})</span>
+                                  <span>
+                                    {formatThaiDate(l.startDate)} ({l.period})
+                                  </span>
                                 </div>
                                 <p className="text-xs text-neutral-700 dark:text-neutral-300 bg-white dark:bg-slate-900 p-2.5 rounded-xl border border-neutral-200/40 dark:border-slate-800">
                                   {l.reason}
                                 </p>
                                 {l.attachment && (
                                   <div className="text-xs">
-                                    <AttachmentPreview src={`/api/leaves/attachment/${l.attachment}`} label="ตรวจเอกสารแนบ" />
+                                    <AttachmentPreview
+                                      src={`/api/leaves/attachment/${l.attachment}`}
+                                      label="ตรวจเอกสารแนบ"
+                                    />
                                   </div>
                                 )}
                               </div>
