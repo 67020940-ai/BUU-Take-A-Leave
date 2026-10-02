@@ -1,6 +1,6 @@
 'use client';
 
-import { useMemo, useState } from 'react';
+import { useMemo, useState, useEffect } from 'react';
 import Link from 'next/link';
 import {
   History,
@@ -35,7 +35,11 @@ const LEAVE_CATEGORIES = [
 ];
 
 export default function StudentHistoryView({ leaves: initialLeaves = [], summaries = [] }) {
-  const [leaves] = useState(initialLeaves);
+  const [leaves, setLeaves] = useState(initialLeaves);
+
+  useEffect(() => {
+    setLeaves(initialLeaves);
+  }, [initialLeaves]);
   const [selectedTerm, setSelectedTerm] = useState('all');
   const [selectedStatus, setSelectedStatus] = useState('all');
   const [selectedType, setSelectedType] = useState('all');

@@ -36,9 +36,21 @@ export default function LeaveDonutChart({
   centerValue = '',
 }) {
   const [isMounted, setIsMounted] = useState(false);
+  const [isDark, setIsDark] = useState(false);
 
   useEffect(() => {
     setIsMounted(true);
+    const updateDark = () => {
+      setIsDark(document.documentElement.classList.contains('dark'));
+    };
+    updateDark();
+    window.addEventListener('theme-change', updateDark);
+    const observer = new MutationObserver(updateDark);
+    observer.observe(document.documentElement, { attributes: true, attributeFilter: ['class'] });
+    return () => {
+      window.removeEventListener('theme-change', updateDark);
+      observer.disconnect();
+    };
   }, []);
 
   const total = dataValues.reduce((acc, curr) => acc + (Number(curr) || 0), 0);
@@ -47,7 +59,7 @@ export default function LeaveDonutChart({
     return (
       <div
         style={{ height }}
-        className="w-full flex items-center justify-center bg-neutral-50/50 dark:bg-slate-800/30 rounded-2xl animate-pulse text-xs text-neutral-400"
+        className="w-full flex items-center justify-center bg-slate-50 dark:bg-slate-800/40 rounded-2xl animate-pulse text-xs text-slate-400"
       >
         กำลังโหลดแผนภูมิ...
       </div>
@@ -56,8 +68,8 @@ export default function LeaveDonutChart({
 
   // Handle empty state gracefully
   const displayValues = total === 0 ? [1] : dataValues;
-  const displayColors = total === 0 ? ['#E2E8F0'] : colors;
-  const displayHoverColors = total === 0 ? ['#CBD5E1'] : hoverColors;
+  const displayColors = total === 0 ? [isDark ? '#334155' : '#E2E8F0'] : colors;
+  const displayHoverColors = total === 0 ? [isDark ? '#475569' : '#CBD5E1'] : hoverColors;
   const displayLabels = total === 0 ? ['ยังไม่มีข้อมูล'] : labels;
 
   const data = {
@@ -67,7 +79,7 @@ export default function LeaveDonutChart({
         data: displayValues,
         backgroundColor: displayColors,
         hoverBackgroundColor: displayHoverColors,
-        borderColor: '#FFFFFF',
+        borderColor: isDark ? '#0F172A' : '#FFFFFF',
         borderWidth: 3,
         hoverOffset: 6,
       },
@@ -84,7 +96,7 @@ export default function LeaveDonutChart({
       },
       tooltip: {
         enabled: total > 0,
-        backgroundColor: '#1E1B4B',
+        backgroundColor: isDark ? '#0F172A' : '#1E293B',
         titleColor: '#FFFFFF',
         titleFont: { size: 12, weight: 'bold' },
         bodyColor: '#E2E8F0',
@@ -92,6 +104,8 @@ export default function LeaveDonutChart({
         padding: 12,
         cornerRadius: 12,
         boxPadding: 6,
+        borderColor: isDark ? '#334155' : '#475569',
+        borderWidth: 1,
         usePointStyle: true,
         callbacks: {
           label: function (context) {

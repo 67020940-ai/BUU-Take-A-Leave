@@ -1,4 +1,5 @@
 'use client';
+/* Hallmark · macrostructure: Workbench · theme: BUU Utilitarian · pre-emit critique: P5 H5 E5 S5 R5 V5 */
 
 import { useMemo, useState } from 'react';
 import Link from 'next/link';
@@ -79,6 +80,10 @@ export default function TeacherDashboard({ courses, initialLeaves, rosterByCours
   const [detailModal, setDetailModal] = useState({ isOpen: false, leave: null, comment: '' });
   const [studentHistoryModal, setStudentHistoryModal] = useState({ isOpen: false, student: null });
   const [errors, setErrors] = useState({});
+
+  // Batch selection state
+  const [selectedLeaveIds, setSelectedLeaveIds] = useState(new Set());
+  const [batchModal, setBatchModal] = useState({ isOpen: false, type: 'approve', comment: '', isSubmitting: false });
 
   const todayStr = useMemo(() => getTodayStr(), []);
 
@@ -272,6 +277,109 @@ export default function TeacherDashboard({ courses, initialLeaves, rosterByCours
     await decideLeave(leave, status, comment);
   }
 
+  // Batch Selection Handlers
+  const allPendingSelected = useMemo(() => {
+    if (pendingFilteredLeaves.length === 0) return false;
+    return pendingFilteredLeaves.every((l) => selectedLeaveIds.has(l.id));
+  }, [pendingFilteredLeaves, selectedLeaveIds]);
+
+  function toggleSelectAll() {
+    if (allPendingSelected) {
+      setSelectedLeaveIds(new Set());
+    } else {
+      setSelectedLeaveIds(new Set(pendingFilteredLeaves.map((l) => l.id)));
+    }
+  }
+
+  function toggleSelectLeave(id) {
+    setSelectedLeaveIds((prev) => {
+      const next = new Set(prev);
+      if (next.has(id)) next.delete(id);
+      else next.add(id);
+      return next;
+    });
+  }
+
+  function openBatchModal(type) {
+    setBatchModal({
+      isOpen: true,
+      type,
+      comment:
+        type === 'approve'
+          ? 'อนุมัติการลาตามระเบียบเรียบร้อย (อนุมัติเป็นกลุ่ม)'
+          : 'ไม่อนุมัติคำขอการลา (ไม่อนุมัติเป็นกลุ่ม)',
+      isSubmitting: false,
+    });
+  }
+
+  async function decideBatchLeaves(ids, status, comment) {
+    if (!ids || ids.length === 0) return;
+    const previousLeaves = [...leaves];
+    const idSet = new Set(ids);
+
+    setLeaves((prev) =>
+      prev.map((l) => (idSet.has(l.id) ? { ...l, status, teacherComment: comment || null } : l))
+    );
+    setSelectedLeaveIds(new Set());
+
+    setToast({
+      message:
+        status === 'อนุมัติ'
+          ? `อนุมัติคำขอที่เลือก ${ids.length} รายการ เรียบร้อยแล้ว (ย้ายไปที่ประวัติการอนุมัติ)`
+          : `ไม่อนุมัติคำขอที่เลือก ${ids.length} รายการ (ย้ายไปที่ประวัติการอนุมัติ)`,
+      type: status === 'อนุมัติ' ? 'success' : 'danger',
+    });
+    setTimeout(() => setToast(null), 5000);
+
+    const nonMockIds = ids.filter((id) => !String(id).startsWith('mock-'));
+    if (nonMockIds.length === 0) return true;
+
+    try {
+      const res = await fetch('/api/leaves', {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ ids: nonMockIds, status, comment }),
+      });
+      const data = await res.json();
+      if (!res.ok) {
+        setLeaves(previousLeaves);
+        setToast({ message: data.error || 'ดำเนินการเป็นกลุ่มไม่สำเร็จ', type: 'danger' });
+        router.refresh();
+        return false;
+      }
+      return true;
+    } catch (err) {
+      setLeaves(previousLeaves);
+      setToast({ message: 'เกิดข้อผิดพลาดในการเชื่อมต่อเครือข่าย', type: 'danger' });
+      return false;
+    }
+  }
+
+  async function handleBatchSubmit() {
+    if (selectedLeaveIds.size === 0) return;
+    setBatchModal((prev) => ({ ...prev, isSubmitting: true }));
+    const ids = Array.from(selectedLeaveIds);
+    const targetStatus = batchModal.type === 'approve' ? 'อนุมัติ' : 'ไม่อนุมัติ';
+    await decideBatchLeaves(ids, targetStatus, batchModal.comment);
+    setBatchModal({ isOpen: false, type: 'approve', comment: '', isSubmitting: false });
+  }
+
+  const selectedLeavesList = useMemo(() => {
+    return leaves.filter((l) => selectedLeaveIds.has(l.id));
+  }, [leaves, selectedLeaveIds]);
+
+  const atRiskLeaves = useMemo(() => {
+    return selectedLeavesList.filter((l) => {
+      const rosterStudent = allStudentsRoster.find(
+        (s) => s.studentCode === l.studentCode || s.name === l.studentName
+      );
+      if (rosterStudent) {
+        return rosterStudent.attendanceRate < 80 || rosterStudent.approvedLeaves >= 3;
+      }
+      return false;
+    });
+  }, [selectedLeavesList, allStudentsRoster]);
+
   return (
     <div className="space-y-6">
       {usingMock && (
@@ -459,6 +567,15 @@ export default function TeacherDashboard({ courses, initialLeaves, rosterByCours
                 <table className="w-full text-left text-xs">
                   <thead className="bg-neutral-100/70 dark:bg-slate-800/80 text-neutral-700 dark:text-neutral-300 font-semibold border-b border-neutral-200/60 dark:border-slate-700">
                     <tr>
+                      <th className="py-3.5 px-3 w-10 text-center">
+                        <input
+                          type="checkbox"
+                          checked={allPendingSelected}
+                          onChange={toggleSelectAll}
+                          className="w-4 h-4 rounded text-[#7749BC] focus:ring-[#7749BC] cursor-pointer accent-[#7749BC]"
+                          title="เลือกทั้งหมด / ยกเลิกทั้งหมด"
+                        />
+                      </th>
                       <th className="py-3.5 px-4">นิสิตผู้ยื่น</th>
                       <th className="py-3.5 px-4">รายวิชา & กลุ่ม</th>
                       <th className="py-3.5 px-4">ประเภท & วันที่ลา</th>
@@ -474,8 +591,19 @@ export default function TeacherDashboard({ courses, initialLeaves, rosterByCours
                       return (
                         <tr
                           key={leave.id}
-                          className="hover:bg-neutral-50/70 dark:hover:bg-slate-800/50 transition-colors"
+                          className={`hover:bg-neutral-50/70 dark:hover:bg-slate-800/50 transition-colors ${
+                            selectedLeaveIds.has(leave.id) ? 'bg-purple-50/60 dark:bg-purple-950/30' : ''
+                          }`}
                         >
+                          {/* Checkbox */}
+                          <td className="py-3.5 px-3 text-center">
+                            <input
+                              type="checkbox"
+                              checked={selectedLeaveIds.has(leave.id)}
+                              onChange={() => toggleSelectLeave(leave.id)}
+                              className="w-4 h-4 rounded text-[#7749BC] focus:ring-[#7749BC] cursor-pointer accent-[#7749BC]"
+                            />
+                          </td>
                           {/* Student */}
                           <td className="py-3.5 px-4">
                             <div className="flex items-center space-x-2.5">
@@ -586,6 +714,12 @@ export default function TeacherDashboard({ courses, initialLeaves, rosterByCours
                     <div key={leave.id} className="p-4 space-y-3">
                       <div className="flex items-start justify-between gap-2">
                         <div className="flex items-center space-x-2.5">
+                          <input
+                            type="checkbox"
+                            checked={selectedLeaveIds.has(leave.id)}
+                            onChange={() => toggleSelectLeave(leave.id)}
+                            className="w-4 h-4 rounded text-[#7749BC] focus:ring-[#7749BC] cursor-pointer accent-[#7749BC] mr-1"
+                          />
                           <div className="w-9 h-9 rounded-xl bg-purple-100 dark:bg-purple-950 text-[#7749BC] dark:text-purple-300 flex items-center justify-center font-bold text-xs shrink-0">
                             {initials(leave.studentName)}
                           </div>
@@ -1254,6 +1388,172 @@ export default function TeacherDashboard({ courses, initialLeaves, rosterByCours
                 className="px-4 py-2 rounded-xl bg-neutral-100 dark:bg-slate-800 text-xs font-semibold text-neutral-700 dark:text-neutral-200 cursor-pointer"
               >
                 ปิดหน้าต่าง
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Floating Batch Action Bar */}
+      {selectedLeaveIds.size > 0 && (
+        <div className="fixed bottom-6 left-1/2 -translate-x-1/2 z-40 w-[92%] max-w-2xl bg-neutral-900/95 dark:bg-slate-800/95 text-white backdrop-blur-xl px-5 py-3.5 rounded-2xl shadow-2xl border border-neutral-700/80 flex flex-col sm:flex-row items-center justify-between gap-3 animate-in fade-in slide-in-from-bottom-4 duration-200">
+          <div className="flex items-center gap-2.5">
+            <span className="w-2.5 h-2.5 rounded-full bg-[#7749BC] animate-pulse" />
+            <span className="text-xs sm:text-sm font-bold">
+              เลือกแล้ว {selectedLeaveIds.size} รายการ
+            </span>
+            <button
+              type="button"
+              onClick={() => setSelectedLeaveIds(new Set())}
+              className="text-[11px] text-neutral-400 hover:text-white underline cursor-pointer ml-1"
+            >
+              ล้างการเลือก
+            </button>
+          </div>
+
+          <div className="flex items-center gap-2 w-full sm:w-auto justify-end">
+            <button
+              type="button"
+              onClick={() => openBatchModal('reject')}
+              className="flex-1 sm:flex-none px-3.5 py-2 rounded-xl bg-rose-600/90 hover:bg-rose-600 text-white text-xs font-bold transition-all shadow-xs flex items-center justify-center gap-1.5 cursor-pointer active:scale-95"
+            >
+              <X className="w-3.5 h-3.5" />
+              <span>ไม่อนุมัติที่เลือก</span>
+            </button>
+            <button
+              type="button"
+              onClick={() => openBatchModal('approve')}
+              className="flex-1 sm:flex-none px-4 py-2 rounded-xl bg-emerald-600 hover:bg-emerald-500 text-white text-xs font-bold transition-all shadow-md shadow-emerald-900/30 flex items-center justify-center gap-1.5 cursor-pointer active:scale-95"
+            >
+              <Check className="w-3.5 h-3.5" />
+              <span>อนุมัติที่เลือก</span>
+            </button>
+          </div>
+        </div>
+      )}
+
+      {/* MODAL 4: Batch Action Modal */}
+      {batchModal.isOpen && (
+        <div className="fixed inset-0 z-50 overflow-y-auto bg-slate-900/50 backdrop-blur-md flex items-center justify-center p-4">
+          <div className="bg-white dark:bg-slate-900 rounded-3xl shadow-2xl border border-neutral-200 dark:border-slate-800 w-full max-w-lg p-6 space-y-4">
+            <div className="flex items-center justify-between">
+              <div className="flex items-center space-x-2">
+                {batchModal.type === 'approve' ? (
+                  <div className="w-8 h-8 rounded-xl bg-emerald-100 dark:bg-emerald-950 text-emerald-700 dark:text-emerald-300 flex items-center justify-center">
+                    <Check className="w-4 h-4" />
+                  </div>
+                ) : (
+                  <div className="w-8 h-8 rounded-xl bg-rose-100 dark:bg-rose-950 text-rose-700 dark:text-rose-300 flex items-center justify-center">
+                    <X className="w-4 h-4" />
+                  </div>
+                )}
+                <h3 className="text-sm font-bold text-neutral-900 dark:text-neutral-100">
+                  {batchModal.type === 'approve'
+                    ? `ยืนยันการอนุมัติแบบกลุ่ม (${selectedLeaveIds.size} รายการ)`
+                    : `ยืนยันการไม่อนุมัติแบบกลุ่ม (${selectedLeaveIds.size} รายการ)`}
+                </h3>
+              </div>
+              <button
+                type="button"
+                onClick={() => setBatchModal({ isOpen: false, type: 'approve', comment: '', isSubmitting: false })}
+                className="p-1.5 text-neutral-400 hover:text-neutral-700 dark:hover:text-neutral-200 rounded-lg cursor-pointer"
+              >
+                <X className="w-4 h-4" />
+              </button>
+            </div>
+
+            {/* OVERQUOTA WARNING BANNER */}
+            {batchModal.type === 'approve' && atRiskLeaves.length > 0 && (
+              <div className="p-3.5 rounded-2xl bg-amber-50 dark:bg-amber-950/50 border border-amber-200 dark:border-amber-800 text-xs text-amber-900 dark:text-amber-200 space-y-1.5">
+                <div className="flex items-center gap-2 font-bold text-amber-800 dark:text-amber-300">
+                  <AlertTriangle className="w-4 h-4 text-amber-600 shrink-0" />
+                  <span>แจ้งเตือน: มีนิสิต {atRiskLeaves.length} ท่านที่เสี่ยงขาดเรียนเกิน 20% (หมดสิทธิ์สอบ)</span>
+                </div>
+                <p className="text-[11px] text-amber-700 dark:text-amber-300/90 leading-relaxed">
+                  นิสิตกลุ่มนี้มีสถิติการลาเดิมใกล้เต็มหรือเกินโควต้า 20% หากอนุมัติเพิ่มจะส่งผลกระทบต่อสิทธิ์การสอบ
+                </p>
+                <div className="space-y-1 pt-1 max-h-32 overflow-y-auto">
+                  {atRiskLeaves.map((l) => (
+                    <div key={l.id} className="flex items-center justify-between text-[11px] bg-white/70 dark:bg-slate-900/60 p-1.5 rounded-lg border border-amber-200/60">
+                      <span className="font-semibold text-neutral-900 dark:text-neutral-100">{l.studentName} ({l.studentCode})</span>
+                      <span className="text-rose-600 dark:text-rose-400 font-bold">เสี่ยงหมดสิทธิ์สอบ</span>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            )}
+
+            {/* LIST OF SELECTED LEAVES */}
+            <div className="space-y-1.5">
+              <label className="text-xs font-semibold text-neutral-700 dark:text-neutral-300">
+                รายการคำขอที่เลือก ({selectedLeaveIds.size} รายการ):
+              </label>
+              <div className="max-h-40 overflow-y-auto divide-y divide-neutral-100 dark:divide-slate-800 border border-neutral-200 dark:border-slate-800 rounded-2xl p-2 bg-neutral-50/70 dark:bg-slate-800/40 text-xs">
+                {selectedLeavesList.map((l) => (
+                  <div key={l.id} className="py-1.5 px-2 flex items-center justify-between">
+                    <div>
+                      <p className="font-semibold text-neutral-900 dark:text-neutral-100">
+                        {l.studentName} <span className="text-neutral-400 font-mono text-[11px]">({l.studentCode})</span>
+                      </p>
+                      <p className="text-[11px] text-neutral-500">
+                        {l.courseCode} · {l.type} ({formatThaiDate(l.startDate)})
+                      </p>
+                    </div>
+                    <button
+                      type="button"
+                      onClick={() => toggleSelectLeave(l.id)}
+                      className="text-[11px] text-neutral-400 hover:text-rose-500 cursor-pointer"
+                      title="นำรายการนี้ออกจากการเลือก"
+                    >
+                      เอาออก
+                    </button>
+                  </div>
+                ))}
+              </div>
+            </div>
+
+            {/* COMMENT BOX */}
+            <div>
+              <label className="block text-xs font-semibold text-neutral-700 dark:text-neutral-300 mb-1.5">
+                หมายเหตุหรือข้อความถึงนิสิตทั้งหมด (ไม่บังคับ)
+              </label>
+              <textarea
+                rows={2}
+                value={batchModal.comment}
+                onChange={(e) => setBatchModal({ ...batchModal, comment: e.target.value })}
+                placeholder="ระบุคำแนะนำหรือเหตุผล..."
+                className="w-full p-3 rounded-xl border border-neutral-300 dark:border-slate-700 bg-white dark:bg-slate-800 text-xs text-neutral-900 dark:text-neutral-100 focus:outline-none focus:ring-2 focus:ring-[#7749BC]/20 focus:border-[#7749BC] shadow-xs"
+              />
+            </div>
+
+            {/* FOOTER BUTTONS */}
+            <div className="pt-2 flex items-center justify-end space-x-2">
+              <button
+                type="button"
+                onClick={() => setBatchModal({ isOpen: false, type: 'approve', comment: '', isSubmitting: false })}
+                className="px-4 py-2 rounded-xl border border-neutral-300 dark:border-slate-700 bg-white dark:bg-slate-800 text-xs font-medium cursor-pointer"
+                disabled={batchModal.isSubmitting}
+              >
+                ยกเลิก
+              </button>
+              <button
+                type="button"
+                onClick={handleBatchSubmit}
+                disabled={batchModal.isSubmitting || selectedLeaveIds.size === 0}
+                className={`px-5 py-2 rounded-xl text-xs font-semibold text-white shadow-xs transition-colors cursor-pointer flex items-center gap-1.5 ${
+                  batchModal.type === 'approve'
+                    ? 'bg-emerald-600 hover:bg-emerald-700'
+                    : 'bg-rose-600 hover:bg-rose-700'
+                }`}
+              >
+                {batchModal.isSubmitting && (
+                  <div className="w-3.5 h-3.5 border-2 border-white/30 border-t-white rounded-full animate-spin" />
+                )}
+                <span>
+                  {batchModal.isSubmitting
+                    ? 'กำลังบันทึก...'
+                    : `ยืนยัน${batchModal.type === 'approve' ? 'อนุมัติ' : 'ไม่อนุมัติ'} (${selectedLeaveIds.size})`}
+                </span>
               </button>
             </div>
           </div>

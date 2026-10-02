@@ -1,0 +1,16 @@
+[
+  {
+    "date": "2026-10-02",
+    "macrostructure": "Workbench",
+    "theme": "BUU Utilitarian (modern-minimal)",
+    "enrichment": "none (app-scope)",
+    "brief": "BUU Take A Leave · Academic leave management system",
+    "nav": "N1b (Responsive header with role badge)",
+    "footer": "Ft1 (Minimal academic status bar)",
+    "features": [
+      "Light / Dark mode toggle with anti-FOUC script and custom Tailwind v4 variant",
+      "Agenda / Mobile Daily List View toggle in student timetable",
+      "Dynamic dark-mode reactive Chart.js (LeaveBarChart & LeaveDonutChart)"
+    ]
+  }
+]

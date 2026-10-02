@@ -1,4 +1,5 @@
 'use client';
+/* Hallmark · macrostructure: Long Document / Focus Form · theme: BUU Utilitarian · pre-emit critique: P5 H5 E5 S5 R5 V5 */
 
 import { useMemo, useState } from 'react';
 import { useRouter } from 'next/navigation';
@@ -25,17 +26,17 @@ import AttachmentPreview from '@/components/AttachmentPreview';
 import { DAY_LABEL_TH } from '@/lib/ui';
 
 const inputCls =
-  'w-full px-3.5 py-2.5 rounded-xl border border-neutral-300 dark:border-slate-700 bg-white dark:bg-slate-800/90 text-sm font-medium text-neutral-900 dark:text-neutral-100 placeholder:text-neutral-400 focus:outline-none focus:border-[#7749BC] focus:ring-2 focus:ring-[#7749BC]/20 transition-all shadow-xs';
+  'w-full px-3.5 py-2.5 rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900 text-sm font-medium text-slate-900 dark:text-slate-100 placeholder:text-slate-400 focus:outline-none focus:border-[#7749BC] focus:ring-1 focus:ring-[#7749BC] transition-all shadow-2xs';
 const inputErrorCls =
-  'w-full px-3.5 py-2.5 rounded-xl border-2 border-rose-500 dark:border-rose-600 bg-rose-50/70 dark:bg-rose-950/40 text-sm font-medium text-neutral-900 dark:text-neutral-100 placeholder:text-neutral-400 focus:outline-none focus:border-rose-600 focus:ring-2 focus:ring-rose-500/20 transition-all shadow-xs';
+  'w-full px-3.5 py-2.5 rounded-xl border border-rose-500 dark:border-rose-500 bg-rose-50/50 dark:bg-rose-950/30 text-sm font-medium text-slate-900 dark:text-slate-100 placeholder:text-slate-400 focus:outline-none focus:border-rose-600 focus:ring-1 focus:ring-rose-500 transition-all shadow-2xs';
 const selectCls = `${inputCls} appearance-none pr-10 cursor-pointer`;
 
 function fieldCls(hasError) {
   return hasError ? inputErrorCls : inputCls;
 }
 
-const labelCls = 'text-xs font-semibold text-neutral-800 dark:text-neutral-200 mb-1.5 flex items-center gap-1.5';
-const sectionTitleCls = 'text-xs font-bold text-[#7749BC] dark:text-purple-300 uppercase tracking-wide mb-3';
+const labelCls = 'text-xs font-semibold text-slate-700 dark:text-slate-300 mb-1.5 flex items-center gap-1.5';
+const sectionTitleCls = 'text-xs font-semibold text-[#7749BC] dark:text-purple-300 uppercase tracking-wider mb-3';
 
 // รายการประเภทการลา: ลบเหตุฉุกเฉินออก, คำว่า "อื่น ๆ" เว้นวรรคไม้ยมก
 const LEAVE_TYPES = [
@@ -482,11 +483,11 @@ export default function LeaveForm({ courses, initialCourseId, lockCourse, initia
       <section>
         <p className={sectionTitleCls}>3. เอกสารหลักฐานประกอบ (Attachment)</p>
         <div className="space-y-2">
-          <label className={labelCls}>ไฟล์แนบ (รูปถ่ายใบรับรองแพทย์ / ใบนัด / หนังสือขออนุญาต)</label>
+          <label className={labelCls}>ไฟล์แนบ (ใบรับรองแพทย์ / ใบนัด / หนังสือขออนุญาต เป็นรูปภาพหรือ PDF)</label>
           {attachment ? (
             <div className="flex items-center gap-3 p-2.5 rounded-xl border border-neutral-300 dark:border-slate-700 bg-neutral-50 dark:bg-slate-800/60">
               <div className="flex-1 text-xs">
-                <AttachmentPreview src={attachment.url} label="ดูรูปเต็ม" thumbClassName="w-14 h-14 rounded-lg" />
+                <AttachmentPreview src={attachment.url} label="ดูเอกสารแนบ" thumbClassName="w-14 h-14 rounded-lg" />
               </div>
               <button
                 type="button"
@@ -512,14 +513,14 @@ export default function LeaveForm({ courses, initialCourseId, lockCourse, initia
               ) : (
                 <>
                   <ImagePlus className="w-4 h-4 text-[#7749BC]" />
-                  <span>เลือกรูปภาพเอกสารแนบ...</span>
+                  <span>เลือกเอกสารแนบ (รูปภาพ หรือ PDF)...</span>
                 </>
               )}
-              <input type="file" accept="image/*" className="hidden" onChange={handleFileChange} disabled={uploading} />
+              <input type="file" accept="image/*,.pdf,application/pdf" className="hidden" onChange={handleFileChange} disabled={uploading} />
             </label>
           )}
           {uploadError && <p className="text-[11px] text-rose-600 dark:text-rose-400 mt-1">{uploadError}</p>}
-          <p className="text-[11px] text-neutral-400 mt-1">* รองรับไฟล์ JPG, PNG, GIF, WEBP ขนาดไม่เกิน 5MB</p>
+          <p className="text-[11px] text-neutral-400 mt-1">* รองรับไฟล์รูปภาพ (JPG, PNG, GIF, WEBP) และเอกสาร PDF ขนาดไม่เกิน 5MB</p>
         </div>
       </section>
 

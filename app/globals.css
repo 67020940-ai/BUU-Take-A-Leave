@@ -1,46 +1,107 @@
 @import "tailwindcss";
 
+@custom-variant dark (&:where(.dark, .dark *));
+
+/* Hallmark · macrostructure: Workbench · theme: BUU Utilitarian (modern-minimal)
+ * genre: modern-minimal · philosophy: academic rigor, tactile hairlines, zero AI-slop
+ * contrast: pass · pre-emit critique: P5 H5 E5 S5 R5 V5
+ */
+
 @layer base {
   :root {
     --primary-buu: #7749bc;
     --primary-buu-hover: #653ba6;
     --primary-buu-light: #f5f0ff;
     --primary-buu-border: #e4d7f5;
+
+    /* Hallmark Utilitarian Tokens */
+    --color-paper: #f8fafc;
+    --color-paper-card: #ffffff;
+    --color-ink: #0f172a;
+    --color-ink-muted: #64748b;
+    --color-rule: #e2e8f0;
+    --color-accent: #7749bc;
+    --color-accent-hover: #653ba6;
   }
 
   body {
     font-family: "Prompt", "Plus Jakarta Sans", system-ui, -apple-system, sans-serif;
-    background-color: #f8fafc;
-    background-image: radial-gradient(at 0% 0%, rgba(119, 73, 188, 0.09) 0px, transparent 50%),
-      radial-gradient(at 100% 0%, rgba(147, 51, 234, 0.07) 0px, transparent 50%),
-      radial-gradient(at 50% 100%, rgba(245, 158, 11, 0.05) 0px, transparent 50%);
-    background-attachment: fixed;
-    background-size: 100% 100%;
+    background-color: var(--color-paper);
+    color: var(--color-ink);
     min-height: 100vh;
+    -webkit-font-smoothing: antialiased;
+  }
+
+  /* Academic subtle grid pattern (tactile, not glowing slop) */
+  body::before {
+    content: "";
+    position: fixed;
+    inset: 0;
+    pointer-events: none;
+    background-image: 
+      radial-gradient(#7749bc 0.75px, transparent 0.75px),
+      linear-gradient(to bottom, rgba(248, 250, 252, 0.4), rgba(248, 250, 252, 0.95));
+    background-size: 24px 24px, 100% 100%;
+    opacity: 0.25;
+    z-index: -1;
   }
 }
 
+.dark {
+  --color-paper: #090d16;
+  --color-paper-card: #0f172a;
+  --color-ink: #f8fafc;
+  --color-ink-muted: #94a3b8;
+  --color-rule: #1e293b;
+  --color-accent: #9d71e8;
+  --color-accent-hover: #8352d4;
+  color-scheme: dark;
+}
+
+.dark body {
+  background-color: var(--color-paper);
+  color: var(--color-ink);
+}
+
+.dark body::before {
+  opacity: 0.15;
+  background-image: radial-gradient(#9d71e8 0.75px, transparent 0.75px);
+}
+
 @media (prefers-color-scheme: dark) {
-  body {
-    background-color: #0b0f19;
-    color: #f1f5f9;
-    background-image: radial-gradient(at 0% 0%, rgba(119, 73, 188, 0.22) 0px, transparent 50%),
-      radial-gradient(at 100% 0%, rgba(79, 70, 229, 0.15) 0px, transparent 50%),
-      radial-gradient(at 50% 100%, rgba(15, 23, 42, 0.8) 0px, transparent 60%);
+  :root:not(.light) {
+    --color-paper: #090d16;
+    --color-paper-card: #0f172a;
+    --color-ink: #f8fafc;
+    --color-ink-muted: #94a3b8;
+    --color-rule: #1e293b;
+    --color-accent: #9d71e8;
+    --color-accent-hover: #8352d4;
+    color-scheme: dark;
+  }
+
+  :root:not(.light) body {
+    background-color: var(--color-paper);
+    color: var(--color-ink);
+  }
+
+  :root:not(.light) body::before {
+    opacity: 0.15;
+    background-image: radial-gradient(#9d71e8 0.75px, transparent 0.75px);
   }
 }
 
 .glass-panel {
-  background-color: rgba(255, 255, 255, 0.82);
-  backdrop-filter: blur(16px);
-  -webkit-backdrop-filter: blur(16px);
-  border: 1px solid rgba(255, 255, 255, 0.9);
+  background-color: rgba(255, 255, 255, 0.92);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+  border: 1px solid var(--color-rule);
 }
 
 @media (prefers-color-scheme: dark) {
   .glass-panel {
-    background-color: rgba(18, 24, 38, 0.82);
-    border: 1px solid rgba(255, 255, 255, 0.08);
+    background-color: rgba(15, 23, 42, 0.88);
+    border: 1px solid var(--color-rule);
   }
 }
 

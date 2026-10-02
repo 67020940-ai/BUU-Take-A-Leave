@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import { Search, Calendar, History, RotateCcw, X } from 'lucide-react';
 import { STATUS_DETAILS, LEAVE_TYPE_DETAILS, LEAVE_TYPE_DEFAULT, formatThaiDate } from '@/lib/ui';
@@ -14,6 +14,10 @@ function initials(name) {
 export default function HistoryList({ leaves: initialLeaves }) {
   const router = useRouter();
   const [leaves, setLeaves] = useState(initialLeaves);
+
+  useEffect(() => {
+    setLeaves(initialLeaves);
+  }, [initialLeaves]);
   const [search, setSearch] = useState('');
   const [filter, setFilter] = useState('all'); // 'all' | 'อนุมัติ' | 'ไม่อนุมัติ'
   const [revertTarget, setRevertTarget] = useState(null); // leave กำลังจะยกเลิกการอนุมัติ

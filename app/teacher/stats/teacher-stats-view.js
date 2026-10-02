@@ -542,6 +542,11 @@ export default function TeacherStatsView({ courses = [], leaves = [], rosterByCo
             <ArrowLeft className="w-4 h-4" />
           </Link>
           <div>
+            <div className="flex items-center gap-2 mb-1">
+              <span className="inline-flex items-center px-2 py-0.5 rounded-full text-[10px] font-mono font-medium tracking-wider uppercase bg-[#7749BC]/10 text-[#7749BC] dark:bg-purple-950/60 dark:text-purple-300 border border-[#7749BC]/20">
+                Hallmark · Instructor Analytics
+              </span>
+            </div>
             <h1 className="text-xl sm:text-2xl font-bold text-neutral-900 dark:text-neutral-100 flex items-center gap-2">
               <BarChart3 className="w-6 h-6 text-[#7749BC] dark:text-purple-400" />
               <span>สถิติการลาเรียน (Instructor Analytics & Statistics)</span>

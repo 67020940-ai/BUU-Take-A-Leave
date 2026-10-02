@@ -7,13 +7,14 @@ const MAX_SIZE = 5 * 1024 * 1024; // 5MB
 
 // ตรวจชนิดไฟล์จริงจาก magic bytes แทนการเชื่อ Content-Type ที่ฝั่ง client ปลอมได้
 const SIGNATURES = [
+  { ext: 'pdf', magic: Buffer.from('%PDF-') },
   { ext: 'jpg', magic: Buffer.from([0xff, 0xd8, 0xff]) },
   { ext: 'png', magic: Buffer.from([0x89, 0x50, 0x4e, 0x47]) },
   { ext: 'gif', magic: Buffer.from('GIF8') },
   { ext: 'webp', magic: Buffer.from('RIFF'), extraCheck: (buf) => buf.subarray(8, 12).toString('ascii') === 'WEBP' },
 ];
 
-function detectImageExt(buffer) {
+function detectAttachmentExt(buffer) {
   for (const sig of SIGNATURES) {
     if (buffer.subarray(0, sig.magic.length).equals(sig.magic)) {
       if (sig.extraCheck && !sig.extraCheck(buffer)) continue;
@@ -39,9 +40,9 @@ export async function POST(request) {
   }
 
   const buffer = Buffer.from(await file.arrayBuffer());
-  const ext = detectImageExt(buffer);
+  const ext = detectAttachmentExt(buffer);
   if (!ext) {
-    return NextResponse.json({ error: 'รองรับเฉพาะไฟล์รูปภาพ (JPG, PNG, GIF, WEBP)' }, { status: 400 });
+    return NextResponse.json({ error: 'รองรับเฉพาะไฟล์รูปภาพ (JPG, PNG, GIF, WEBP) และเอกสาร PDF' }, { status: 400 });
   }
 
   const filename = `${user.id}_${crypto.randomBytes(16).toString('hex')}.${ext}`;

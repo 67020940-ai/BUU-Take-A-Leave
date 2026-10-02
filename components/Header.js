@@ -21,6 +21,7 @@ import {
   BarChart3,
 } from 'lucide-react';
 import { formatThaiDate } from '@/lib/ui';
+import ThemeToggle from '@/components/ThemeToggle';
 
 const NAV = {
   student: [
@@ -117,6 +118,8 @@ export default function Header({ user, semester = '1/2569' }) {
               <Calendar className="w-3.5 h-3.5 text-[#7749BC] dark:text-purple-400" />
               <span>ภาคเรียน {semester}</span>
             </div>
+
+            <ThemeToggle />
 
             <Link
               href="/support"
@@ -234,6 +237,11 @@ export default function Header({ user, semester = '1/2569' }) {
                       {user.major && <p className="text-xs text-neutral-500 dark:text-neutral-400 mt-0.5">{user.major}</p>}
                     </div>
                   )}
+
+                  <div className="py-3 border-b border-neutral-100 dark:border-slate-800 flex items-center justify-between">
+                    <span className="text-xs font-semibold text-neutral-700 dark:text-neutral-300">โหมดการแสดงผล</span>
+                    <ThemeToggle showLabel />
+                  </div>
 
                   <div className="py-3.5 border-b border-neutral-100 dark:border-slate-800 flex items-center justify-between">
                     <span className="text-xs font-semibold text-neutral-700 dark:text-neutral-300">สถานะการเข้าสู่ระบบ</span>

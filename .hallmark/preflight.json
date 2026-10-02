@@ -1,0 +1,14 @@
+{
+  "scan_date": "2026-10-02T21:04:30+07:00",
+  "framework": "Next.js 16 (App Router, Turbopack, React 19)",
+  "font_stack": "Prompt, Plus Jakarta Sans, Caveat, Dancing Script",
+  "palette": "BUU Purple (#7749bc), BUU Hover (#653ba6), Light (#f5f0ff), Border (#e4d7f5), Amber accents",
+  "motion": "motion-cut",
+  "spacing": "Tailwind v4 default",
+  "preserved": [
+    "font_stack (Prompt, Plus Jakarta Sans)",
+    "palette (BUU Purple #7749bc + neutral slate/amber)",
+    "framework (Next.js 16 App Router)",
+    "mock_data structures"
+  ]
+}

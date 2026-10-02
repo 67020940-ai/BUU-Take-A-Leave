@@ -51,7 +51,7 @@ export default async function StudentLeavePage({ searchParams }) {
           title="ยื่นคำขอลาเรียน"
           subtitle="กรอกรายละเอียดให้ครบถ้วน ระบบจะแจ้งอาจารย์ผู้สอนทันที"
         />
-        <div className="bg-white/80 dark:bg-slate-900/80 backdrop-blur-xl rounded-3xl border border-neutral-200/80 dark:border-slate-800 p-6 sm:p-8 shadow-xs">
+        <div className="max-w-4xl mx-auto bg-white dark:bg-slate-900 rounded-2xl border border-slate-200 dark:border-slate-800 p-6 sm:p-8 shadow-xs">
           <LeaveForm
             courses={courses}
             initialCourseId={initialCourseId}
