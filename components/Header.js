@@ -17,6 +17,7 @@ import {
   FileEdit,
   ClipboardCheck,
   History,
+  Archive,
   CalendarDays,
   BarChart3,
 } from 'lucide-react';
@@ -35,6 +36,7 @@ const NAV = {
     { href: '/teacher', label: 'คำร้องรออนุมัติ', icon: ClipboardCheck },
     { href: '/teacher/stats', label: 'สถิติการลา', icon: BarChart3 },
     { href: '/teacher/history', label: 'ประวัติการอนุมัติ', icon: History },
+    { href: '/teacher/archive', label: 'คลังสถิติย้อนหลัง', icon: Archive },
   ],
   admin: [{ href: '/admin', label: 'ภาพรวมระบบ', icon: ShieldCheck }],
 };
