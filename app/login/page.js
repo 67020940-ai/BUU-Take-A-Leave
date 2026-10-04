@@ -80,7 +80,7 @@ export default function LoginPage() {
           <div className="px-6 pt-8 pb-3 text-center md:hidden">
             <div className="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-xl border border-[#7749BC]/30 bg-purple-50 dark:bg-purple-950/40 text-[#7749BC] dark:text-purple-300 font-bold text-base tracking-wider mb-2">
               <BuuLogo size={28} />
-              <span>Take A Leave</span>
+              <span>BUU TL · Take A Leave</span>
             </div>
             <p className="text-xs text-slate-500 dark:text-slate-400">ระบบบริหารจัดการการลาเรียน มหาวิทยาลัยบูรพา</p>
           </div>

@@ -48,7 +48,7 @@ export default function Header({ user, semester = '1/2569' }) {
   const [notifications, setNotifications] = useState([]);
   const [showNotifications, setShowNotifications] = useState(false);
   const [showUserMenu, setShowUserMenu] = useState(false);
-  const [logoVariant, setLogoVariant] = useState('crest');
+  const [logoVariant, setLogoVariant] = useState('calendar');
 
   useEffect(() => {
     try {
@@ -60,7 +60,7 @@ export default function Header({ user, semester = '1/2569' }) {
   function cycleLogoVariant(e) {
     e.preventDefault();
     e.stopPropagation();
-    const variants = ['crest', 'sunrise', 'minimal'];
+    const variants = ['calendar', 'document', 'sprout'];
     const nextIdx = (variants.indexOf(logoVariant) + 1) % variants.length;
     const next = variants[nextIdx];
     setLogoVariant(next);
@@ -116,34 +116,35 @@ export default function Header({ user, semester = '1/2569' }) {
             href={user.role === 'teacher' ? '/teacher' : user.role === 'admin' ? '/admin' : '/student'}
             className="flex items-center gap-3.5 group select-none"
           >
-            {/* Official Institutional Logo Emblem (Click to cycle styles) */}
+            {/* BUU TL Modernist Leave Logo (Click to cycle styles) */}
             <div
               onClick={cycleLogoVariant}
               role="button"
               tabIndex={0}
-              title={`คลิกเพื่อสลับแบบโลโก้ (ปัจจุบัน: ${
-                logoVariant === 'crest'
-                  ? 'Modern Academic Crest (Ref LOGO2)'
-                  : logoVariant === 'sunrise'
-                  ? 'The Burapha Sunrise (Ref Yasaburo Kuwayama)'
-                  : 'Minimalist Monogram'
+              title={`คลิกเพื่อสลับแบบโลโก้ BUU TL (ปัจจุบัน: ${
+                logoVariant === 'calendar'
+                  ? 'แบบที่ 1: ปฏิทินวันลา & อนุมัติ (Leave Calendar & Checkmark)'
+                  : logoVariant === 'document'
+                  ? 'แบบที่ 2: ใบคำร้องลาเรียน & เช็คถูก (Folded Leave Document)'
+                  : 'แบบที่ 3: สัญลักษณ์เรขาคณิตผสานใบไม้ (Modernist Sprout)'
               })`}
               className="relative shrink-0 group-hover:scale-105 transition-transform duration-200 cursor-pointer"
             >
               <BuuLogo variant={logoVariant} size={42} className="drop-shadow-sm" />
             </div>
 
-            {/* Brand Title: Displayed Only Once */}
+            {/* Brand Title: BUU TL • Take A Leave */}
             <div className="flex flex-col">
               <div className="flex items-center gap-2">
-                <span className="font-extrabold text-neutral-900 dark:text-neutral-100 tracking-tight text-base sm:text-lg leading-tight group-hover:text-[#7749BC] dark:group-hover:text-purple-300 transition-colors">
+                <span className="font-black text-neutral-900 dark:text-neutral-100 tracking-tight text-lg sm:text-xl leading-none group-hover:text-[#7749BC] dark:group-hover:text-purple-300 transition-colors">
+                  BUU <span className="text-[#7749BC] dark:text-purple-400">TL</span>
+                </span>
+                <span className="text-xs font-bold text-neutral-300 dark:text-neutral-600">·</span>
+                <span className="text-xs sm:text-sm font-bold text-neutral-600 dark:text-neutral-300 tracking-tight">
                   Take A Leave
                 </span>
-                <span className="text-[10px] font-bold px-1.5 py-0.5 rounded-md bg-purple-100 text-[#7749BC] dark:bg-purple-950/80 dark:text-purple-300 border border-purple-200/80 dark:border-purple-800/80 font-mono tracking-wider">
-                  BUU
-                </span>
               </div>
-              <p className="text-[11px] text-neutral-500 dark:text-neutral-400 hidden sm:block leading-tight mt-0.5 font-normal">
+              <p className="text-[11px] text-neutral-500 dark:text-neutral-400 hidden sm:block leading-tight mt-1 font-normal">
                 ระบบยื่นและอนุมัติคำขอลาเรียนออนไลน์ มหาวิทยาลัยบูรพา
               </p>
             </div>
