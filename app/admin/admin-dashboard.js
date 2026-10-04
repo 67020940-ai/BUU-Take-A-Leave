@@ -24,6 +24,7 @@ import {
   HeartPulse,
   HelpCircle,
   RotateCcw,
+  ArrowRight,
 } from 'lucide-react';
 import AdminSidebar from '@/components/AdminSidebar';
 import AdminTopBar from '@/components/AdminTopBar';
