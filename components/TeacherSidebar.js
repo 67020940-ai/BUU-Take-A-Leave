@@ -55,7 +55,8 @@ export default function TeacherSidebar({
     if (onSelectTab) {
       onSelectTab(tabKey);
     }
-    if (targetHref && pathname !== targetHref) {
+    const targetBase = targetHref ? targetHref.split('?')[0] : '';
+    if (targetHref && pathname !== targetBase) {
       router.push(targetHref);
     }
   }

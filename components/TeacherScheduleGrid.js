@@ -70,8 +70,9 @@ const SCHEDULE_ITEMS = [
   },
 ];
 
-export default function TeacherScheduleGrid({ onSelectCourse }) {
+export default function TeacherScheduleGrid({ courses = [], customItems = null, onSelectCourse }) {
   const [selectedItem, setSelectedItem] = useState(null);
+  const scheduleList = customItems || SCHEDULE_ITEMS;
 
   return (
     <div className="bg-white/90 dark:bg-slate-900/90 backdrop-blur-xl rounded-3xl border border-neutral-200/80 dark:border-slate-800 shadow-xs overflow-hidden">
@@ -119,7 +120,7 @@ export default function TeacherScheduleGrid({ onSelectCourse }) {
           {/* Day Rows: Monday to Friday */}
           {DAYS.map((day, dayIdx) => {
             // Find all classes on this day
-            const dayClasses = SCHEDULE_ITEMS.filter((item) => item.day === day.key);
+            const dayClasses = scheduleList.filter((item) => item.day === day.key);
 
             return (
               <div

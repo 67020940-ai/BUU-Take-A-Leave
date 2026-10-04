@@ -22,10 +22,14 @@ export default function SupportModal({ isOpen, onClose }) {
     setError('');
     setSubmitting(true);
     try {
+      const fullSubject = (category ? `[${category}] ${subject}` : subject).trim().slice(0, 150);
       const res = await fetch('/api/support', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ category, subject, details }),
+        body: JSON.stringify({
+          subject: fullSubject,
+          message: details.trim().slice(0, 500),
+        }),
       });
       if (res.ok) {
         setSuccess(true);

@@ -41,6 +41,13 @@ import AttachmentPreview from '@/components/AttachmentPreview';
 import TeacherSidebar from '@/components/TeacherSidebar';
 import TeacherTopBar from '@/components/TeacherTopBar';
 import TeacherScheduleGrid from '@/components/TeacherScheduleGrid';
+import {
+  STATUS_DETAILS,
+  LEAVE_TYPE_DETAILS,
+  LEAVE_TYPE_DEFAULT,
+  formatThaiDate,
+  formatThaiDateTime,
+} from '@/lib/ui';
 
 function initials(name) {
   return (name || '?').trim().charAt(0).toUpperCase();
@@ -594,7 +601,7 @@ export default function TeacherDashboard({ user, courses, initialLeaves, rosterB
 
           {/* Timetable (ตารางสอน - Strictly matching wireframe S__3366938_0.jpg) */}
           <section id="schedule-section">
-            <TeacherScheduleGrid />
+            <TeacherScheduleGrid courses={courses} />
           </section>
 
           {/* Leave Requests Management Section */}
