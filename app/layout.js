@@ -15,14 +15,13 @@ export default function RootLayout({ children }) {
           href="https://fonts.googleapis.com/css2?family=Caveat:wght@600;700&family=Dancing+Script:wght@600;700&family=Plus+Jakarta+Sans:wght@400;500;600;700&family=Prompt:wght@300;400;500;600;700&display=swap"
           rel="stylesheet"
         />
-      </head>
-      <body className="bg-neutral-50 text-neutral-900 antialiased selection:bg-amber-100 selection:text-amber-900">
         <script
-          suppressHydrationWarning
           dangerouslySetInnerHTML={{
             __html: `(function(){try{var t=localStorage.getItem('theme');var isDark=t==='dark'||(!t&&window.matchMedia('(prefers-color-scheme: dark)').matches);if(isDark){document.documentElement.classList.add('dark');document.documentElement.classList.remove('light');}else{document.documentElement.classList.remove('dark');document.documentElement.classList.add('light');}}catch(e){}})();`,
           }}
         />
+      </head>
+      <body className="bg-neutral-50 text-neutral-900 antialiased selection:bg-amber-100 selection:text-amber-900">
         {children}
       </body>
     </html>
