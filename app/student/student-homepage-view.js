@@ -30,6 +30,7 @@ import LeaveForm from './leave/leave-form';
 import StudentStatsView from './stats/stats-view';
 import StudentHistoryView from './history/history-view';
 import StudentScheduleView from './schedule/schedule-view';
+import { getCoursePrep } from '@/lib/coursePrepData';
 
 export default function StudentHomepageView({
   user,
@@ -552,44 +553,84 @@ export default function StudentHomepageView({
                 <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
                   {currentSummaries.map((s, idx) => {
                     const c = s.course || s;
+                    const prep = getCoursePrep(c.code);
+
                     return (
                       <div
                         key={c.id || idx}
-                        className="p-4 sm:p-5 rounded-2xl border border-slate-200 dark:border-slate-800 bg-slate-50/70 dark:bg-slate-850/60 space-y-3"
+                        className="p-4 sm:p-5 rounded-3xl border border-slate-200/90 dark:border-slate-700/80 bg-white dark:bg-slate-800 hover:border-purple-300 dark:hover:border-purple-500/50 shadow-xs hover:shadow-md transition-all space-y-3.5"
                       >
-                        <div className="flex items-start justify-between gap-2">
-                          <div>
-                            <span className="font-mono text-xs font-bold text-[#7749BC] dark:text-purple-300">
-                              {c.code} • กลุ่ม {c.group || '1'}
-                            </span>
-                            <h4 className="font-bold text-sm text-neutral-900 dark:text-white mt-0.5">
+                        <div className="flex items-start justify-between gap-3">
+                          <div className="space-y-1 min-w-0">
+                            <div className="flex items-center gap-2 flex-wrap">
+                              <span className="font-mono text-xs font-bold px-2.5 py-0.5 rounded-lg bg-purple-100 dark:bg-purple-950 text-[#7749BC] dark:text-purple-300 border border-purple-200/70 dark:border-purple-800/70 shadow-2xs">
+                                {c.code}
+                              </span>
+                              <span className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-slate-100 dark:bg-slate-700/80 text-slate-700 dark:text-slate-200 border border-slate-200 dark:border-slate-600">
+                                กลุ่ม {c.group || '1'}
+                              </span>
+                            </div>
+                            <h4 className="font-bold text-base text-neutral-900 dark:text-white leading-snug">
                               {c.name}
                             </h4>
-                            <p className="text-xs text-neutral-500 dark:text-neutral-400 mt-0.5">
-                              {c.teacherName || c.teacher?.name} • ห้อง {c.room} ({c.time})
-                            </p>
+                            <div className="flex items-center gap-3 flex-wrap text-xs text-slate-600 dark:text-slate-300 pt-0.5">
+                              <span className="flex items-center gap-1 font-medium">
+                                <User className="w-3.5 h-3.5 text-[#7749BC] dark:text-purple-400 shrink-0" />
+                                <span>{c.teacherName || c.teacher?.name || 'อาจารย์ผู้สอน'}</span>
+                              </span>
+                              <span className="text-slate-400 dark:text-slate-600">•</span>
+                              <span className="flex items-center gap-1 font-mono font-medium">
+                                <MapPin className="w-3.5 h-3.5 text-[#7749BC] dark:text-purple-400 shrink-0" />
+                                <span>{c.room}</span>
+                              </span>
+                              <span className="text-slate-400 dark:text-slate-600">•</span>
+                              <span className="flex items-center gap-1 font-mono">
+                                <Clock className="w-3.5 h-3.5 text-[#7749BC] dark:text-purple-400 shrink-0" />
+                                <span>{c.time}</span>
+                              </span>
+                            </div>
                           </div>
+
                           <button
                             type="button"
                             onClick={() => {
                               setTargetCourseForLeave(c.id);
                               handleSwitchTab('leave', { courseId: c.id, code: c.code });
                             }}
-                            className="text-[11px] font-bold px-3 py-1.5 rounded-xl bg-purple-100 dark:bg-purple-950 text-[#7749BC] dark:text-purple-300 hover:bg-purple-200 dark:hover:bg-purple-900 transition-colors flex items-center gap-1 shrink-0 cursor-pointer"
+                            className="px-3.5 py-2 rounded-2xl bg-[#7749BC] hover:bg-[#683ca8] text-white text-xs font-bold shadow-xs hover:shadow-sm transition-all flex items-center gap-1.5 shrink-0 cursor-pointer"
+                            title={`ยื่นใบลาสำหรับวิชา ${c.name}`}
                           >
-                            <FileEdit className="w-3 h-3" />
+                            <FileEdit className="w-3.5 h-3.5" />
                             <span>ยื่นใบลา</span>
                           </button>
                         </div>
 
-                        <div className="p-3 rounded-xl bg-white dark:bg-slate-900 border border-slate-200/80 dark:border-slate-800 space-y-1.5">
-                          <span className="text-[10px] font-black uppercase px-2 py-0.5 rounded-full bg-purple-100 dark:bg-purple-950 text-[#7749BC] dark:text-purple-300 inline-block">
-                            สัปดาห์นี้
-                          </span>
-                          <p className="text-xs font-semibold text-neutral-800 dark:text-neutral-200">
-                            การเตรียมตัว: ทบทวนเนื้อหาบทเรียนก่อนหน้า และเตรียมความพร้อมสำหรับคาบเรียนถัดไป
+                        {/* Distinct, beautiful prep box with rich color and dynamic course data */}
+                        <div className="p-3.5 rounded-2xl bg-purple-50/70 dark:bg-slate-900/90 border border-purple-200/80 dark:border-purple-900/60 space-y-2">
+                          <div className="flex items-center gap-2">
+                            <span className="text-[10px] font-extrabold uppercase px-2.5 py-0.5 rounded-md bg-[#7749BC] text-white shadow-2xs">
+                              สัปดาห์ที่ {prep.week}
+                            </span>
+                            <span className="text-xs font-bold text-neutral-900 dark:text-purple-200 truncate">
+                              {prep.topic}
+                            </span>
+                          </div>
+                          <p className="text-xs text-neutral-700 dark:text-slate-300 leading-relaxed">
+                            <span className="font-semibold text-[#7749BC] dark:text-purple-300">สิ่งที่ต้องเตรียมตัว: </span>
+                            {prep.preClassTasks[0] || 'ทบทวนเนื้อหาบทเรียนก่อนหน้า และเตรียมความพร้อมสำหรับคาบเรียนถัดไป'}
                           </p>
                         </div>
+
+                        {/* Exam highlight teaser */}
+                        {prep.examHighlights && prep.examHighlights.length > 0 && (
+                          <div className="flex items-start gap-2 text-xs text-slate-600 dark:text-slate-300 px-1">
+                            <GraduationCap className="w-4 h-4 text-amber-500 shrink-0 mt-0.5" />
+                            <span className="truncate">
+                              <span className="font-semibold text-amber-700 dark:text-amber-400">ประเด็นข้อสอบ: </span>
+                              {prep.examHighlights[0]}
+                            </span>
+                          </div>
+                        )}
                       </div>
                     );
                   })}
