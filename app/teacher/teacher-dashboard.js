@@ -37,8 +37,10 @@ import {
   ArrowRight,
   ClipboardCheck,
 } from 'lucide-react';
-import { LEAVE_TYPE_DETAILS, LEAVE_TYPE_DEFAULT, STATUS_DETAILS, formatThaiDate, formatThaiDateTime } from '@/lib/ui';
 import AttachmentPreview from '@/components/AttachmentPreview';
+import TeacherSidebar from '@/components/TeacherSidebar';
+import TeacherTopBar from '@/components/TeacherTopBar';
+import TeacherScheduleGrid from '@/components/TeacherScheduleGrid';
 
 function initials(name) {
   return (name || '?').trim().charAt(0).toUpperCase();
@@ -60,9 +62,11 @@ const LEAVE_CATEGORIES = [
   { key: 'อื่น ๆ', label: 'อื่น ๆ', icon: HelpCircle },
 ];
 
-export default function TeacherDashboard({ courses, initialLeaves, rosterByCourse, usingMock = false }) {
+export default function TeacherDashboard({ user, courses, initialLeaves, rosterByCourse, usingMock = false }) {
   const router = useRouter();
   const [leaves, setLeaves] = useState(initialLeaves);
+  const [mobileSidebarOpen, setMobileSidebarOpen] = useState(false);
+  const [activeNavTab, setActiveNavTab] = useState('requests');
 
   // Filters
   const [selectedTerm, setSelectedTerm] = useState('all');
@@ -144,9 +148,11 @@ export default function TeacherDashboard({ courses, initialLeaves, rosterByCours
   const pendingFilteredLeaves = useMemo(() => {
     return leaves.filter((leave) => {
       // 1. Status Tab filter
-      if (activeStatusTab === 'รออนุมัติ') {
+      if (activeStatusTab === 'all' || activeStatusTab === 'คำร้องขอลาทั้งหมด') {
+        // show all leaves
+      } else if (activeStatusTab === 'รออนุมัติ') {
         if (leave.status !== 'รออนุมัติ') return false;
-      } else if (activeStatusTab === 'อนุมัติแล้ว') {
+      } else if (activeStatusTab === 'อนุมัติแล้ว' || activeStatusTab === 'อนุมัติ') {
         if (leave.status !== 'อนุมัติ') return false;
       } else if (activeStatusTab === 'ไม่อนุมัติ') {
         if (leave.status !== 'ไม่อนุมัติ') return false;
@@ -427,163 +433,223 @@ export default function TeacherDashboard({ courses, initialLeaves, rosterByCours
   }, [selectedLeavesList, allStudentsRoster]);
 
   return (
-    <div className="space-y-6">
-      {usingMock && (
-        <div className="flex items-start sm:items-center gap-2 px-4 py-2.5 rounded-2xl bg-amber-50 dark:bg-amber-950/40 border border-amber-200 dark:border-amber-800 text-xs text-amber-800 dark:text-amber-300 shadow-xs">
-          <AlertTriangle className="w-3.5 h-3.5 shrink-0 mt-0.5 sm:mt-0" />
-          <span>
-            กำลังแสดง<strong>ข้อมูลตัวอย่าง (Mock Data)</strong> สำหรับทดสอบระบบ
-          </span>
-        </div>
-      )}
+    <div className="min-h-screen bg-slate-50/70 dark:bg-slate-950 flex flex-col lg:flex-row">
+      {/* 1. Left Sidebar (mode="menu") */}
+      <TeacherSidebar
+        mode="menu"
+        activeTab={activeNavTab}
+        onSelectTab={(tab) => {
+          setActiveNavTab(tab);
+          if (tab === 'schedule') {
+            const el = document.getElementById('schedule-section');
+            if (el) el.scrollIntoView({ behavior: 'smooth' });
+          } else if (tab === 'requests') {
+            setActiveStatusTab('all');
+            const el = document.getElementById('requests-section');
+            if (el) el.scrollIntoView({ behavior: 'smooth' });
+          } else if (tab === 'history') {
+            setActiveStatusTab('ประวัติการอนุมัติ');
+            const el = document.getElementById('requests-section');
+            if (el) el.scrollIntoView({ behavior: 'smooth' });
+          }
+        }}
+        pendingCount={totalPendingCount}
+        isOpenMobile={mobileSidebarOpen}
+        onCloseMobile={() => setMobileSidebarOpen(false)}
+      />
 
-      {/* Floating Toast Notification for State Transitions */}
-      {toast && (
-        <div className="fixed bottom-6 right-6 z-50 animate-bounce sm:animate-none">
-          <div
-            className={`flex items-center gap-3 px-4 py-3 rounded-2xl shadow-xl border text-xs font-semibold backdrop-blur-md ${
-              toast.type === 'success'
-                ? 'bg-emerald-900/90 text-white border-emerald-700'
-                : toast.type === 'danger'
-                ? 'bg-rose-900/90 text-white border-rose-700'
-                : 'bg-slate-900/90 text-white border-slate-700'
-            }`}
-          >
-            {toast.type === 'success' ? (
-              <CheckCircle2 className="w-4 h-4 text-emerald-300 shrink-0" />
-            ) : toast.type === 'danger' ? (
-              <XCircle className="w-4 h-4 text-rose-300 shrink-0" />
-            ) : (
-              <Clock className="w-4 h-4 text-amber-300 shrink-0" />
-            )}
-            <span>{toast.message}</span>
-            <Link
-              href="/teacher/history"
-              className="ml-2 px-2.5 py-1 rounded-lg bg-white/20 hover:bg-white/30 text-white text-[11px] underline flex items-center gap-1 transition-colors"
-            >
-              <span>ดูประวัติ</span>
-              <ArrowRight className="w-3 h-3" />
-            </Link>
-          </div>
-        </div>
-      )}
+      {/* 2. Main Content Column */}
+      <div className="flex-1 lg:pl-64 sm:lg:pl-68 flex flex-col min-w-0">
+        <TeacherTopBar
+          user={user}
+          semester={selectedTerm === 'all' ? '1/2569' : selectedTerm}
+          onSemesterChange={(t) => setSelectedTerm(t)}
+          availableSemesters={academicTerms}
+          searchValue={searchQuery}
+          onSearchChange={setSearchQuery}
+          onToggleMobileSidebar={() => setMobileSidebarOpen(true)}
+        />
 
-      {/* Main 2-Column Workbench: Left Sidebar (5 Status Tabs) + Right Main Content */}
-      <div className="flex flex-col lg:flex-row gap-6 items-start">
-        {/* Mobile Dropdown Select (Visible on < lg screens) */}
-        <div className="lg:hidden w-full bg-white/80 dark:bg-slate-900/80 backdrop-blur-xl rounded-2xl border border-neutral-200/80 dark:border-slate-800 p-3 shadow-xs space-y-2">
-          <div className="flex items-center justify-between text-xs font-bold text-neutral-700 dark:text-neutral-300 px-1">
-            <span className="flex items-center gap-1.5">
-              <ClipboardCheck className="w-4 h-4 text-[#7749BC]" />
-              <span>สถานะคำร้อง</span>
-            </span>
-            <span className="text-[11px] text-neutral-400 font-normal">
-              เลือกเพื่อเปลี่ยนหมวด
-            </span>
-          </div>
-          <div className="relative">
-            <select
-              value={activeStatusTab}
-              onChange={(e) => {
-                setActiveStatusTab(e.target.value);
-                setSelectedLeaveIds(new Set());
-              }}
-              className="w-full px-4 py-2.5 rounded-xl border border-neutral-300 dark:border-slate-700 bg-white dark:bg-slate-800 text-xs font-bold text-neutral-900 dark:text-neutral-100 focus:outline-none focus:border-[#7749BC] appearance-none pr-9 cursor-pointer shadow-xs"
-            >
-              {STATUS_TABS.map((tab) => (
-                <option key={tab.key} value={tab.key}>
-                  {tab.label} ({tab.count} รายการ)
-                </option>
-              ))}
-            </select>
-            <ChevronDown className="w-4 h-4 text-neutral-400 absolute right-3 top-1/2 -translate-y-1/2 pointer-events-none" />
-          </div>
-        </div>
+        <main className="flex-1 p-4 sm:p-6 lg:p-8 space-y-6 max-w-7xl w-full mx-auto">
+          {usingMock && (
+            <div className="flex items-start sm:items-center gap-2 px-4 py-2.5 rounded-2xl bg-amber-50 dark:bg-amber-950/40 border border-amber-200 dark:border-amber-800 text-xs text-amber-800 dark:text-amber-300 shadow-xs">
+              <AlertTriangle className="w-3.5 h-3.5 shrink-0 mt-0.5 sm:mt-0" />
+              <span>
+                กำลังแสดง<strong>ข้อมูลตัวอย่าง (Mock Data)</strong> สำหรับทดสอบระบบ
+              </span>
+            </div>
+          )}
 
-        {/* Desktop Left Sidebar: Status Submenu (Visible on lg+ screens) */}
-        <aside className="hidden lg:block w-60 shrink-0 bg-white/80 dark:bg-slate-900/80 backdrop-blur-xl rounded-3xl border border-neutral-200/80 dark:border-slate-800 p-4 shadow-xs space-y-3 sticky top-24">
-          <div className="px-2 pb-2 border-b border-neutral-100 dark:border-slate-800">
-            <h3 className="font-bold text-xs uppercase tracking-wider text-neutral-400 dark:text-neutral-500 flex items-center gap-1.5">
-              <ClipboardCheck className="w-4 h-4 text-[#7749BC]" />
-              <span>สถานะคำร้อง</span>
-            </h3>
-            <p className="text-[11px] text-neutral-500 dark:text-neutral-400 mt-0.5">เลือกหมวดคำร้องลาเรียน</p>
-          </div>
-          <nav className="flex flex-col gap-1.5">
-            {STATUS_TABS.map((tab) => {
-              const Icon = tab.icon;
-              const isActive = activeStatusTab === tab.key;
-              return (
-                <button
-                  key={tab.key}
-                  onClick={() => {
-                    setActiveStatusTab(tab.key);
-                    setSelectedLeaveIds(new Set());
-                  }}
-                  className={`flex items-center justify-between px-3.5 py-2.5 rounded-2xl text-xs font-semibold transition-all shrink-0 w-full text-left cursor-pointer ${
-                    isActive
-                      ? 'bg-[#7749BC] text-white shadow-sm shadow-purple-900/20'
-                      : 'text-neutral-700 dark:text-neutral-300 hover:bg-neutral-100 dark:hover:bg-slate-800'
-                  }`}
+          {/* Floating Toast Notification for State Transitions */}
+          {toast && (
+            <div className="fixed bottom-6 right-6 z-50 animate-bounce sm:animate-none">
+              <div
+                className={`flex items-center gap-3 px-4 py-3 rounded-2xl shadow-xl border text-xs font-semibold backdrop-blur-md ${
+                  toast.type === 'success'
+                    ? 'bg-emerald-900/90 text-white border-emerald-700'
+                    : toast.type === 'danger'
+                    ? 'bg-rose-900/90 text-white border-rose-700'
+                    : 'bg-slate-900/90 text-white border-slate-700'
+                }`}
+              >
+                {toast.type === 'success' ? (
+                  <CheckCircle2 className="w-4 h-4 text-emerald-300 shrink-0" />
+                ) : toast.type === 'danger' ? (
+                  <XCircle className="w-4 h-4 text-rose-300 shrink-0" />
+                ) : (
+                  <Clock className="w-4 h-4 text-amber-300 shrink-0" />
+                )}
+                <span>{toast.message}</span>
+                <Link
+                  href="/teacher/history"
+                  className="ml-2 px-2.5 py-1 rounded-lg bg-white/20 hover:bg-white/30 text-white text-[11px] underline flex items-center gap-1 transition-colors"
                 >
-                  <div className="flex items-center gap-2.5">
-                    <Icon className={`w-4 h-4 ${isActive ? 'text-white' : tab.color}`} />
-                    <span>{tab.label}</span>
-                  </div>
-                  <span
-                    className={`text-[10px] px-2 py-0.5 rounded-full font-bold ${
-                      isActive
-                        ? 'bg-white/20 text-white'
-                        : 'bg-neutral-100 dark:bg-slate-800 text-neutral-600 dark:text-neutral-400'
-                    }`}
-                  >
-                    {tab.count}
-                  </span>
-                </button>
-              );
-            })}
-          </nav>
-        </aside>
+                  <span>ดูประวัติ</span>
+                  <ArrowRight className="w-3 h-3" />
+                </Link>
+              </div>
+            </div>
+          )}
 
-        {/* Right Main Content */}
-        <div className="flex-1 min-w-0 w-full space-y-4">
-          {/* HEADER WITH ACTIONS */}
-          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pb-3 border-b border-neutral-200 dark:border-slate-800">
-            <div>
-              <h3 className="text-base sm:text-lg font-bold text-neutral-900 dark:text-neutral-100 flex items-center gap-2">
-                <span>คำร้องลาเรียน: {activeStatusTab}</span>
-                <span className="text-xs font-bold px-2.5 py-0.5 rounded-full bg-purple-100 dark:bg-purple-950 text-[#7749BC] dark:text-purple-300 border border-purple-200 dark:border-purple-800">
-                  {pendingFilteredLeaves.length} รายการ
-                </span>
-              </h3>
-              <p className="text-xs text-neutral-500 dark:text-neutral-400 mt-0.5">
-                {activeStatusTab === 'รออนุมัติ' && 'แสดงคำร้องที่รอดำเนินการ สามารถอนุมัติทีละรายการหรือเลือกหลายรายการเพื่อดำเนินการพร้อมกัน'}
-                {activeStatusTab === 'อนุมัติแล้ว' && 'แสดงคำร้องที่อนุมัติแล้ว สามารถเพิกถอนการอนุมัติได้'}
-                {activeStatusTab === 'ไม่อนุมัติ' && 'แสดงคำร้องที่ไม่อนุมัติ สามารถนำกลับมาพิจารณาใหม่ได้'}
-                {activeStatusTab === 'เพิกถอนการอนุมัติ' && 'แสดงคำร้องที่ถูกเพิกถอนการอนุมัติ สามารถนำกลับมาพิจารณาใหม่ได้'}
-                {activeStatusTab === 'ประวัติการอนุมัติ' && 'แสดงประวัติคำร้องที่ดำเนินการเสร็จสิ้นแล้วทั้งหมด'}
+          {/* 4 Connected Horizontal Boxes (Strictly matching wireframe S__3366938_0.jpg) */}
+          <div className="grid grid-cols-2 sm:grid-cols-4 divide-y sm:divide-y-0 sm:divide-x border-2 border-neutral-300 dark:border-slate-700 rounded-3xl bg-white dark:bg-slate-900 shadow-xs overflow-hidden">
+            {/* Box 1: คำร้องขอลาทั้งหมด */}
+            <button
+              type="button"
+              onClick={() => {
+                setActiveStatusTab('all');
+                const el = document.getElementById('requests-section');
+                if (el) el.scrollIntoView({ behavior: 'smooth' });
+              }}
+              className={`p-4 sm:p-5 text-left transition-colors cursor-pointer ${
+                activeStatusTab === 'all'
+                  ? 'bg-purple-50/80 dark:bg-purple-950/40 text-[#7749BC] dark:text-purple-300 font-bold'
+                  : 'hover:bg-neutral-50 dark:hover:bg-slate-800/50 text-neutral-800 dark:text-neutral-200'
+              }`}
+            >
+              <p className="text-xs sm:text-sm font-bold truncate">คำร้องขอลาทั้งหมด</p>
+              <p className="text-lg sm:text-2xl font-black font-mono mt-1">: {leaves.length}</p>
+            </button>
+
+            {/* Box 2: อนุมัติ */}
+            <button
+              type="button"
+              onClick={() => {
+                setActiveStatusTab('อนุมัติแล้ว');
+                const el = document.getElementById('requests-section');
+                if (el) el.scrollIntoView({ behavior: 'smooth' });
+              }}
+              className={`p-4 sm:p-5 text-left transition-colors cursor-pointer ${
+                activeStatusTab === 'อนุมัติแล้ว'
+                  ? 'bg-emerald-50/80 dark:bg-emerald-950/40 text-emerald-700 dark:text-emerald-300 font-bold'
+                  : 'hover:bg-neutral-50 dark:hover:bg-slate-800/50 text-neutral-800 dark:text-neutral-200'
+              }`}
+            >
+              <p className="text-xs sm:text-sm font-bold truncate">อนุมัติ</p>
+              <p className="text-lg sm:text-2xl font-black font-mono mt-1 text-emerald-600 dark:text-emerald-400">
+                : {totalApprovedCount}
               </p>
-            </div>
+            </button>
 
-            <div className="flex items-center gap-2">
-              <a
-                href="/api/export"
-                className="flex items-center space-x-1.5 text-xs font-semibold text-[#7749BC] dark:text-purple-300 bg-white/80 dark:bg-purple-950/60 hover:bg-purple-100 border border-purple-200 dark:border-purple-800 px-3.5 py-2 rounded-xl shadow-xs transition-colors"
-              >
-                <FileSpreadsheet className="w-3.5 h-3.5" />
-                <span>ส่งออก CSV</span>
-              </a>
-              <a
-                href="/teacher/print"
-                target="_blank"
-                rel="noreferrer"
-                className="flex items-center space-x-1.5 text-xs font-semibold text-neutral-700 dark:text-neutral-200 bg-white/80 dark:bg-slate-800 hover:bg-white border border-neutral-200/80 dark:border-slate-700 px-3.5 py-2 rounded-xl shadow-xs transition-colors"
-              >
-                <Printer className="w-3.5 h-3.5" />
-                <span>พิมพ์รายงาน</span>
-              </a>
-            </div>
+            {/* Box 3: รออนุมัติ */}
+            <button
+              type="button"
+              onClick={() => {
+                setActiveStatusTab('รออนุมัติ');
+                const el = document.getElementById('requests-section');
+                if (el) el.scrollIntoView({ behavior: 'smooth' });
+              }}
+              className={`p-4 sm:p-5 text-left transition-colors cursor-pointer ${
+                activeStatusTab === 'รออนุมัติ'
+                  ? 'bg-amber-50/80 dark:bg-amber-950/40 text-amber-700 dark:text-amber-300 font-bold'
+                  : 'hover:bg-neutral-50 dark:hover:bg-slate-800/50 text-neutral-800 dark:text-neutral-200'
+              }`}
+            >
+              <p className="text-xs sm:text-sm font-bold truncate">รออนุมัติ</p>
+              <p className="text-lg sm:text-2xl font-black font-mono mt-1 text-amber-600 dark:text-amber-400">
+                : {totalPendingCount}
+              </p>
+            </button>
+
+            {/* Box 4: ไม่อนุมัติ */}
+            <button
+              type="button"
+              onClick={() => {
+                setActiveStatusTab('ไม่อนุมัติ');
+                const el = document.getElementById('requests-section');
+                if (el) el.scrollIntoView({ behavior: 'smooth' });
+              }}
+              className={`p-4 sm:p-5 text-left transition-colors cursor-pointer ${
+                activeStatusTab === 'ไม่อนุมัติ'
+                  ? 'bg-rose-50/80 dark:bg-rose-950/40 text-rose-700 dark:text-rose-300 font-bold'
+                  : 'hover:bg-neutral-50 dark:hover:bg-slate-800/50 text-neutral-800 dark:text-neutral-200'
+              }`}
+            >
+              <p className="text-xs sm:text-sm font-bold truncate">ไม่อนุมัติ</p>
+              <p className="text-lg sm:text-2xl font-black font-mono mt-1 text-rose-600 dark:text-rose-400">
+                : {totalRejectedCount}
+              </p>
+            </button>
           </div>
+
+          {/* Timetable (ตารางสอน - Strictly matching wireframe S__3366938_0.jpg) */}
+          <section id="schedule-section">
+            <TeacherScheduleGrid />
+          </section>
+
+          {/* Leave Requests Management Section */}
+          <section id="requests-section" className="space-y-4 pt-2">
+            {/* Status Tabs Pill Strip & Export/Print Actions */}
+            <div className="flex flex-wrap items-center justify-between gap-3 pb-3 border-b border-neutral-200 dark:border-slate-800">
+              <div className="flex flex-wrap items-center gap-1.5">
+                {[
+                  { key: 'all', label: 'ทั้งหมด', count: leaves.length },
+                  { key: 'รออนุมัติ', label: 'รออนุมัติ', count: totalPendingCount },
+                  { key: 'อนุมัติแล้ว', label: 'อนุมัติแล้ว', count: totalApprovedCount },
+                  { key: 'ไม่อนุมัติ', label: 'ไม่อนุมัติ', count: totalRejectedCount },
+                  { key: 'เพิกถอนการอนุมัติ', label: 'เพิกถอนการอนุมัติ', count: totalRevokedCount },
+                  { key: 'ประวัติการอนุมัติ', label: 'ประวัติการอนุมัติ', count: totalHistoryCount },
+                ].map((tab) => {
+                  const isActive = activeStatusTab === tab.key;
+                  return (
+                    <button
+                      key={tab.key}
+                      type="button"
+                      onClick={() => {
+                        setActiveStatusTab(tab.key);
+                        setSelectedLeaveIds(new Set());
+                      }}
+                      className={`px-3 py-1.5 rounded-xl text-xs font-bold transition-all cursor-pointer ${
+                        isActive
+                          ? 'bg-[#7749BC] text-white shadow-xs'
+                          : 'bg-white dark:bg-slate-800 text-neutral-700 dark:text-neutral-300 border border-neutral-200/80 dark:border-slate-700 hover:bg-neutral-50'
+                      }`}
+                    >
+                      {tab.label} ({tab.count})
+                    </button>
+                  );
+                })}
+              </div>
+
+              <div className="flex items-center gap-2">
+                <a
+                  href="/api/export"
+                  className="flex items-center space-x-1.5 text-xs font-semibold text-[#7749BC] dark:text-purple-300 bg-white/80 dark:bg-purple-950/60 hover:bg-purple-100 border border-purple-200 dark:border-purple-800 px-3.5 py-1.5 rounded-xl shadow-xs transition-colors"
+                >
+                  <FileSpreadsheet className="w-3.5 h-3.5" />
+                  <span>ส่งออก CSV</span>
+                </a>
+                <a
+                  href="/teacher/print"
+                  target="_blank"
+                  rel="noreferrer"
+                  className="flex items-center space-x-1.5 text-xs font-semibold text-neutral-700 dark:text-neutral-200 bg-white/80 dark:bg-slate-800 hover:bg-white border border-neutral-200/80 dark:border-slate-700 px-3.5 py-1.5 rounded-xl shadow-xs transition-colors"
+                >
+                  <Printer className="w-3.5 h-3.5" />
+                  <span>พิมพ์รายงาน</span>
+                </a>
+              </div>
+            </div>
 
           {/* FILTER CONTROLS BAR */}
           <div className="bg-white/80 dark:bg-slate-900/80 backdrop-blur-xl rounded-3xl border border-neutral-200/80 dark:border-slate-800 p-4 space-y-3 shadow-xs">
@@ -1052,8 +1118,8 @@ export default function TeacherDashboard({ courses, initialLeaves, rosterByCours
               </div>
             </div>
           )}
-
-        </div>
+          </section>
+        </main>
       </div>
 
       {/* MODAL 1: Detail Modal */}
