@@ -21,7 +21,7 @@ import SettingsModal from '@/components/SettingsModal';
 import SupportModal from '@/components/SupportModal';
 
 export default function StudentSidebar({
-  activeTab = 'home', // 'home' | 'leave' | 'history' | 'schedule' | 'stats'
+  activeTab = 'home', // 'home' | 'leave' | 'stats' | 'history' | 'schedule'
   onSelectTab,
   pendingCount = 0,
   isOpenMobile = false,
@@ -51,29 +51,39 @@ export default function StudentSidebar({
     {
       key: 'leave',
       label: 'ยื่นคำขอลาเรียน',
-      href: '/student/leave',
+      href: '/student?tab=leave',
       icon: FileEdit,
     },
     {
       key: 'stats',
       label: 'สถิติเวลาเรียน',
-      href: '/student/stats',
+      href: '/student?tab=stats',
       icon: BarChart3,
     },
     {
       key: 'history',
       label: 'ประวัติการลา',
-      href: '/student/history',
+      href: '/student?tab=history',
       icon: History,
       badge: pendingCount > 0 ? pendingCount : null,
     },
     {
       key: 'schedule',
       label: 'ตารางเรียน',
-      href: '/student/schedule',
+      href: '/student?tab=schedule',
       icon: CalendarDays,
     },
   ];
+
+  function handleItemClick(e, item) {
+    if (onCloseMobile) onCloseMobile();
+    if (onSelectTab) {
+      e.preventDefault();
+      onSelectTab(item.key);
+      const newUrl = item.key === 'home' ? '/student' : `/student?tab=${item.key}`;
+      window.history.pushState(null, '', newUrl);
+    }
+  }
 
   return (
     <>
@@ -96,7 +106,14 @@ export default function StudentSidebar({
           <div className="h-20 px-4 sm:px-5 flex items-center justify-between border-b border-neutral-100 dark:border-slate-800/80">
             <Link
               href="/student"
-              onClick={onCloseMobile}
+              onClick={(e) => {
+                if (onCloseMobile) onCloseMobile();
+                if (onSelectTab) {
+                  e.preventDefault();
+                  onSelectTab('home');
+                  window.history.pushState(null, '', '/student');
+                }
+              }}
               className="flex items-center gap-3 group min-w-0"
               title="หน้าแรกนิสิต Take A Leave"
             >
@@ -148,19 +165,13 @@ export default function StudentSidebar({
               <nav className="flex flex-col gap-1">
                 {navItems.map((item) => {
                   const Icon = item.icon;
-                  const isActive =
-                    activeTab === item.key ||
-                    pathname === item.href ||
-                    (item.key === 'home' && pathname === '/student');
+                  const isActive = activeTab === item.key;
 
                   return (
                     <Link
                       key={item.key}
                       href={item.href}
-                      onClick={() => {
-                        if (onCloseMobile) onCloseMobile();
-                        if (onSelectTab) onSelectTab(item.key);
-                      }}
+                      onClick={(e) => handleItemClick(e, item)}
                       className={`w-full flex items-center justify-between px-3 py-2.5 rounded-2xl text-xs font-semibold transition-all cursor-pointer ${
                         isActive
                           ? 'bg-[#7749BC] text-white shadow-md shadow-purple-900/20'
