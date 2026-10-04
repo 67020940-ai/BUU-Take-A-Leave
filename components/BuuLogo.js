@@ -45,42 +45,26 @@ export default function BuuLogo({ size = 42, variant = 'calendar', className = '
           {/* Header Bar Line */}
           <path d="M 4 19 L 44 19" stroke="#FFFFFF" strokeOpacity="0.18" strokeWidth="1.2" />
 
-          {/* Two Calendar Binder Rings at top (representing leave days/dates) */}
-          <rect x="13" y="4" width="4.5" height="8" rx="2.25" fill="#F59E0B" />
-          <rect x="30.5" y="4" width="4.5" height="8" rx="2.25" fill="#F59E0B" />
+          {/* Two Calendar Binder Rings at top (Pure White) */}
+          <rect x="13" y="4" width="4.5" height="8" rx="2.25" fill="#FFFFFF" />
+          <rect x="30.5" y="4" width="4.5" height="8" rx="2.25" fill="#FFFFFF" />
 
           {/* Letter "T" (Take) - Clean, bold modern geometry */}
           <path
-            d="M 12 25 L 24 25 M 18 25 L 18 39"
+            d="M 11 25.5 L 23 25.5 M 17 25.5 L 17 38.5"
             stroke="#FFFFFF"
-            strokeWidth="3.4"
+            strokeWidth="3.6"
             strokeLinecap="round"
             strokeLinejoin="round"
           />
 
-          {/* Letter "L" (Leave) - Extends into an Approval Checkmark & Leaf! */}
-          {/* Vertical stem of L */}
+          {/* Letter "L" (Leave) - Clean, bold modern geometry */}
           <path
-            d="M 27 25 L 27 38 L 33 38"
-            stroke="#FEF08A"
-            strokeWidth="3.4"
+            d="M 27 25.5 L 27 38.5 L 37 38.5"
+            stroke="#FFFFFF"
+            strokeWidth="3.6"
             strokeLinecap="round"
             strokeLinejoin="round"
-          />
-
-          {/* Vibrant Emerald Approval Checkmark (อนุมัติการลา ✓) emerging from L */}
-          <path
-            d="M 31 35 L 34.5 38.5 L 42 27"
-            stroke="url(#checkGrad)"
-            strokeWidth="3.4"
-            strokeLinecap="round"
-            strokeLinejoin="round"
-          />
-
-          {/* Tiny Organic Leaf (Leave) floating above the checkmark */}
-          <path
-            d="M 39 23 C 39 19 43 17 43 17 C 43 17 43 21 39 23 Z"
-            fill="#34D399"
           />
         </g>
       </svg>

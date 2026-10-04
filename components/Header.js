@@ -121,29 +121,17 @@ export default function Header({ user, semester = '1/2569' }) {
               onClick={cycleLogoVariant}
               role="button"
               tabIndex={0}
-              title={`คลิกเพื่อสลับแบบโลโก้ BUU TL (ปัจจุบัน: ${
-                logoVariant === 'calendar'
-                  ? 'แบบที่ 1: ปฏิทินวันลา & อนุมัติ (Leave Calendar & Checkmark)'
-                  : logoVariant === 'document'
-                  ? 'แบบที่ 2: ใบคำร้องลาเรียน & เช็คถูก (Folded Leave Document)'
-                  : 'แบบที่ 3: สัญลักษณ์เรขาคณิตผสานใบไม้ (Modernist Sprout)'
-              })`}
+              title="Take A Leave - ระบบลาเรียนออนไลน์ มหาวิทยาลัยบูรพา"
               className="relative shrink-0 group-hover:scale-105 transition-transform duration-200 cursor-pointer"
             >
               <BuuLogo variant={logoVariant} size={42} className="drop-shadow-sm" />
             </div>
 
-            {/* Brand Title: BUU TL • Take A Leave */}
+            {/* Brand Title: Take A Leave */}
             <div className="flex flex-col">
-              <div className="flex items-center gap-2">
-                <span className="font-black text-neutral-900 dark:text-neutral-100 tracking-tight text-lg sm:text-xl leading-none group-hover:text-[#7749BC] dark:group-hover:text-purple-300 transition-colors">
-                  BUU <span className="text-[#7749BC] dark:text-purple-400">TL</span>
-                </span>
-                <span className="text-xs font-bold text-neutral-300 dark:text-neutral-600">·</span>
-                <span className="text-xs sm:text-sm font-bold text-neutral-600 dark:text-neutral-300 tracking-tight">
-                  Take A Leave
-                </span>
-              </div>
+              <span className="font-extrabold text-neutral-900 dark:text-neutral-100 tracking-tight text-lg sm:text-xl leading-none group-hover:text-[#7749BC] dark:group-hover:text-purple-300 transition-colors">
+                Take A Leave
+              </span>
               <p className="text-[11px] text-neutral-500 dark:text-neutral-400 hidden sm:block leading-tight mt-1 font-normal">
                 ระบบยื่นและอนุมัติคำขอลาเรียนออนไลน์ มหาวิทยาลัยบูรพา
               </p>
