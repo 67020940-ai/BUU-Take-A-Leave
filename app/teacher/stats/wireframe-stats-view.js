@@ -20,6 +20,8 @@ import {
 import TeacherSidebar from '@/components/TeacherSidebar';
 import TeacherTopBar from '@/components/TeacherTopBar';
 import AttachmentPreview from '@/components/AttachmentPreview';
+import ArchiveView from '@/app/teacher/archive/archive-view';
+import { Archive } from 'lucide-react';
 
 // Helper to format Thai date
 function formatThaiDate(dateStr) {
@@ -101,11 +103,22 @@ export default function WireframeStatsView({
 
   // Controls & States
   const [semester, setSemester] = useState('1/2569');
+  const [activeStatsView, setActiveStatsView] = useState('current'); // 'current' | 'archive'
   const [studentSearch, setStudentSearch] = useState('');
   const [selectedLeaveTypeFilter, setSelectedLeaveTypeFilter] = useState(null); // 'all' | 'ป่วย' | 'กิจ' | 'กิจกรรม' | 'อื่น ๆ'
   const [mobileSidebarOpen, setMobileSidebarOpen] = useState(false);
   const [currentPage, setCurrentPage] = useState(1);
   const pageSize = 10;
+
+  // Sync archive query param
+  useEffect(() => {
+    if (typeof window !== 'undefined') {
+      const sp = new URLSearchParams(window.location.search);
+      if (sp.get('view') === 'archive' || sp.get('tab') === 'archive') {
+        setActiveStatsView('archive');
+      }
+    }
+  }, []);
 
   // Modal State for Individual Student Drill-down (Step 3)
   const [modalStudent, setModalStudent] = useState(null);
@@ -251,7 +264,12 @@ export default function WireframeStatsView({
         mode="stats"
         subjects={subjectGroups}
         selectedSubjectKey={selectedSubjectKey}
-        onSelectSubject={handleSelectSubject}
+        onSelectSubject={(key) => {
+          setActiveStatsView('current');
+          handleSelectSubject(key);
+        }}
+        activeStatsView={activeStatsView}
+        onSelectArchive={() => setActiveStatsView('archive')}
         isOpenMobile={mobileSidebarOpen}
         onCloseMobile={() => setMobileSidebarOpen(false)}
       />
@@ -270,6 +288,34 @@ export default function WireframeStatsView({
         />
 
         <main className="flex-1 p-4 sm:p-6 lg:p-8 space-y-6 max-w-7xl w-full mx-auto">
+          {activeStatsView === 'archive' ? (
+            <div className="space-y-6">
+              <div className="bg-white/90 dark:bg-slate-900/90 backdrop-blur-xl p-5 sm:p-6 rounded-3xl border border-neutral-200/80 dark:border-slate-800 shadow-xs">
+                <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+                  <div>
+                    <h2 className="text-lg sm:text-xl font-black text-neutral-900 dark:text-neutral-100 tracking-tight flex items-center gap-2.5">
+                      <span className="w-9 h-9 rounded-2xl bg-purple-100 dark:bg-purple-950 text-[#7749BC] dark:text-purple-300 flex items-center justify-center text-sm font-bold">
+                        <Archive className="w-5 h-5" />
+                      </span>
+                      <span>คลังสถิติย้อนหลัง (Historical Archive)</span>
+                    </h2>
+                    <p className="text-xs text-neutral-500 dark:text-neutral-400 mt-1">
+                      สืบค้นข้อมูลการลาเรียนย้อนหลัง สรุปอัตราส่วนการอนุมัติ และสถิติสะสมตามภาคการศึกษา
+                    </p>
+                  </div>
+                  <button
+                    type="button"
+                    onClick={() => setActiveStatsView('current')}
+                    className="px-4 py-2 rounded-2xl bg-[#7749BC] hover:bg-[#683ca8] text-white text-xs font-bold shadow-xs cursor-pointer self-start sm:self-auto"
+                  >
+                    กลับไปดูรายวิชาปัจจุบัน
+                  </button>
+                </div>
+              </div>
+              <ArchiveView courses={courses} leaves={leaves} />
+            </div>
+          ) : (
+            <>
           {/* COURSE & GROUP HEADER (Strictly matching wireframe S__3366939_0.jpg) */}
           <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 bg-white/90 dark:bg-slate-900/90 backdrop-blur-xl p-4 sm:p-5 rounded-3xl border border-neutral-200/80 dark:border-slate-800 shadow-xs">
             {/* Left: Course Code and Name */}
@@ -572,6 +618,8 @@ export default function WireframeStatsView({
               </div>
             </div>
           </div>
+            </>
+          )}
         </main>
       </div>
 
@@ -643,25 +691,25 @@ export default function WireframeStatsView({
                   </p>
 
                   <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
-                    {/* 1. ลาป่วย */}
+                    {/* ลาป่วย */}
                     <button
                       onClick={() => setModalLeaveCategory('ลาป่วย')}
                       className="p-4 rounded-2xl border border-sky-200 dark:border-sky-800 bg-sky-50/60 dark:bg-sky-950/30 text-left hover:scale-[1.02] transition-transform cursor-pointer shadow-xs"
                     >
-                      <span className="text-xs font-semibold text-sky-800 dark:text-sky-300 block">1. ลาป่วย</span>
+                      <span className="text-xs font-semibold text-sky-800 dark:text-sky-300 block">ลาป่วย</span>
                       <span className="text-2xl font-bold text-sky-900 dark:text-sky-100 mt-1 block">
                         {modalStudent.sickCount}
                       </span>
                       <span className="text-[11px] text-sky-600 dark:text-sky-400 mt-1 block">คลิกดูรายการ</span>
                     </button>
 
-                    {/* 2. ลากิจส่วนตัว */}
+                    {/* ลากิจส่วนตัว */}
                     <button
                       onClick={() => setModalLeaveCategory('ลากิจส่วนตัว')}
                       className="p-4 rounded-2xl border border-purple-200 dark:border-purple-800 bg-purple-50/60 dark:bg-purple-950/30 text-left hover:scale-[1.02] transition-transform cursor-pointer shadow-xs"
                     >
                       <span className="text-xs font-semibold text-purple-800 dark:text-purple-300 block">
-                        2. ลากิจส่วนตัว
+                        ลากิจส่วนตัว
                       </span>
                       <span className="text-2xl font-bold text-purple-900 dark:text-purple-100 mt-1 block">
                         {modalStudent.personalCount}
@@ -669,13 +717,13 @@ export default function WireframeStatsView({
                       <span className="text-[11px] text-purple-600 dark:text-purple-400 mt-1 block">คลิกดูรายการ</span>
                     </button>
 
-                    {/* 3. ลากิจกรรม */}
+                    {/* ลากิจกรรม */}
                     <button
                       onClick={() => setModalLeaveCategory('ลากิจกรรม')}
                       className="p-4 rounded-2xl border border-indigo-200 dark:border-indigo-800 bg-indigo-50/60 dark:bg-indigo-950/30 text-left hover:scale-[1.02] transition-transform cursor-pointer shadow-xs"
                     >
                       <span className="text-xs font-semibold text-indigo-800 dark:text-indigo-300 block">
-                        3. ลากิจกรรม
+                        ลากิจกรรม
                       </span>
                       <span className="text-2xl font-bold text-indigo-900 dark:text-indigo-100 mt-1 block">
                         {modalStudent.activityCount}
@@ -683,12 +731,12 @@ export default function WireframeStatsView({
                       <span className="text-[11px] text-indigo-600 dark:text-indigo-400 mt-1 block">คลิกดูรายการ</span>
                     </button>
 
-                    {/* 4. อื่นๆ */}
+                    {/* อื่นๆ */}
                     <button
                       onClick={() => setModalLeaveCategory('อื่นๆ')}
                       className="p-4 rounded-2xl border border-neutral-200 dark:border-slate-700 bg-neutral-50 dark:bg-slate-800 text-left hover:scale-[1.02] transition-transform cursor-pointer shadow-xs"
                     >
-                      <span className="text-xs font-semibold text-neutral-700 dark:text-neutral-300 block">4. อื่น ๆ</span>
+                      <span className="text-xs font-semibold text-neutral-700 dark:text-neutral-300 block">อื่น ๆ</span>
                       <span className="text-2xl font-bold text-neutral-900 dark:text-neutral-100 mt-1 block">
                         {modalStudent.otherCount}
                       </span>

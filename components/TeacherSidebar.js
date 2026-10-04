@@ -26,11 +26,13 @@ import SupportModal from '@/components/SupportModal';
 
 export default function TeacherSidebar({
   mode = 'menu', // 'menu' for Teacher Home, 'stats' for Leave Statistics
-  activeTab = 'requests', // 'requests' | 'stats' | 'history' | 'schedule'
+  activeTab = 'requests', // 'home' | 'requests' | 'stats' | 'history' | 'schedule'
   onSelectTab, // callback for in-page navigation (e.g. scrollTo or switch view)
   subjects = [], // for stats mode: [{ key: 'SA', name: '...', code: '...' }, { key: 'OSS', ... }]
   selectedSubjectKey = 'SA',
   onSelectSubject,
+  activeStatsView = 'current', // 'current' | 'archive'
+  onSelectArchive,
   pendingCount = 0,
   isOpenMobile = false,
   onCloseMobile,
@@ -134,25 +136,25 @@ export default function TeacherSidebar({
                 )}
 
                 <nav className="flex flex-col gap-1">
-                  {/* 1. คำขอร้องลาเรียน */}
-                  <button
-                    type="button"
-                    onClick={() => handleTabClick('requests', '/teacher')}
-                    className={`w-full flex items-center justify-between px-3 py-2.5 rounded-2xl text-xs font-semibold transition-all cursor-pointer text-left ${
-                      activeTab === 'requests' && pathname === '/teacher'
+                  {/* คำขอร้องลาเรียน */}
+                  <Link
+                    href="/teacher/requests"
+                    onClick={onCloseMobile}
+                    className={`w-full flex items-center justify-between px-3 py-2.5 rounded-2xl text-xs font-semibold transition-all cursor-pointer ${
+                      activeTab === 'requests' || pathname === '/teacher/requests'
                         ? 'bg-[#7749BC] text-white shadow-md shadow-purple-900/20'
                         : 'text-neutral-700 dark:text-neutral-300 hover:bg-neutral-100 dark:hover:bg-slate-800'
                     }`}
-                    title="1. คำขอร้องลาเรียน"
+                    title="คำขอร้องลาเรียน"
                   >
                     <div className="flex items-center gap-2.5 min-w-0">
                       <ClipboardCheck className="w-4 h-4 shrink-0" />
-                      {!collapsed && <span className="truncate">1. คำขอร้องลาเรียน</span>}
+                      {!collapsed && <span className="truncate">คำขอร้องลาเรียน</span>}
                     </div>
                     {!collapsed && pendingCount > 0 && (
                       <span
                         className={`text-[10px] font-bold px-2 py-0.5 rounded-full ${
-                          activeTab === 'requests' && pathname === '/teacher'
+                          activeTab === 'requests' || pathname === '/teacher/requests'
                             ? 'bg-white/20 text-white'
                             : 'bg-amber-100 text-amber-800 dark:bg-amber-950 dark:text-amber-300'
                         }`}
@@ -160,58 +162,58 @@ export default function TeacherSidebar({
                         {pendingCount}
                       </span>
                     )}
-                  </button>
+                  </Link>
 
-                  {/* 2. สถิติการลา */}
+                  {/* สถิติการลา */}
                   <Link
                     href="/teacher/stats"
                     onClick={onCloseMobile}
                     className={`w-full flex items-center justify-between px-3 py-2.5 rounded-2xl text-xs font-semibold transition-all cursor-pointer ${
-                      pathname === '/teacher/stats'
+                      activeTab === 'stats' || pathname === '/teacher/stats'
                         ? 'bg-[#7749BC] text-white shadow-md shadow-purple-900/20'
                         : 'text-neutral-700 dark:text-neutral-300 hover:bg-neutral-100 dark:hover:bg-slate-800'
                     }`}
-                    title="2. สถิติการลา"
+                    title="สถิติการลา"
                   >
                     <div className="flex items-center gap-2.5 min-w-0">
                       <BarChart3 className="w-4 h-4 shrink-0" />
-                      {!collapsed && <span className="truncate">2. สถิติการลา</span>}
+                      {!collapsed && <span className="truncate">สถิติการลา</span>}
                     </div>
                   </Link>
 
-                  {/* 3. ประวัติการอนุมัติ */}
-                  <button
-                    type="button"
-                    onClick={() => handleTabClick('history', '/teacher?status=' + encodeURIComponent('ประวัติการอนุมัติ'))}
-                    className={`w-full flex items-center justify-between px-3 py-2.5 rounded-2xl text-xs font-semibold transition-all cursor-pointer text-left ${
-                      activeTab === 'history'
+                  {/* ประวัติการอนุมัติ */}
+                  <Link
+                    href="/teacher/history"
+                    onClick={onCloseMobile}
+                    className={`w-full flex items-center justify-between px-3 py-2.5 rounded-2xl text-xs font-semibold transition-all cursor-pointer ${
+                      activeTab === 'history' || pathname === '/teacher/history'
                         ? 'bg-[#7749BC] text-white shadow-md shadow-purple-900/20'
                         : 'text-neutral-700 dark:text-neutral-300 hover:bg-neutral-100 dark:hover:bg-slate-800'
                     }`}
-                    title="3. ประวัติการอนุมัติ"
+                    title="ประวัติการอนุมัติ"
                   >
                     <div className="flex items-center gap-2.5 min-w-0">
                       <History className="w-4 h-4 shrink-0" />
-                      {!collapsed && <span className="truncate">3. ประวัติการอนุมัติ</span>}
+                      {!collapsed && <span className="truncate">ประวัติการอนุมัติ</span>}
                     </div>
-                  </button>
+                  </Link>
 
-                  {/* 4. ตารางสอน */}
-                  <button
-                    type="button"
-                    onClick={() => handleTabClick('schedule', '/teacher')}
-                    className={`w-full flex items-center justify-between px-3 py-2.5 rounded-2xl text-xs font-semibold transition-all cursor-pointer text-left ${
-                      activeTab === 'schedule'
+                  {/* ตารางสอน */}
+                  <Link
+                    href="/teacher/schedule"
+                    onClick={onCloseMobile}
+                    className={`w-full flex items-center justify-between px-3 py-2.5 rounded-2xl text-xs font-semibold transition-all cursor-pointer ${
+                      activeTab === 'schedule' || pathname === '/teacher/schedule'
                         ? 'bg-[#7749BC] text-white shadow-md shadow-purple-900/20'
                         : 'text-neutral-700 dark:text-neutral-300 hover:bg-neutral-100 dark:hover:bg-slate-800'
                     }`}
-                    title="4. ตารางสอน"
+                    title="ตารางสอน"
                   >
                     <div className="flex items-center gap-2.5 min-w-0">
                       <CalendarDays className="w-4 h-4 shrink-0" />
-                      {!collapsed && <span className="truncate">4. ตารางสอน</span>}
+                      {!collapsed && <span className="truncate">ตารางสอน</span>}
                     </div>
-                  </button>
+                  </Link>
                 </nav>
               </div>
             )}
@@ -228,17 +230,17 @@ export default function TeacherSidebar({
                 )}
 
                 <div className="space-y-1">
-                  {/* 1. รายวิชาที่สอน (Dropdown/Toggleable) */}
+                  {/* รายวิชาที่สอน (Dropdown/Toggleable) */}
                   <div className="rounded-2xl border border-neutral-200/80 dark:border-slate-800 bg-neutral-50/70 dark:bg-slate-800/40 p-1.5">
                     <button
                       type="button"
                       onClick={() => setCoursesDropdownOpen(!coursesDropdownOpen)}
                       className="w-full flex items-center justify-between px-2.5 py-2 rounded-xl text-xs font-bold text-neutral-800 dark:text-neutral-200 hover:bg-white dark:hover:bg-slate-800 transition-colors cursor-pointer"
-                      title="1. รายวิชาที่สอน"
+                      title="รายวิชาที่สอน"
                     >
                       <div className="flex items-center gap-2 min-w-0">
                         <BookOpen className="w-4 h-4 text-[#7749BC] dark:text-purple-400 shrink-0" />
-                        {!collapsed && <span className="truncate">1. รายวิชาที่สอน</span>}
+                        {!collapsed && <span className="truncate">รายวิชาที่สอน</span>}
                       </div>
                       {!collapsed && (
                         <ChevronDown
@@ -253,7 +255,7 @@ export default function TeacherSidebar({
                     {!collapsed && coursesDropdownOpen && (
                       <div className="mt-1 pt-1 border-t border-neutral-200/60 dark:border-slate-700/60 space-y-1 pl-2">
                         {subjects.map((sub) => {
-                          const isSelected = selectedSubjectKey === sub.key;
+                          const isSelected = activeStatsView === 'current' && selectedSubjectKey === sub.key;
                           return (
                             <button
                               key={sub.key}
@@ -288,22 +290,25 @@ export default function TeacherSidebar({
                     )}
                   </div>
 
-                  {/* 2. คลังสถิติย้อนหลัง */}
-                  <Link
-                    href="/teacher/archive"
-                    onClick={onCloseMobile}
-                    className={`w-full flex items-center justify-between px-3 py-2.5 rounded-2xl text-xs font-semibold transition-all cursor-pointer ${
-                      pathname === '/teacher/archive'
+                  {/* คลังสถิติย้อนหลัง */}
+                  <button
+                    type="button"
+                    onClick={() => {
+                      if (onSelectArchive) onSelectArchive();
+                      if (onCloseMobile) onCloseMobile();
+                    }}
+                    className={`w-full flex items-center justify-between px-3 py-2.5 rounded-2xl text-xs font-semibold transition-all cursor-pointer text-left ${
+                      activeStatsView === 'archive'
                         ? 'bg-[#7749BC] text-white shadow-md shadow-purple-900/20'
                         : 'text-neutral-700 dark:text-neutral-300 hover:bg-neutral-100 dark:hover:bg-slate-800'
                     }`}
-                    title="2. คลังสถิติย้อนหลัง"
+                    title="คลังสถิติย้อนหลัง"
                   >
                     <div className="flex items-center gap-2.5 min-w-0">
                       <Archive className="w-4 h-4 shrink-0" />
-                      {!collapsed && <span className="truncate">2. คลังสถิติย้อนหลัง</span>}
+                      {!collapsed && <span className="truncate">คลังสถิติย้อนหลัง</span>}
                     </div>
-                  </Link>
+                  </button>
 
                   {/* Back to Teacher Home */}
                   <Link
@@ -313,7 +318,7 @@ export default function TeacherSidebar({
                   >
                     <div className="flex items-center gap-2.5 min-w-0">
                       <ClipboardCheck className="w-3.5 h-3.5 shrink-0" />
-                      {!collapsed && <span className="truncate">กลับไปหน้าคำขอลา</span>}
+                      {!collapsed && <span className="truncate">กลับไปหน้าหลัก</span>}
                     </div>
                   </Link>
                 </div>
@@ -329,26 +334,26 @@ export default function TeacherSidebar({
               )}
 
               <nav className="flex flex-col gap-1">
-                {/* 1. แจ้งปัญหาระบบ */}
+                {/* แจ้งปัญหาระบบ */}
                 <button
                   type="button"
                   onClick={() => setShowSupport(true)}
                   className="w-full flex items-center gap-2.5 px-3 py-2 rounded-2xl text-xs font-semibold text-neutral-700 dark:text-neutral-300 hover:bg-neutral-100 dark:hover:bg-slate-800 transition-colors cursor-pointer text-left"
-                  title="1. แจ้งปัญหาระบบ"
+                  title="แจ้งปัญหาระบบ"
                 >
                   <HelpCircle className="w-4 h-4 shrink-0 text-sky-600 dark:text-sky-400" />
-                  {!collapsed && <span className="truncate">1. แจ้งปัญหาระบบ</span>}
+                  {!collapsed && <span className="truncate">แจ้งปัญหาระบบ</span>}
                 </button>
 
-                {/* 2. การตั้งค่า */}
+                {/* การตั้งค่า */}
                 <button
                   type="button"
                   onClick={() => setShowSettings(true)}
                   className="w-full flex items-center gap-2.5 px-3 py-2 rounded-2xl text-xs font-semibold text-neutral-700 dark:text-neutral-300 hover:bg-neutral-100 dark:hover:bg-slate-800 transition-colors cursor-pointer text-left"
-                  title="2. การตั้งค่า"
+                  title="การตั้งค่า"
                 >
                   <Settings className="w-4 h-4 shrink-0 text-neutral-500 dark:text-neutral-400" />
-                  {!collapsed && <span className="truncate">2. การตั้งค่า</span>}
+                  {!collapsed && <span className="truncate">การตั้งค่า</span>}
                 </button>
               </nav>
             </div>

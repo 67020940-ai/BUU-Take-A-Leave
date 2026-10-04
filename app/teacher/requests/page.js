@@ -1,14 +1,14 @@
 import { redirect } from 'next/navigation';
 import { getCurrentUser } from '@/lib/auth';
 import { getTeacherCoursesAndRoster, getTeacherLeaves } from '@/lib/teacherData';
-import TeacherHistoryView from './teacher-history-view';
+import TeacherRequestsView from './teacher-requests-view';
 
 export const metadata = {
-  title: 'ประวัติการอนุมัติ | Take A Leave',
-  description: 'ประวัติและบันทึกการพิจารณาคำขอลาเรียนย้อนหลัง มหาวิทยาลัยบูรพา',
+  title: 'คำขอร้องลาเรียน | Take A Leave',
+  description: 'ระบบพิจารณาและอนุมัติคำขอลาเรียนของนิสิต มหาวิทยาลัยบูรพา',
 };
 
-export default async function TeacherHistoryPage() {
+export default async function TeacherRequestsPage() {
   const user = await getCurrentUser();
   if (!user || user.role !== 'teacher') redirect('/login');
 
@@ -16,7 +16,7 @@ export default async function TeacherHistoryPage() {
   const leaves = await getTeacherLeaves(user.id, usingMock);
 
   return (
-    <TeacherHistoryView
+    <TeacherRequestsView
       user={{
         name: user.name,
         role: user.role,
