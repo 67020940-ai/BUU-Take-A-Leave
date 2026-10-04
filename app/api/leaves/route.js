@@ -129,7 +129,7 @@ export async function PATCH(request) {
   const body = await request.json();
   const { id, ids, status, comment } = body;
 
-  if (!['อนุมัติ', 'ไม่อนุมัติ', 'รออนุมัติ'].includes(status)) {
+  if (!['อนุมัติ', 'ไม่อนุมัติ', 'รออนุมัติ', 'เพิกถอนการอนุมัติ'].includes(status)) {
     return NextResponse.json({ error: 'สถานะไม่ถูกต้อง' }, { status: 400 });
   }
   if (comment != null && (typeof comment !== 'string' || comment.length > 300)) {

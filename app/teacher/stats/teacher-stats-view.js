@@ -41,6 +41,7 @@ import {
 } from 'lucide-react';
 import { STATUS_DETAILS, LEAVE_TYPE_DETAILS, formatThaiDate, formatThaiDateTime, initials } from '@/lib/ui';
 import AttachmentPreview from '@/components/AttachmentPreview';
+import WireframeStatsView from './wireframe-stats-view';
 
 // Helper to format Thai date with day of the week
 function formatThaiDayOfWeekDate(dateStr) {
@@ -84,6 +85,7 @@ export default function TeacherStatsView({ courses = [], leaves = [], rosterByCo
     return Array.from(terms).sort().reverse();
   }, [courses, leaves]);
 
+  const [viewMode, setViewMode] = useState('wireframe'); // 'wireframe' | 'analytics'
   const [selectedTerm, setSelectedTerm] = useState('all');
   const [selectedCourseId, setSelectedCourseId] = useState('all');
 
@@ -536,9 +538,9 @@ export default function TeacherStatsView({ courses = [], leaves = [], rosterByCo
   }, [studentLeaveStats, searchQuery, studentStatusFilter, studentTypeFilter]);
 
   return (
-    <div className="space-y-8">
+    <div className="space-y-6">
       {/* Top Header & Navigation */}
-      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+      <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 pb-2 border-b border-neutral-200/60 dark:border-slate-800">
         <div className="flex items-center gap-3">
           <Link
             href="/teacher"
@@ -550,56 +552,92 @@ export default function TeacherStatsView({ courses = [], leaves = [], rosterByCo
           <div>
             <div className="flex items-center gap-2 mb-1">
               <span className="inline-flex items-center px-2 py-0.5 rounded-full text-[10px] font-mono font-medium tracking-wider uppercase bg-[#7749BC]/10 text-[#7749BC] dark:bg-purple-950/60 dark:text-purple-300 border border-[#7749BC]/20">
-                BUU · Instructor Analytics
+                BUU · Teacher Statistics
               </span>
             </div>
             <h1 className="text-xl sm:text-2xl font-bold text-neutral-900 dark:text-neutral-100 flex items-center gap-2">
               <BarChart3 className="w-6 h-6 text-[#7749BC] dark:text-purple-400" />
-              <span>สถิติการลาเรียน (Instructor Analytics & Statistics)</span>
+              <span>สถิติการลาเรียน (Leave Statistics)</span>
             </h1>
             <p className="text-xs text-neutral-500 dark:text-neutral-400 mt-0.5">
-              วิเคราะห์จำนวนการลาจำแนกตามรายวัน รายวิชา และสถิติการลาของนิสิตรายบุคคล
+              ระบบตรวจสอบสถิติการลาตามรายวิชา/กลุ่มเรียน และภาพรวมแดชบอร์ด
             </p>
           </div>
         </div>
 
-        {/* Global Selectors: Academic Term & Course */}
-        <div className="flex flex-wrap items-center gap-2.5">
-          {/* Term Selector */}
-          <div className="relative min-w-[160px]">
-            <select
-              value={selectedTerm}
-              onChange={(e) => setSelectedTerm(e.target.value)}
-              className="w-full px-3.5 py-2 rounded-xl border border-neutral-300 dark:border-slate-700 bg-white dark:bg-slate-800 text-xs font-bold text-neutral-900 dark:text-neutral-100 focus:outline-none focus:border-[#7749BC] appearance-none pr-8 cursor-pointer shadow-xs"
-            >
-              <option value="all">ทุกภาคการศึกษา</option>
-              {academicTerms.map((t) => (
-                <option key={t} value={t}>
-                  ภาคเรียน {t}
-                </option>
-              ))}
-            </select>
-            <ChevronDown className="w-3.5 h-3.5 text-neutral-400 absolute right-3 top-1/2 -translate-y-1/2 pointer-events-none" />
-          </div>
-
-          {/* Course Selector */}
-          <div className="relative min-w-[200px]">
-            <select
-              value={selectedCourseId}
-              onChange={(e) => setSelectedCourseId(e.target.value)}
-              className="w-full px-3.5 py-2 rounded-xl border border-neutral-300 dark:border-slate-700 bg-white dark:bg-slate-800 text-xs font-bold text-neutral-900 dark:text-neutral-100 focus:outline-none focus:border-[#7749BC] appearance-none pr-8 cursor-pointer shadow-xs"
-            >
-              <option value="all">ทุกรายวิชา ({courses.length} กลุ่ม)</option>
-              {courses.map((c) => (
-                <option key={c.id} value={c.id}>
-                  {c.code} {c.name} {c.group ? `(กลุ่ม ${c.group})` : ''}
-                </option>
-              ))}
-            </select>
-            <ChevronDown className="w-3.5 h-3.5 text-neutral-400 absolute right-3 top-1/2 -translate-y-1/2 pointer-events-none" />
-          </div>
+        {/* View Mode Switcher */}
+        <div className="flex items-center p-1 bg-neutral-200/70 dark:bg-slate-800/80 backdrop-blur-md rounded-2xl border border-neutral-200/60 dark:border-slate-700/60 self-start md:self-auto">
+          <button
+            type="button"
+            onClick={() => setViewMode('wireframe')}
+            className={`flex items-center gap-2 px-3.5 py-2 rounded-xl text-xs font-semibold transition-all cursor-pointer ${
+              viewMode === 'wireframe'
+                ? 'bg-white dark:bg-slate-900 text-[#7749BC] dark:text-purple-300 shadow-sm'
+                : 'text-neutral-600 dark:text-neutral-400 hover:text-neutral-900 dark:hover:text-neutral-200'
+            }`}
+          >
+            <BookOpen className="w-4 h-4" />
+            <span>สถิติตามรายวิชา & กลุ่มเรียน (แบบร่าง)</span>
+          </button>
+          <button
+            type="button"
+            onClick={() => setViewMode('analytics')}
+            className={`flex items-center gap-2 px-3.5 py-2 rounded-xl text-xs font-semibold transition-all cursor-pointer ${
+              viewMode === 'analytics'
+                ? 'bg-white dark:bg-slate-900 text-[#7749BC] dark:text-purple-300 shadow-sm'
+                : 'text-neutral-600 dark:text-neutral-400 hover:text-neutral-900 dark:hover:text-neutral-200'
+            }`}
+          >
+            <BarChart3 className="w-4 h-4" />
+            <span>กราฟวิเคราะห์ขั้นสูง</span>
+          </button>
         </div>
       </div>
+
+      {viewMode === 'wireframe' ? (
+        <WireframeStatsView
+          courses={courses}
+          leaves={leaves}
+          rosterByCourse={rosterByCourse}
+        />
+      ) : (
+        <div className="space-y-8">
+          {/* Global Selectors: Academic Term & Course */}
+          <div className="flex flex-wrap items-center justify-end gap-2.5">
+            {/* Term Selector */}
+            <div className="relative min-w-[160px]">
+              <select
+                value={selectedTerm}
+                onChange={(e) => setSelectedTerm(e.target.value)}
+                className="w-full px-3.5 py-2 rounded-xl border border-neutral-300 dark:border-slate-700 bg-white dark:bg-slate-800 text-xs font-bold text-neutral-900 dark:text-neutral-100 focus:outline-none focus:border-[#7749BC] appearance-none pr-8 cursor-pointer shadow-xs"
+              >
+                <option value="all">ทุกภาคการศึกษา</option>
+                {academicTerms.map((t) => (
+                  <option key={t} value={t}>
+                    ภาคเรียน {t}
+                  </option>
+                ))}
+              </select>
+              <ChevronDown className="w-3.5 h-3.5 text-neutral-400 absolute right-3 top-1/2 -translate-y-1/2 pointer-events-none" />
+            </div>
+
+            {/* Course Selector */}
+            <div className="relative min-w-[200px]">
+              <select
+                value={selectedCourseId}
+                onChange={(e) => setSelectedCourseId(e.target.value)}
+                className="w-full px-3.5 py-2 rounded-xl border border-neutral-300 dark:border-slate-700 bg-white dark:bg-slate-800 text-xs font-bold text-neutral-900 dark:text-neutral-100 focus:outline-none focus:border-[#7749BC] appearance-none pr-8 cursor-pointer shadow-xs"
+              >
+                <option value="all">ทุกรายวิชา ({courses.length} กลุ่ม)</option>
+                {courses.map((c) => (
+                  <option key={c.id} value={c.id}>
+                    {c.code} {c.name} {c.group ? `(กลุ่ม ${c.group})` : ''}
+                  </option>
+                ))}
+              </select>
+              <ChevronDown className="w-3.5 h-3.5 text-neutral-400 absolute right-3 top-1/2 -translate-y-1/2 pointer-events-none" />
+            </div>
+          </div>
 
       {/* 1.1 Summary Overview Metric Cards */}
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-4">
@@ -2087,6 +2125,8 @@ export default function TeacherStatsView({ courses = [], leaves = [], rosterByCo
           </div>
         );
       })()}
+        </div>
+      )}
     </div>
   );
 }

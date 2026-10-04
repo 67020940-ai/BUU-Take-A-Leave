@@ -33,9 +33,8 @@ const NAV = {
     { href: '/student/stats', label: 'สถิติการลา', icon: BarChart3 },
   ],
   teacher: [
-    { href: '/teacher', label: 'คำร้องรออนุมัติ', icon: ClipboardCheck },
+    { href: '/teacher', label: 'คำร้องลาเรียน', icon: ClipboardCheck },
     { href: '/teacher/stats', label: 'สถิติการลา', icon: BarChart3 },
-    { href: '/teacher/history', label: 'ประวัติการอนุมัติ', icon: History },
     { href: '/teacher/archive', label: 'คลังสถิติย้อนหลัง', icon: Archive },
   ],
   admin: [{ href: '/admin', label: 'ภาพรวมระบบ', icon: ShieldCheck }],

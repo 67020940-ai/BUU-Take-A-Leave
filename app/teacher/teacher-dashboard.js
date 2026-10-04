@@ -1,7 +1,7 @@
 'use client';
 /* Hallmark · macrostructure: Workbench · theme: BUU Utilitarian · pre-emit critique: P5 H5 E5 S5 R5 V5 */
 
-import { useMemo, useState } from 'react';
+import { useMemo, useState, useEffect } from 'react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import {
@@ -35,6 +35,7 @@ import {
   CheckCircle2,
   XCircle,
   ArrowRight,
+  ClipboardCheck,
 } from 'lucide-react';
 import { LEAVE_TYPE_DETAILS, LEAVE_TYPE_DEFAULT, STATUS_DETAILS, formatThaiDate, formatThaiDateTime } from '@/lib/ui';
 import AttachmentPreview from '@/components/AttachmentPreview';
@@ -98,7 +99,19 @@ export default function TeacherDashboard({ courses, initialLeaves, rosterByCours
     return Array.from(terms).sort().reverse();
   }, [courses, leaves]);
 
-  // Total pending leaves count across entire system
+  // 5 Status Submenu Tabs from Wireframe (Page 1)
+  const [activeStatusTab, setActiveStatusTab] = useState('รออนุมัติ');
+
+  // URL query sync
+  useEffect(() => {
+    if (typeof window !== 'undefined') {
+      const sp = new URLSearchParams(window.location.search);
+      const s = sp.get('status');
+      if (s) setActiveStatusTab(s);
+    }
+  }, []);
+
+  // Total counts across all statuses
   const totalPendingCount = useMemo(() => {
     return leaves.filter((l) => l.status === 'รออนุมัติ').length;
   }, [leaves]);
@@ -111,12 +124,36 @@ export default function TeacherDashboard({ courses, initialLeaves, rosterByCours
     return leaves.filter((l) => l.status === 'ไม่อนุมัติ').length;
   }, [leaves]);
 
-  // PENDING ONLY LEAVES for the Pending Requests Tab (Requirement 2.1)
+  const totalRevokedCount = useMemo(() => {
+    return leaves.filter((l) => l.status === 'เพิกถอนการอนุมัติ' || l.status === 'เพิกถอน').length;
+  }, [leaves]);
+
+  const totalHistoryCount = useMemo(() => {
+    return leaves.filter((l) => l.status !== 'รออนุมัติ').length;
+  }, [leaves]);
+
+  const STATUS_TABS = [
+    { key: 'รออนุมัติ', label: 'รออนุมัติ', count: totalPendingCount, icon: Clock, color: 'text-amber-500' },
+    { key: 'อนุมัติแล้ว', label: 'อนุมัติแล้ว', count: totalApprovedCount, icon: CheckCircle2, color: 'text-emerald-500' },
+    { key: 'ไม่อนุมัติ', label: 'ไม่อนุมัติ', count: totalRejectedCount, icon: XCircle, color: 'text-rose-500' },
+    { key: 'เพิกถอนการอนุมัติ', label: 'เพิกถอนการอนุมัติ', count: totalRevokedCount, icon: RotateCcw, color: 'text-orange-500' },
+    { key: 'ประวัติการอนุมัติ', label: 'ประวัติการอนุมัติ', count: totalHistoryCount, icon: History, color: 'text-purple-500' },
+  ];
+
+  // Leaves filtered according to active status tab and search/filters
   const pendingFilteredLeaves = useMemo(() => {
     return leaves.filter((leave) => {
-      // 1. STRICT REQUIREMENT: Only Pending requests in this tab
-      if (leave.status !== 'รออนุมัติ') {
-        return false;
+      // 1. Status Tab filter
+      if (activeStatusTab === 'รออนุมัติ') {
+        if (leave.status !== 'รออนุมัติ') return false;
+      } else if (activeStatusTab === 'อนุมัติแล้ว') {
+        if (leave.status !== 'อนุมัติ') return false;
+      } else if (activeStatusTab === 'ไม่อนุมัติ') {
+        if (leave.status !== 'ไม่อนุมัติ') return false;
+      } else if (activeStatusTab === 'เพิกถอนการอนุมัติ') {
+        if (leave.status !== 'เพิกถอนการอนุมัติ' && leave.status !== 'เพิกถอน') return false;
+      } else if (activeStatusTab === 'ประวัติการอนุมัติ') {
+        if (leave.status === 'รออนุมัติ') return false;
       }
 
       // 2. Term filter
@@ -159,7 +196,7 @@ export default function TeacherDashboard({ courses, initialLeaves, rosterByCours
 
       return true;
     });
-  }, [leaves, courses, selectedTerm, selectedCourseId, typeFilter, isTodayOnly, searchQuery, todayStr]);
+  }, [leaves, activeStatusTab, courses, selectedTerm, selectedCourseId, typeFilter, isTodayOnly, searchQuery, todayStr]);
 
   // Today's count
   const todayLeavesCount = useMemo(() => {
@@ -204,9 +241,11 @@ export default function TeacherDashboard({ courses, initialLeaves, rosterByCours
     setToast({
       message:
         status === 'อนุมัติ'
-          ? `อนุมัติคำขอของ ${leave.studentName} เรียบร้อยแล้ว (ย้ายไปที่ประวัติการอนุมัติ)`
+          ? `อนุมัติคำขอของ ${leave.studentName} เรียบร้อยแล้ว`
           : status === 'ไม่อนุมัติ'
-          ? `ไม่อนุมัติคำขอของ ${leave.studentName} (ย้ายไปที่ประวัติการอนุมัติ)`
+          ? `ไม่อนุมัติคำขอของ ${leave.studentName}`
+          : status === 'เพิกถอนการอนุมัติ'
+          ? `เพิกถอนการอนุมัติคำขอของ ${leave.studentName} เรียบร้อยแล้ว`
           : `นำคำขอของ ${leave.studentName} กลับมารออนุมัติ`,
       type: status === 'อนุมัติ' ? 'success' : status === 'ไม่อนุมัติ' ? 'danger' : 'info',
     });
@@ -247,6 +286,8 @@ export default function TeacherDashboard({ courses, initialLeaves, rosterByCours
           ? 'อนุมัติการลาตามระเบียบเรียบร้อย'
           : type === 'reject'
           ? 'ไม่อนุมัติเนื่องจากข้อมูลหรือเอกสารประกอบไม่ครบถ้วนตามเกณฑ์'
+          : type === 'revoke'
+          ? 'เพิกถอนการอนุมัติเนื่องจากตรวจพบข้อมูลเพิ่มเติม'
           : 'ยกเลิกการตัดสินใจ นำกลับมาพิจารณาใหม่',
     });
   }
@@ -263,7 +304,14 @@ export default function TeacherDashboard({ courses, initialLeaves, rosterByCours
   async function handleConfirmAction() {
     const { leave, type, comment } = actionModal;
     if (!leave) return;
-    const targetStatus = type === 'approve' ? 'อนุมัติ' : type === 'reject' ? 'ไม่อนุมัติ' : 'รออนุมัติ';
+    const targetStatus =
+      type === 'approve'
+        ? 'อนุมัติ'
+        : type === 'reject'
+        ? 'ไม่อนุมัติ'
+        : type === 'revoke'
+        ? 'เพิกถอนการอนุมัติ'
+        : 'รออนุมัติ';
     setActionModal({ isOpen: false, type: 'approve', leave: null, comment: '' });
     await decideLeave(leave, targetStatus, comment);
   }
@@ -420,312 +468,125 @@ export default function TeacherDashboard({ courses, initialLeaves, rosterByCours
         </div>
       )}
 
-      {/* PENDING REQUESTS SECTION HEADER WITH ACTIONS */}
-      <section className="space-y-4">
-        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pb-3 border-b border-neutral-200 dark:border-slate-800">
-          <div>
-            <h3 className="text-base sm:text-lg font-bold text-neutral-900 dark:text-neutral-100 flex items-center gap-2">
-              <Clock className="w-5 h-5 text-amber-500" />
-              <span>รายการคำขอลาเรียน (รอพิจารณาอนุมัติ)</span>
-              <span className="text-xs font-bold px-2.5 py-0.5 rounded-full bg-amber-100 dark:bg-amber-950 text-amber-800 dark:text-amber-300 border border-amber-200 dark:border-amber-800">
-                {pendingFilteredLeaves.length} คำร้องรอการตรวจ
-              </span>
-            </h3>
-            <p className="text-xs text-neutral-500 dark:text-neutral-400 mt-0.5">
-              แสดงเฉพาะคำร้องที่มีสถานะ &quot;รออนุมัติ&quot; — เมื่อกดอนุมัติหรือไม่อนุมัติ รายการจะถูกย้ายไปยัง{' '}
-              <Link href="/teacher/history" className="text-[#7749BC] dark:text-purple-300 underline font-semibold">
-                ประวัติการอนุมัติ
-              </Link>{' '}
-              ทันที
-            </p>
+      {/* Main 2-Column Workbench: Left Sidebar (5 Status Tabs) + Right Main Content */}
+      <div className="flex flex-col lg:flex-row gap-6 items-start">
+        {/* Mobile Dropdown Select (Visible on < lg screens) */}
+        <div className="lg:hidden w-full bg-white/80 dark:bg-slate-900/80 backdrop-blur-xl rounded-2xl border border-neutral-200/80 dark:border-slate-800 p-3 shadow-xs space-y-2">
+          <div className="flex items-center justify-between text-xs font-bold text-neutral-700 dark:text-neutral-300 px-1">
+            <span className="flex items-center gap-1.5">
+              <ClipboardCheck className="w-4 h-4 text-[#7749BC]" />
+              <span>สถานะคำร้อง</span>
+            </span>
+            <span className="text-[11px] text-neutral-400 font-normal">
+              เลือกเพื่อเปลี่ยนหมวด
+            </span>
           </div>
-
-          <div className="flex items-center gap-2">
-            {isTodayOnly && (
-              <span className="text-xs font-semibold text-amber-600 dark:text-amber-400 bg-amber-50 dark:bg-amber-950/60 px-3 py-1.5 rounded-xl border border-amber-200 dark:border-amber-800 flex items-center gap-1.5">
-                <CalendarDays className="w-3.5 h-3.5" />
-                <span>คำขอวันนี้ ({todayLeavesCount})</span>
-              </span>
-            )}
-            <a
-              href="/api/export"
-              className="flex items-center space-x-1.5 text-xs font-semibold text-[#7749BC] dark:text-purple-300 bg-white/80 dark:bg-purple-950/60 hover:bg-purple-100 border border-purple-200 dark:border-purple-800 px-3.5 py-2 rounded-xl shadow-xs transition-colors"
+          <div className="relative">
+            <select
+              value={activeStatusTab}
+              onChange={(e) => {
+                setActiveStatusTab(e.target.value);
+                setSelectedLeaveIds(new Set());
+              }}
+              className="w-full px-4 py-2.5 rounded-xl border border-neutral-300 dark:border-slate-700 bg-white dark:bg-slate-800 text-xs font-bold text-neutral-900 dark:text-neutral-100 focus:outline-none focus:border-[#7749BC] appearance-none pr-9 cursor-pointer shadow-xs"
             >
-              <FileSpreadsheet className="w-3.5 h-3.5" />
-              <span>ส่งออก CSV</span>
-            </a>
-            <a
-              href="/teacher/print"
-              target="_blank"
-              rel="noreferrer"
-              className="flex items-center space-x-1.5 text-xs font-semibold text-neutral-700 dark:text-neutral-200 bg-white/80 dark:bg-slate-800 hover:bg-white border border-neutral-200/80 dark:border-slate-700 px-3.5 py-2 rounded-xl shadow-xs transition-colors"
-            >
-              <Printer className="w-3.5 h-3.5" />
-              <span>พิมพ์รายงาน</span>
-            </a>
+              {STATUS_TABS.map((tab) => (
+                <option key={tab.key} value={tab.key}>
+                  {tab.label} ({tab.count} รายการ)
+                </option>
+              ))}
+            </select>
+            <ChevronDown className="w-4 h-4 text-neutral-400 absolute right-3 top-1/2 -translate-y-1/2 pointer-events-none" />
           </div>
         </div>
 
-          {pendingFilteredLeaves.length === 0 ? (
-            <div className="bg-white/80 dark:bg-slate-900/80 backdrop-blur-xl rounded-3xl border border-neutral-200/80 dark:border-slate-800 p-12 text-center shadow-xs space-y-3">
-              <div className="w-14 h-14 rounded-2xl bg-emerald-50 dark:bg-emerald-950/60 text-emerald-600 dark:text-emerald-400 flex items-center justify-center mx-auto shadow-sm">
-                <CheckCircle2 className="w-8 h-8" />
-              </div>
-              <h4 className="text-base font-bold text-neutral-800 dark:text-neutral-200">
-                ไม่มีคำร้องรอพิจารณาในขณะนี้
-              </h4>
-              <p className="text-xs text-neutral-500 dark:text-neutral-400 max-w-md mx-auto">
-                คุณได้พิจารณาอนุมัติคำขอลาเรียนของนิสิตครบถ้วนแล้ว หรือไม่มีคำร้องที่ตรงกับตัวกรองที่เลือก
-              </p>
-              <div className="pt-2">
-                <Link
-                  href="/teacher/history"
-                  className="inline-flex items-center gap-1.5 px-4 py-2 rounded-xl bg-[#7749BC] text-white text-xs font-semibold shadow-xs hover:bg-[#5B21B6] transition-colors"
+        {/* Desktop Left Sidebar: Status Submenu (Visible on lg+ screens) */}
+        <aside className="hidden lg:block w-60 shrink-0 bg-white/80 dark:bg-slate-900/80 backdrop-blur-xl rounded-3xl border border-neutral-200/80 dark:border-slate-800 p-4 shadow-xs space-y-3 sticky top-24">
+          <div className="px-2 pb-2 border-b border-neutral-100 dark:border-slate-800">
+            <h3 className="font-bold text-xs uppercase tracking-wider text-neutral-400 dark:text-neutral-500 flex items-center gap-1.5">
+              <ClipboardCheck className="w-4 h-4 text-[#7749BC]" />
+              <span>สถานะคำร้อง</span>
+            </h3>
+            <p className="text-[11px] text-neutral-500 dark:text-neutral-400 mt-0.5">เลือกหมวดคำร้องลาเรียน</p>
+          </div>
+          <nav className="flex flex-col gap-1.5">
+            {STATUS_TABS.map((tab) => {
+              const Icon = tab.icon;
+              const isActive = activeStatusTab === tab.key;
+              return (
+                <button
+                  key={tab.key}
+                  onClick={() => {
+                    setActiveStatusTab(tab.key);
+                    setSelectedLeaveIds(new Set());
+                  }}
+                  className={`flex items-center justify-between px-3.5 py-2.5 rounded-2xl text-xs font-semibold transition-all shrink-0 w-full text-left cursor-pointer ${
+                    isActive
+                      ? 'bg-[#7749BC] text-white shadow-sm shadow-purple-900/20'
+                      : 'text-neutral-700 dark:text-neutral-300 hover:bg-neutral-100 dark:hover:bg-slate-800'
+                  }`}
                 >
-                  <History className="w-3.5 h-3.5" />
-                  <span>ดูประวัติคำร้องที่เคยพิจารณาแล้ว ({totalApprovedCount + totalRejectedCount} รายการ)</span>
-                </Link>
-              </div>
+                  <div className="flex items-center gap-2.5">
+                    <Icon className={`w-4 h-4 ${isActive ? 'text-white' : tab.color}`} />
+                    <span>{tab.label}</span>
+                  </div>
+                  <span
+                    className={`text-[10px] px-2 py-0.5 rounded-full font-bold ${
+                      isActive
+                        ? 'bg-white/20 text-white'
+                        : 'bg-neutral-100 dark:bg-slate-800 text-neutral-600 dark:text-neutral-400'
+                    }`}
+                  >
+                    {tab.count}
+                  </span>
+                </button>
+              );
+            })}
+          </nav>
+        </aside>
+
+        {/* Right Main Content */}
+        <div className="flex-1 min-w-0 w-full space-y-4">
+          {/* HEADER WITH ACTIONS */}
+          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pb-3 border-b border-neutral-200 dark:border-slate-800">
+            <div>
+              <h3 className="text-base sm:text-lg font-bold text-neutral-900 dark:text-neutral-100 flex items-center gap-2">
+                <span>คำร้องลาเรียน: {activeStatusTab}</span>
+                <span className="text-xs font-bold px-2.5 py-0.5 rounded-full bg-purple-100 dark:bg-purple-950 text-[#7749BC] dark:text-purple-300 border border-purple-200 dark:border-purple-800">
+                  {pendingFilteredLeaves.length} รายการ
+                </span>
+              </h3>
+              <p className="text-xs text-neutral-500 dark:text-neutral-400 mt-0.5">
+                {activeStatusTab === 'รออนุมัติ' && 'แสดงคำร้องที่รอดำเนินการ สามารถอนุมัติทีละรายการหรือเลือกหลายรายการเพื่อดำเนินการพร้อมกัน'}
+                {activeStatusTab === 'อนุมัติแล้ว' && 'แสดงคำร้องที่อนุมัติแล้ว สามารถเพิกถอนการอนุมัติได้'}
+                {activeStatusTab === 'ไม่อนุมัติ' && 'แสดงคำร้องที่ไม่อนุมัติ สามารถนำกลับมาพิจารณาใหม่ได้'}
+                {activeStatusTab === 'เพิกถอนการอนุมัติ' && 'แสดงคำร้องที่ถูกเพิกถอนการอนุมัติ สามารถนำกลับมาพิจารณาใหม่ได้'}
+                {activeStatusTab === 'ประวัติการอนุมัติ' && 'แสดงประวัติคำร้องที่ดำเนินการเสร็จสิ้นแล้วทั้งหมด'}
+              </p>
             </div>
-          ) : (
-            <div className="bg-white/80 dark:bg-slate-900/80 backdrop-blur-xl rounded-3xl border border-neutral-200/80 dark:border-slate-800 shadow-xs overflow-hidden">
-              {/* Desktop Responsive Table */}
-              <div className="hidden lg:block overflow-x-auto">
-                <table className="w-full text-left text-xs">
-                  <thead className="bg-neutral-100/70 dark:bg-slate-800/80 text-neutral-700 dark:text-neutral-300 font-semibold border-b border-neutral-200/60 dark:border-slate-700">
-                    <tr>
-                      <th className="py-3.5 px-3 w-10 text-center">
-                        <input
-                          type="checkbox"
-                          checked={allPendingSelected}
-                          onChange={toggleSelectAll}
-                          className="w-4 h-4 rounded text-[#7749BC] focus:ring-[#7749BC] cursor-pointer accent-[#7749BC]"
-                          title="เลือกทั้งหมด / ยกเลิกทั้งหมด"
-                        />
-                      </th>
-                      <th className="py-3.5 px-4">นิสิตผู้ยื่น</th>
-                      <th className="py-3.5 px-4">รายวิชา & กลุ่ม</th>
-                      <th className="py-3.5 px-4">ประเภท & วันที่ลา</th>
-                      <th className="py-3.5 px-4">เหตุผลการลา</th>
-                      <th className="py-3.5 px-4 text-center">สถานะปัจจุบัน</th>
-                      <th className="py-3.5 px-4 text-center">จัดการสถานะ (Action Buttons)</th>
-                      <th className="py-3.5 px-4 text-right">การจัดการ</th>
-                    </tr>
-                  </thead>
-                  <tbody className="divide-y divide-neutral-100 dark:divide-slate-800">
-                    {pendingFilteredLeaves.map((leave) => {
-                      const typeCls = LEAVE_TYPE_DETAILS[leave.type] || LEAVE_TYPE_DEFAULT;
-                      return (
-                        <tr
-                          key={leave.id}
-                          className={`hover:bg-neutral-50/70 dark:hover:bg-slate-800/50 transition-colors ${
-                            selectedLeaveIds.has(leave.id) ? 'bg-purple-50/60 dark:bg-purple-950/30' : ''
-                          }`}
-                        >
-                          {/* Checkbox */}
-                          <td className="py-3.5 px-3 text-center">
-                            <input
-                              type="checkbox"
-                              checked={selectedLeaveIds.has(leave.id)}
-                              onChange={() => toggleSelectLeave(leave.id)}
-                              className="w-4 h-4 rounded text-[#7749BC] focus:ring-[#7749BC] cursor-pointer accent-[#7749BC]"
-                            />
-                          </td>
-                          {/* Student */}
-                          <td className="py-3.5 px-4">
-                            <div className="flex items-center space-x-2.5">
-                              <div className="w-8 h-8 rounded-xl bg-purple-100 dark:bg-purple-950 text-[#7749BC] dark:text-purple-300 flex items-center justify-center font-bold text-xs shrink-0">
-                                {initials(leave.studentName)}
-                              </div>
-                              <div>
-                                <p className="font-semibold text-neutral-900 dark:text-neutral-100">
-                                  {leave.studentName}
-                                </p>
-                                <p className="text-[11px] text-neutral-500 dark:text-neutral-400 font-mono">
-                                  {leave.studentCode}
-                                </p>
-                              </div>
-                            </div>
-                          </td>
 
-                          {/* Course */}
-                          <td className="py-3.5 px-4">
-                            <p className="font-semibold text-neutral-900 dark:text-neutral-100">{leave.courseCode}</p>
-                            <p className="text-[11px] text-neutral-500 dark:text-neutral-400 truncate max-w-[180px]">
-                              {leave.courseName} {leave.section ? `(กลุ่ม ${leave.section})` : ''}
-                            </p>
-                          </td>
-
-                          {/* Type & Date */}
-                          <td className="py-3.5 px-4">
-                            <div className="space-y-1">
-                              <span
-                                className={`inline-block px-2 py-0.5 rounded-lg text-[10px] font-semibold border ${typeCls}`}
-                              >
-                                {leave.type}
-                              </span>
-                              <p className="text-[11px] text-neutral-600 dark:text-neutral-400">
-                                {formatThaiDate(leave.startDate)}
-                                {leave.endDate && leave.endDate !== leave.startDate
-                                  ? ` - ${formatThaiDate(leave.endDate)}`
-                                  : ''}
-                              </p>
-                            </div>
-                          </td>
-
-                          {/* Reason */}
-                          <td className="py-3.5 px-4 max-w-[220px]">
-                            <p className="text-xs text-neutral-700 dark:text-neutral-300 truncate" title={leave.reason}>
-                              {leave.reason}
-                            </p>
-                            {leave.attachment && (
-                              <span className="inline-flex items-center gap-1 text-[10px] text-purple-600 dark:text-purple-400 mt-0.5">
-                                <FileText className="w-3 h-3" />
-                                <span>มีเอกสารแนบ</span>
-                              </span>
-                            )}
-                          </td>
-
-                          {/* Status Badge: Consistent Amber Badge */}
-                          <td className="py-3.5 px-4 text-center">
-                            <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-semibold bg-amber-50 dark:bg-amber-950/60 text-amber-700 dark:text-amber-300 border border-amber-200 dark:border-amber-800 shadow-xs">
-                              <span className="w-1.5 h-1.5 rounded-full bg-amber-500 animate-pulse" />
-                              <span>รออนุมัติ</span>
-                            </span>
-                          </td>
-
-                          {/* Quick Action Buttons (อนุมัติ / ไม่อนุมัติ) */}
-                          <td className="py-3.5 px-4 text-center">
-                            <div className="inline-flex items-center gap-1.5">
-                              <button
-                                onClick={() => openActionModal(leave, 'approve')}
-                                title="อนุมัติคำขอนี้ทันที"
-                                className="inline-flex items-center gap-1 px-3 py-1.5 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white font-semibold text-xs transition-colors shadow-xs cursor-pointer ring-1 ring-white/20"
-                              >
-                                <Check className="w-3.5 h-3.5" />
-                                <span>อนุมัติ</span>
-                              </button>
-                              <button
-                                onClick={() => openActionModal(leave, 'reject')}
-                                title="ไม่อนุมัติคำขอนี้"
-                                className="inline-flex items-center gap-1 px-3 py-1.5 rounded-xl bg-rose-50 hover:bg-rose-100 dark:bg-rose-950/60 dark:hover:bg-rose-900/60 text-rose-700 dark:text-rose-300 font-semibold text-xs border border-rose-200 dark:border-rose-800 transition-colors cursor-pointer"
-                              >
-                                <X className="w-3.5 h-3.5" />
-                                <span>ไม่อนุมัติ</span>
-                              </button>
-                            </div>
-                          </td>
-
-                          {/* Detail Modal Button */}
-                          <td className="py-3.5 px-4 text-right">
-                            <button
-                              onClick={() => openDetailModal(leave)}
-                              className="px-3 py-1.5 rounded-xl bg-neutral-100 hover:bg-purple-100 text-neutral-700 hover:text-[#7749BC] dark:bg-slate-800 dark:hover:bg-purple-950/60 dark:text-neutral-200 text-xs font-semibold transition-colors inline-flex items-center gap-1 cursor-pointer"
-                            >
-                              <Eye className="w-3.5 h-3.5" />
-                              <span>ดูข้อมูล</span>
-                            </button>
-                          </td>
-                        </tr>
-                      );
-                    })}
-                  </tbody>
-                </table>
-              </div>
-
-              {/* Mobile / Tablet Responsive Cards */}
-              <div className="lg:hidden divide-y divide-neutral-100 dark:divide-slate-800">
-                {pendingFilteredLeaves.map((leave) => {
-                  const typeCls = LEAVE_TYPE_DETAILS[leave.type] || LEAVE_TYPE_DEFAULT;
-                  return (
-                    <div key={leave.id} className="p-4 space-y-3">
-                      <div className="flex items-start justify-between gap-2">
-                        <div className="flex items-center space-x-2.5">
-                          <input
-                            type="checkbox"
-                            checked={selectedLeaveIds.has(leave.id)}
-                            onChange={() => toggleSelectLeave(leave.id)}
-                            className="w-4 h-4 rounded text-[#7749BC] focus:ring-[#7749BC] cursor-pointer accent-[#7749BC] mr-1"
-                          />
-                          <div className="w-9 h-9 rounded-xl bg-purple-100 dark:bg-purple-950 text-[#7749BC] dark:text-purple-300 flex items-center justify-center font-bold text-xs shrink-0">
-                            {initials(leave.studentName)}
-                          </div>
-                          <div>
-                            <p className="font-semibold text-neutral-900 dark:text-neutral-100 text-sm">
-                              {leave.studentName}
-                            </p>
-                            <p className="text-[11px] text-neutral-500 dark:text-neutral-400 font-mono">
-                              {leave.studentCode}
-                            </p>
-                          </div>
-                        </div>
-                        <span className={`px-2.5 py-0.5 rounded-lg text-xs font-semibold border ${typeCls}`}>
-                          {leave.type}
-                        </span>
-                      </div>
-
-                      <div className="p-3 rounded-2xl bg-neutral-50 dark:bg-slate-800/60 border border-neutral-200/60 dark:border-slate-700/60 space-y-1 text-xs">
-                        <p className="font-semibold text-neutral-900 dark:text-neutral-100">
-                          {leave.courseCode} {leave.courseName} {leave.section ? `(กลุ่ม ${leave.section})` : ''}
-                        </p>
-                        <p className="text-neutral-600 dark:text-neutral-400 text-[11px]">
-                          วันที่ลา: {formatThaiDate(leave.startDate)}{' '}
-                          {leave.endDate && leave.endDate !== leave.startDate
-                            ? ` - ${formatThaiDate(leave.endDate)}`
-                            : ''}{' '}
-                          ({leave.period})
-                        </p>
-                        <p className="text-neutral-700 dark:text-neutral-300 pt-1 border-t border-neutral-200/40 dark:border-slate-700/40">
-                          <strong>เหตุผล:</strong> {leave.reason}
-                        </p>
-                      </div>
-
-                      <div className="flex flex-wrap items-center justify-between pt-1 gap-2">
-                        <span className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-xs font-semibold bg-amber-50 dark:bg-amber-950 text-amber-700 dark:text-amber-300 border border-amber-200 dark:border-amber-800">
-                          <span className="w-1.5 h-1.5 rounded-full bg-amber-500 animate-pulse" />
-                          <span>รออนุมัติ</span>
-                        </span>
-
-                        <div className="flex items-center gap-1.5">
-                          <button
-                            onClick={() => openDetailModal(leave)}
-                            className="px-3 py-1.5 rounded-xl bg-neutral-100 dark:bg-slate-800 text-xs font-semibold text-neutral-700 dark:text-neutral-200"
-                          >
-                            ดูข้อมูล
-                          </button>
-                          <button
-                            onClick={() => openActionModal(leave, 'reject')}
-                            className="px-3 py-1.5 rounded-xl bg-rose-50 text-rose-700 dark:bg-rose-950/60 dark:text-rose-300 border border-rose-200 dark:border-rose-800 text-xs font-semibold"
-                          >
-                            ไม่อนุมัติ
-                          </button>
-                          <button
-                            onClick={() => openActionModal(leave, 'approve')}
-                            className="px-3.5 py-1.5 rounded-xl bg-emerald-600 text-white text-xs font-semibold shadow-xs"
-                          >
-                            อนุมัติ
-                          </button>
-                        </div>
-                      </div>
-                    </div>
-                  );
-                })}
-              </div>
+            <div className="flex items-center gap-2">
+              <a
+                href="/api/export"
+                className="flex items-center space-x-1.5 text-xs font-semibold text-[#7749BC] dark:text-purple-300 bg-white/80 dark:bg-purple-950/60 hover:bg-purple-100 border border-purple-200 dark:border-purple-800 px-3.5 py-2 rounded-xl shadow-xs transition-colors"
+              >
+                <FileSpreadsheet className="w-3.5 h-3.5" />
+                <span>ส่งออก CSV</span>
+              </a>
+              <a
+                href="/teacher/print"
+                target="_blank"
+                rel="noreferrer"
+                className="flex items-center space-x-1.5 text-xs font-semibold text-neutral-700 dark:text-neutral-200 bg-white/80 dark:bg-slate-800 hover:bg-white border border-neutral-200/80 dark:border-slate-700 px-3.5 py-2 rounded-xl shadow-xs transition-colors"
+              >
+                <Printer className="w-3.5 h-3.5" />
+                <span>พิมพ์รายงาน</span>
+              </a>
             </div>
-          )}
+          </div>
 
           {/* FILTER CONTROLS BAR */}
-          <div className="bg-white/80 dark:bg-slate-900/80 backdrop-blur-xl rounded-3xl border border-neutral-200/80 dark:border-slate-800 p-4 space-y-3 shadow-xs mt-6">
-            <div className="flex items-center justify-between pb-1 border-b border-neutral-100 dark:border-slate-800">
-              <span className="text-xs font-bold text-neutral-700 dark:text-neutral-300 flex items-center gap-1.5">
-                <Layers className="w-3.5 h-3.5 text-[#7749BC] dark:text-purple-400" />
-                <span>ตัวกรองและค้นหาคำขอลาเรียนรออนุมัติ (Filters & Search)</span>
-              </span>
-              <span className="text-[11px] text-neutral-400">
-                ผลการกรอง: {pendingFilteredLeaves.length} รายการ
-              </span>
-            </div>
-
+          <div className="bg-white/80 dark:bg-slate-900/80 backdrop-blur-xl rounded-3xl border border-neutral-200/80 dark:border-slate-800 p-4 space-y-3 shadow-xs">
             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3">
               {/* 1. Academic Year & Semester Filter */}
               <div>
@@ -792,7 +653,6 @@ export default function TeacherDashboard({ courses, initialLeaves, rosterByCours
             {/* Filter Quick Pills */}
             <div className="pt-2 border-t border-neutral-100 dark:border-slate-800 flex flex-wrap items-center justify-between gap-2">
               <div className="flex flex-wrap items-center gap-1.5">
-                {/* Daily Overview Button */}
                 <button
                   onClick={() => setIsTodayOnly(!isTodayOnly)}
                   className={`px-3 py-1.5 rounded-xl text-xs font-bold transition-all flex items-center gap-1.5 cursor-pointer ${
@@ -806,7 +666,6 @@ export default function TeacherDashboard({ courses, initialLeaves, rosterByCours
                 </button>
               </div>
 
-              {/* Right: Leave Type Pills */}
               <div className="flex flex-wrap items-center gap-1">
                 {LEAVE_CATEGORIES.map(({ key, label }) => (
                   <button
@@ -824,7 +683,378 @@ export default function TeacherDashboard({ courses, initialLeaves, rosterByCours
               </div>
             </div>
           </div>
-        </section>
+
+          {/* Batch Actions Bar (when in รออนุมัติ and items selected) */}
+          {activeStatusTab === 'รออนุมัติ' && selectedLeaveIds.size > 0 && (
+            <div className="bg-purple-900 text-white rounded-2xl p-3.5 shadow-xl flex flex-wrap items-center justify-between gap-3 animate-in fade-in slide-in-from-top-2 duration-200">
+              <div className="flex items-center gap-2.5 text-xs font-semibold">
+                <span className="w-6 h-6 rounded-full bg-white/20 flex items-center justify-center font-bold">
+                  {selectedLeaveIds.size}
+                </span>
+                <span>เลือกคำร้องแล้ว {selectedLeaveIds.size} รายการ</span>
+              </div>
+              <div className="flex items-center gap-2">
+                <button
+                  onClick={() => setSelectedLeaveIds(new Set())}
+                  className="px-3 py-1.5 rounded-xl bg-white/10 hover:bg-white/20 text-xs font-medium transition-colors cursor-pointer"
+                >
+                  ยกเลิกการเลือก
+                </button>
+                <button
+                  onClick={() => openBatchModal('reject')}
+                  className="px-3 py-1.5 rounded-xl bg-rose-600 hover:bg-rose-700 text-xs font-semibold transition-colors cursor-pointer"
+                >
+                  ไม่อนุมัติที่เลือก
+                </button>
+                <button
+                  onClick={() => openBatchModal('approve')}
+                  className="px-3.5 py-1.5 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-xs font-semibold transition-colors cursor-pointer shadow-sm"
+                >
+                  อนุมัติที่เลือก
+                </button>
+              </div>
+            </div>
+          )}
+
+          {pendingFilteredLeaves.length === 0 ? (
+            <div className="bg-white/80 dark:bg-slate-900/80 backdrop-blur-xl rounded-3xl border border-neutral-200/80 dark:border-slate-800 p-12 text-center shadow-xs space-y-3">
+              <div className="w-14 h-14 rounded-2xl bg-purple-50 dark:bg-purple-950/60 text-[#7749BC] dark:text-purple-400 flex items-center justify-center mx-auto shadow-sm">
+                <ClipboardCheck className="w-8 h-8" />
+              </div>
+              <h4 className="text-base font-bold text-neutral-800 dark:text-neutral-200">
+                ไม่มีคำร้องในหมวด &quot;{activeStatusTab}&quot;
+              </h4>
+              <p className="text-xs text-neutral-500 dark:text-neutral-400 max-w-md mx-auto">
+                ไม่พบคำร้องที่ตรงกับตัวกรองที่เลือกในหมวดหมู่นี้
+              </p>
+            </div>
+          ) : (
+            <div className="bg-white/80 dark:bg-slate-900/80 backdrop-blur-xl rounded-3xl border border-neutral-200/80 dark:border-slate-800 shadow-xs overflow-hidden">
+              {/* Desktop Responsive Table - Rigorously locked to 100% width with zero horizontal scroll */}
+              <div className="hidden lg:block overflow-hidden">
+                <table className="w-full table-fixed text-left text-xs">
+                  <colgroup>
+                    <col style={{ width: '38px' }} />
+                    <col style={{ width: '23%' }} />
+                    <col style={{ width: '21%' }} />
+                    <col style={{ width: '18%' }} />
+                    <col style={{ width: '18%' }} />
+                    <col style={{ width: '215px' }} />
+                  </colgroup>
+                  <thead className="bg-neutral-100/70 dark:bg-slate-800/80 text-neutral-700 dark:text-neutral-300 font-semibold border-b border-neutral-200/60 dark:border-slate-700">
+                    <tr>
+                      <th className="py-3 px-2 w-10 text-center">
+                        <input
+                          type="checkbox"
+                          checked={allPendingSelected}
+                          onChange={toggleSelectAll}
+                          className="w-4 h-4 rounded text-[#7749BC] focus:ring-[#7749BC] cursor-pointer accent-[#7749BC]"
+                          title="เลือกทั้งหมด / ยกเลิกทั้งหมด"
+                        />
+                      </th>
+                      <th className="py-3 px-3">นิสิตผู้ยื่น</th>
+                      <th className="py-3 px-3">รายวิชา & กลุ่ม</th>
+                      <th className="py-3 px-3 whitespace-nowrap">ประเภทและวันที่ลา</th>
+                      <th className="py-3 px-3">เหตุผล & เอกสาร</th>
+                      <th className="py-3 pr-4 pl-2 text-right whitespace-nowrap">จัดการคำร้อง</th>
+                    </tr>
+                  </thead>
+                  <tbody className="divide-y divide-neutral-100 dark:divide-slate-800">
+                    {pendingFilteredLeaves.map((leave) => {
+                      const typeCls = LEAVE_TYPE_DETAILS[leave.type] || LEAVE_TYPE_DEFAULT;
+                      return (
+                        <tr
+                          key={leave.id}
+                          className={`hover:bg-neutral-50/70 dark:hover:bg-slate-800/50 transition-colors ${
+                            selectedLeaveIds.has(leave.id) ? 'bg-purple-50/60 dark:bg-purple-950/30' : ''
+                          }`}
+                        >
+                          {/* Checkbox */}
+                          <td className="py-3 px-2 text-center">
+                            <input
+                              type="checkbox"
+                              checked={selectedLeaveIds.has(leave.id)}
+                              onChange={() => toggleSelectLeave(leave.id)}
+                              className="w-4 h-4 rounded text-[#7749BC] focus:ring-[#7749BC] cursor-pointer accent-[#7749BC]"
+                            />
+                          </td>
+
+                          {/* Student (clickable to view details) */}
+                          <td className="py-3 px-3 min-w-0">
+                            <div
+                              onClick={() => openDetailModal(leave)}
+                              className="flex items-center space-x-2 cursor-pointer group"
+                              title="คลิกเพื่อดูรายละเอียดคำร้อง"
+                            >
+                              <div className="w-8 h-8 rounded-xl bg-purple-100 group-hover:bg-[#7749BC] group-hover:text-white dark:bg-purple-950 text-[#7749BC] dark:text-purple-300 flex items-center justify-center font-bold text-xs shrink-0 transition-colors">
+                                {initials(leave.studentName)}
+                              </div>
+                              <div className="min-w-0 flex-1">
+                                <p className="font-semibold text-neutral-900 dark:text-neutral-100 group-hover:text-[#7749BC] transition-colors truncate">
+                                  {leave.studentName}
+                                </p>
+                                <p className="text-[11px] text-neutral-500 dark:text-neutral-400 font-mono">
+                                  {leave.studentCode}
+                                </p>
+                              </div>
+                            </div>
+                          </td>
+
+                          {/* Course */}
+                          <td className="py-3 px-3 min-w-0">
+                            <div className="flex items-center gap-1.5 flex-wrap">
+                              <span className="font-semibold text-neutral-900 dark:text-neutral-100">{leave.courseCode}</span>
+                              {leave.section && (
+                                <span className="text-[10px] font-medium text-neutral-600 dark:text-neutral-300 bg-neutral-100 dark:bg-slate-800 px-1.5 py-0.5 rounded shrink-0">
+                                  กลุ่ม {leave.section}
+                                </span>
+                              )}
+                            </div>
+                            <p className="text-[11px] text-neutral-500 dark:text-neutral-400 truncate block" title={leave.courseName}>
+                              {leave.courseName}
+                            </p>
+                          </td>
+
+                          {/* Type & Date */}
+                          <td className="py-3 px-3 min-w-0 whitespace-nowrap">
+                            <div className="space-y-0.5">
+                              <span
+                                className={`inline-block px-2 py-0.5 rounded-lg text-[10px] font-semibold border ${typeCls}`}
+                              >
+                                {leave.type}
+                              </span>
+                              <p className="text-[11px] text-neutral-600 dark:text-neutral-400">
+                                {formatThaiDate(leave.startDate)}
+                                {leave.endDate && leave.endDate !== leave.startDate
+                                  ? ` - ${formatThaiDate(leave.endDate)}`
+                                  : ''}
+                              </p>
+                            </div>
+                          </td>
+
+                          {/* Reason & Attachment */}
+                          <td className="py-3 px-3 min-w-0">
+                            <p className="text-xs text-neutral-700 dark:text-neutral-300 truncate" title={leave.reason}>
+                              {leave.reason}
+                            </p>
+                            {leave.attachment && (
+                              <button
+                                type="button"
+                                onClick={() => openDetailModal(leave)}
+                                className="inline-flex items-center gap-1 text-[10px] text-purple-600 hover:text-purple-700 dark:text-purple-400 mt-0.5 cursor-pointer hover:underline"
+                                title="คลิกเพื่อดูเอกสารแนบ"
+                              >
+                                <FileText className="w-3 h-3 shrink-0" />
+                                <span>มีเอกสารแนบ</span>
+                              </button>
+                            )}
+                          </td>
+
+                          {/* Unified Action Column: Space-efficient without horizontal overflow */}
+                          <td className="py-3 pr-4 pl-2 text-right whitespace-nowrap">
+                            {activeStatusTab === 'รออนุมัติ' ? (
+                              <div className="inline-flex items-center gap-1.5 justify-end">
+                                <button
+                                  onClick={() => openDetailModal(leave)}
+                                  className="p-1.5 rounded-lg bg-neutral-100 hover:bg-purple-100 text-neutral-600 hover:text-[#7749BC] dark:bg-slate-800 dark:hover:bg-purple-950/60 dark:text-neutral-300 transition-colors cursor-pointer shrink-0"
+                                  title="ดูรายละเอียดคำร้อง"
+                                  aria-label="ดูรายละเอียดคำร้อง"
+                                >
+                                  <Eye className="w-3.5 h-3.5" />
+                                </button>
+                                <button
+                                  onClick={() => openActionModal(leave, 'approve')}
+                                  title="อนุมัติคำขอนี้ทันที"
+                                  className="inline-flex items-center gap-1 px-2.5 py-1.5 rounded-lg bg-emerald-600 hover:bg-emerald-700 text-white font-semibold text-xs transition-colors shadow-2xs cursor-pointer shrink-0 ring-1 ring-white/10"
+                                >
+                                  <Check className="w-3.5 h-3.5" />
+                                  <span>อนุมัติ</span>
+                                </button>
+                                <button
+                                  onClick={() => openActionModal(leave, 'reject')}
+                                  title="ไม่อนุมัติคำขอนี้"
+                                  className="inline-flex items-center gap-1 px-2.5 py-1.5 rounded-lg bg-rose-50 hover:bg-rose-100 dark:bg-rose-950/60 dark:hover:bg-rose-900/60 text-rose-700 dark:text-rose-300 font-semibold text-xs border border-rose-200 dark:border-rose-800 transition-colors cursor-pointer shrink-0"
+                                >
+                                  <X className="w-3.5 h-3.5" />
+                                  <span>ไม่อนุมัติ</span>
+                                </button>
+                              </div>
+                            ) : activeStatusTab === 'อนุมัติแล้ว' ? (
+                              <div className="inline-flex items-center gap-1.5 justify-end">
+                                <button
+                                  onClick={() => openDetailModal(leave)}
+                                  className="p-1.5 rounded-lg bg-neutral-100 hover:bg-purple-100 text-neutral-600 hover:text-[#7749BC] dark:bg-slate-800 dark:hover:bg-purple-950/60 dark:text-neutral-300 transition-colors cursor-pointer shrink-0"
+                                  title="ดูรายละเอียดคำร้อง"
+                                  aria-label="ดูรายละเอียดคำร้อง"
+                                >
+                                  <Eye className="w-3.5 h-3.5" />
+                                </button>
+                                <button
+                                  onClick={() => openActionModal(leave, 'revoke')}
+                                  title="เพิกถอนการอนุมัติคำขอนี้"
+                                  className="inline-flex items-center gap-1 px-2.5 py-1.5 rounded-lg bg-amber-50 hover:bg-amber-100 dark:bg-amber-950/60 dark:hover:bg-amber-900/60 text-amber-800 dark:text-amber-300 font-semibold text-xs border border-amber-300 dark:border-amber-700 transition-colors cursor-pointer shrink-0"
+                                >
+                                  <RotateCcw className="w-3.5 h-3.5" />
+                                  <span>เพิกถอน</span>
+                                </button>
+                              </div>
+                            ) : activeStatusTab === 'ไม่อนุมัติ' || activeStatusTab === 'เพิกถอนการอนุมัติ' ? (
+                              <div className="inline-flex items-center gap-1.5 justify-end">
+                                <button
+                                  onClick={() => openDetailModal(leave)}
+                                  className="p-1.5 rounded-lg bg-neutral-100 hover:bg-purple-100 text-neutral-600 hover:text-[#7749BC] dark:bg-slate-800 dark:hover:bg-purple-950/60 dark:text-neutral-300 transition-colors cursor-pointer shrink-0"
+                                  title="ดูรายละเอียดคำร้อง"
+                                  aria-label="ดูรายละเอียดคำร้อง"
+                                >
+                                  <Eye className="w-3.5 h-3.5" />
+                                </button>
+                                <button
+                                  onClick={() => openActionModal(leave, 'reconsider')}
+                                  title="นำคำขอนี้กลับมาพิจารณาใหม่"
+                                  className="inline-flex items-center gap-1 px-2.5 py-1.5 rounded-lg bg-purple-50 hover:bg-purple-100 dark:bg-purple-950/60 dark:hover:bg-purple-900/60 text-[#7749BC] dark:text-purple-300 font-semibold text-xs border border-purple-200 dark:border-purple-800 transition-colors cursor-pointer shrink-0"
+                                >
+                                  <RotateCcw className="w-3.5 h-3.5" />
+                                  <span>พิจารณาใหม่</span>
+                                </button>
+                              </div>
+                            ) : (
+                              /* ประวัติการอนุมัติ */
+                              <div className="inline-flex items-center gap-2 justify-end">
+                                {(() => {
+                                  const s = STATUS_DETAILS[leave.status] || STATUS_DETAILS['รออนุมัติ'];
+                                  return (
+                                    <span className={`inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-semibold border shadow-2xs ${s.badge}`}>
+                                      <span className={`w-1.5 h-1.5 rounded-full ${s.dot}`} />
+                                      <span>{s.label || leave.status}</span>
+                                    </span>
+                                  );
+                                })()}
+                                <button
+                                  onClick={() => openDetailModal(leave)}
+                                  className="p-1.5 rounded-lg bg-neutral-100 hover:bg-purple-100 text-neutral-600 hover:text-[#7749BC] dark:bg-slate-800 dark:hover:bg-purple-950/60 dark:text-neutral-300 transition-colors cursor-pointer shrink-0"
+                                  title="ดูรายละเอียดคำร้อง"
+                                  aria-label="ดูรายละเอียดคำร้อง"
+                                >
+                                  <Eye className="w-3.5 h-3.5" />
+                                </button>
+                              </div>
+                            )}
+                          </td>
+                        </tr>
+                      );
+                    })}
+                  </tbody>
+                </table>
+              </div>
+
+              {/* Mobile / Tablet Responsive Cards */}
+              <div className="lg:hidden divide-y divide-neutral-100 dark:divide-slate-800">
+                {pendingFilteredLeaves.map((leave) => {
+                  const typeCls = LEAVE_TYPE_DETAILS[leave.type] || LEAVE_TYPE_DEFAULT;
+                  return (
+                    <div key={leave.id} className="p-4 space-y-3">
+                      <div className="flex items-start justify-between gap-2">
+                        <div className="flex items-center space-x-2.5">
+                          <input
+                            type="checkbox"
+                            checked={selectedLeaveIds.has(leave.id)}
+                            onChange={() => toggleSelectLeave(leave.id)}
+                            className="w-4 h-4 rounded text-[#7749BC] focus:ring-[#7749BC] cursor-pointer accent-[#7749BC] mr-1"
+                          />
+                          <div className="w-9 h-9 rounded-xl bg-purple-100 dark:bg-purple-950 text-[#7749BC] dark:text-purple-300 flex items-center justify-center font-bold text-xs shrink-0">
+                            {initials(leave.studentName)}
+                          </div>
+                          <div>
+                            <p className="font-semibold text-neutral-900 dark:text-neutral-100 text-sm">
+                              {leave.studentName}
+                            </p>
+                            <p className="text-[11px] text-neutral-500 dark:text-neutral-400 font-mono">
+                              {leave.studentCode}
+                            </p>
+                          </div>
+                        </div>
+                        <span className={`px-2.5 py-0.5 rounded-lg text-xs font-semibold border ${typeCls}`}>
+                          {leave.type}
+                        </span>
+                      </div>
+
+                      <div className="p-3 rounded-2xl bg-neutral-50 dark:bg-slate-800/60 border border-neutral-200/60 dark:border-slate-700/60 space-y-1 text-xs">
+                        <p className="font-semibold text-neutral-900 dark:text-neutral-100">
+                          {leave.courseCode} {leave.courseName} {leave.section ? `(กลุ่ม ${leave.section})` : ''}
+                        </p>
+                        <p className="text-neutral-600 dark:text-neutral-400 text-[11px]">
+                          วันที่ลา: {formatThaiDate(leave.startDate)}{' '}
+                          {leave.endDate && leave.endDate !== leave.startDate
+                            ? ` - ${formatThaiDate(leave.endDate)}`
+                            : ''}{' '}
+                          ({leave.period})
+                        </p>
+                        <p className="text-neutral-700 dark:text-neutral-300 pt-1 border-t border-neutral-200/40 dark:border-slate-700/40">
+                          <strong>เหตุผล:</strong> {leave.reason}
+                        </p>
+                      </div>
+
+                      <div className="flex flex-wrap items-center justify-between pt-1 gap-2">
+                        {(() => {
+                          const s = STATUS_DETAILS[leave.status] || STATUS_DETAILS['รออนุมัติ'];
+                          return (
+                            <span className={`inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-xs font-semibold border ${s.badge}`}>
+                              <span className={`w-1.5 h-1.5 rounded-full ${s.dot}`} />
+                              <span>{s.label || leave.status}</span>
+                            </span>
+                          );
+                        })()}
+
+                        <div className="flex items-center gap-1.5">
+                          <button
+                            onClick={() => openDetailModal(leave)}
+                            className="px-3 py-1.5 rounded-xl bg-neutral-100 hover:bg-neutral-200 dark:bg-slate-800 text-xs font-semibold text-neutral-700 dark:text-neutral-200 cursor-pointer"
+                          >
+                            ดูข้อมูล
+                          </button>
+                          {activeStatusTab === 'รออนุมัติ' ? (
+                            <>
+                              <button
+                                onClick={() => openActionModal(leave, 'reject')}
+                                className="px-3 py-1.5 rounded-xl bg-rose-50 text-rose-700 dark:bg-rose-950/60 dark:text-rose-300 border border-rose-200 dark:border-rose-800 text-xs font-semibold cursor-pointer"
+                              >
+                                ไม่อนุมัติ
+                              </button>
+                              <button
+                                onClick={() => openActionModal(leave, 'approve')}
+                                className="px-3.5 py-1.5 rounded-xl bg-emerald-600 text-white text-xs font-semibold shadow-xs cursor-pointer"
+                              >
+                                อนุมัติ
+                              </button>
+                            </>
+                          ) : activeStatusTab === 'อนุมัติแล้ว' ? (
+                            <button
+                              onClick={() => openActionModal(leave, 'revoke')}
+                              className="px-3 py-1.5 rounded-xl bg-amber-50 text-amber-800 dark:bg-amber-950/60 dark:text-amber-300 border border-amber-300 dark:border-amber-700 text-xs font-semibold cursor-pointer flex items-center gap-1"
+                            >
+                              <RotateCcw className="w-3 h-3" />
+                              <span>เพิกถอน</span>
+                            </button>
+                          ) : activeStatusTab === 'ไม่อนุมัติ' || activeStatusTab === 'เพิกถอนการอนุมัติ' ? (
+                            <button
+                              onClick={() => openActionModal(leave, 'reconsider')}
+                              className="px-3 py-1.5 rounded-xl bg-purple-50 text-[#7749BC] dark:bg-purple-950/60 dark:text-purple-300 border border-purple-200 dark:border-purple-800 text-xs font-semibold cursor-pointer flex items-center gap-1"
+                            >
+                              <RotateCcw className="w-3 h-3" />
+                              <span>พิจารณาใหม่</span>
+                            </button>
+                          ) : null}
+                        </div>
+                      </div>
+                    </div>
+                  );
+                })}
+              </div>
+            </div>
+          )}
+
+        </div>
+      </div>
 
       {/* MODAL 1: Detail Modal */}
       {detailModal.isOpen && detailModal.leave && (
@@ -1267,9 +1497,13 @@ export default function TeacherDashboard({ courses, initialLeaves, rosterByCours
                   <div className="w-8 h-8 rounded-xl bg-rose-100 dark:bg-rose-950 text-rose-700 dark:text-rose-300 flex items-center justify-center">
                     <X className="w-4 h-4" />
                   </div>
-                ) : (
+                ) : actionModal.type === 'revoke' ? (
                   <div className="w-8 h-8 rounded-xl bg-amber-100 dark:bg-amber-950 text-amber-700 dark:text-amber-300 flex items-center justify-center">
-                    <Clock className="w-4 h-4" />
+                    <RotateCcw className="w-4 h-4" />
+                  </div>
+                ) : (
+                  <div className="w-8 h-8 rounded-xl bg-purple-100 dark:bg-purple-950 text-[#7749BC] dark:text-purple-300 flex items-center justify-center">
+                    <RotateCcw className="w-4 h-4" />
                   </div>
                 )}
                 <h3 className="text-sm font-semibold text-neutral-900 dark:text-neutral-100">
@@ -1277,6 +1511,8 @@ export default function TeacherDashboard({ courses, initialLeaves, rosterByCours
                     ? 'ยืนยันการอนุมัติคำขอลา'
                     : actionModal.type === 'reject'
                     ? 'ยืนยันการไม่อนุมัติคำขอลา'
+                    : actionModal.type === 'revoke'
+                    ? 'ยืนยันการเพิกถอนการอนุมัติ'
                     : 'นำคำขอกลับมาเป็นสถานะรออนุมัติ'}
                 </h3>
               </div>
@@ -1327,10 +1563,18 @@ export default function TeacherDashboard({ courses, initialLeaves, rosterByCours
                     ? 'bg-emerald-600 hover:bg-emerald-700'
                     : actionModal.type === 'reject'
                     ? 'bg-rose-600 hover:bg-rose-700'
-                    : 'bg-amber-600 hover:bg-amber-700'
+                    : actionModal.type === 'revoke'
+                    ? 'bg-amber-600 hover:bg-amber-700'
+                    : 'bg-[#7749BC] hover:bg-[#5B21B6]'
                 }`}
               >
-                บันทึกการเปลี่ยนแปลง
+                {actionModal.type === 'approve'
+                  ? 'ยืนยันอนุมัติ'
+                  : actionModal.type === 'reject'
+                  ? 'ยืนยันไม่อนุมัติ'
+                  : actionModal.type === 'revoke'
+                  ? 'ยืนยันเพิกถอน'
+                  : 'ยืนยันนำกลับมาพิจารณา'}
               </button>
             </div>
           </div>
