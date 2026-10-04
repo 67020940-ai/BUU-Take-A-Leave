@@ -5,6 +5,7 @@ import { useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { Eye, EyeOff, AlertCircle, ArrowRight, CalendarCheck, BellRing, FileSpreadsheet, ShieldCheck } from 'lucide-react';
 import ThemeToggle from '@/components/ThemeToggle';
+import BuuLogo from '@/components/BuuLogo';
 
 const ROLE_HOME = { student: '/student', teacher: '/teacher', admin: '/admin' };
 
@@ -55,9 +56,7 @@ export default function LoginPage() {
       <div className="w-full max-w-4xl grid md:grid-cols-2 rounded-2xl shadow-xs overflow-hidden border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900">
         <div className="hidden md:flex flex-col justify-between bg-[#7749BC] p-10 text-white border-r border-[#653ba6]">
           <div>
-            <div className="w-12 h-12 rounded-xl bg-white/20 border border-white/30 flex items-center justify-center font-bold text-base mb-6 tracking-wider">
-              BUU
-            </div>
+            <BuuLogo size={52} className="mb-6 drop-shadow-md" />
             <h2 className="text-xl font-bold tracking-tight leading-snug">
               ระบบบริหารจัดการ
               <br />
@@ -79,8 +78,9 @@ export default function LoginPage() {
 
         <div className="bg-white dark:bg-slate-900 flex flex-col justify-center">
           <div className="px-6 pt-8 pb-3 text-center md:hidden">
-            <div className="inline-flex items-center justify-center px-3.5 py-1.5 rounded-xl border border-[#7749BC] bg-purple-50 dark:bg-purple-950/40 text-[#7749BC] dark:text-purple-300 font-bold text-lg tracking-wider mb-2">
-              BUU Take A Leave
+            <div className="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-xl border border-[#7749BC]/30 bg-purple-50 dark:bg-purple-950/40 text-[#7749BC] dark:text-purple-300 font-bold text-base tracking-wider mb-2">
+              <BuuLogo size={28} />
+              <span>Take A Leave</span>
             </div>
             <p className="text-xs text-slate-500 dark:text-slate-400">ระบบบริหารจัดการการลาเรียน มหาวิทยาลัยบูรพา</p>
           </div>

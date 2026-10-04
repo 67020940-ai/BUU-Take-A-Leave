@@ -21,8 +21,8 @@ import {
   CalendarDays,
   BarChart3,
 } from 'lucide-react';
-import { formatThaiDate } from '@/lib/ui';
 import ThemeToggle from '@/components/ThemeToggle';
+import BuuLogo from '@/components/BuuLogo';
 
 const NAV = {
   student: [
@@ -48,6 +48,26 @@ export default function Header({ user, semester = '1/2569' }) {
   const [notifications, setNotifications] = useState([]);
   const [showNotifications, setShowNotifications] = useState(false);
   const [showUserMenu, setShowUserMenu] = useState(false);
+  const [logoVariant, setLogoVariant] = useState('crest');
+
+  useEffect(() => {
+    try {
+      const saved = localStorage.getItem('buu_logo_variant');
+      if (saved) setLogoVariant(saved);
+    } catch {}
+  }, []);
+
+  function cycleLogoVariant(e) {
+    e.preventDefault();
+    e.stopPropagation();
+    const variants = ['crest', 'sunrise', 'minimal'];
+    const nextIdx = (variants.indexOf(logoVariant) + 1) % variants.length;
+    const next = variants[nextIdx];
+    setLogoVariant(next);
+    try {
+      localStorage.setItem('buu_logo_variant', next);
+    } catch {}
+  }
 
   useEffect(() => {
     let active = true;
@@ -94,22 +114,37 @@ export default function Header({ user, semester = '1/2569' }) {
         <div className="flex items-center justify-between h-16">
           <Link
             href={user.role === 'teacher' ? '/teacher' : user.role === 'admin' ? '/admin' : '/student'}
-            className="flex items-center space-x-3 group"
+            className="flex items-center gap-3.5 group select-none"
           >
-            <div className="flex flex-col items-center shrink-0">
-              <div className="w-10 h-10 rounded-2xl bg-[#7749BC] text-white flex items-center justify-center font-extrabold text-sm shadow-md shadow-purple-900/20 ring-2 ring-purple-300/30 group-hover:scale-105 transition-transform">
-                BUU
-              </div>
-              <span className="text-[9px] font-bold text-[#7749BC] dark:text-purple-300 leading-tight mt-0.5 tracking-tight text-center">
-                Take A Leave
-              </span>
+            {/* Official Institutional Logo Emblem (Click to cycle styles) */}
+            <div
+              onClick={cycleLogoVariant}
+              role="button"
+              tabIndex={0}
+              title={`คลิกเพื่อสลับแบบโลโก้ (ปัจจุบัน: ${
+                logoVariant === 'crest'
+                  ? 'Modern Academic Crest (Ref LOGO2)'
+                  : logoVariant === 'sunrise'
+                  ? 'The Burapha Sunrise (Ref Yasaburo Kuwayama)'
+                  : 'Minimalist Monogram'
+              })`}
+              className="relative shrink-0 group-hover:scale-105 transition-transform duration-200 cursor-pointer"
+            >
+              <BuuLogo variant={logoVariant} size={42} className="drop-shadow-sm" />
             </div>
-            <div>
-              <div className="flex items-center space-x-2">
-                <span className="font-bold text-neutral-900 dark:text-neutral-100 tracking-tight text-base">Take A Leave</span>
+
+            {/* Brand Title: Displayed Only Once */}
+            <div className="flex flex-col">
+              <div className="flex items-center gap-2">
+                <span className="font-extrabold text-neutral-900 dark:text-neutral-100 tracking-tight text-base sm:text-lg leading-tight group-hover:text-[#7749BC] dark:group-hover:text-purple-300 transition-colors">
+                  Take A Leave
+                </span>
+                <span className="text-[10px] font-bold px-1.5 py-0.5 rounded-md bg-purple-100 text-[#7749BC] dark:bg-purple-950/80 dark:text-purple-300 border border-purple-200/80 dark:border-purple-800/80 font-mono tracking-wider">
+                  BUU
+                </span>
               </div>
-              <p className="text-xs text-neutral-500 dark:text-neutral-400 hidden sm:block">
-                ระบบยื่นและอนุมัติคำขอลาเรียนออนไลน์
+              <p className="text-[11px] text-neutral-500 dark:text-neutral-400 hidden sm:block leading-tight mt-0.5 font-normal">
+                ระบบยื่นและอนุมัติคำขอลาเรียนออนไลน์ มหาวิทยาลัยบูรพา
               </p>
             </div>
           </Link>
