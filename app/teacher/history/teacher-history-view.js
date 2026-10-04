@@ -53,6 +53,20 @@ export default function TeacherHistoryView({
   const [reconsiderModal, setReconsiderModal] = useState({ isOpen: false, leave: null, type: 'reconsider', comment: '' });
   const [toast, setToast] = useState(null);
 
+  // Sync status filter from query param
+  useEffect(() => {
+    if (typeof window !== 'undefined') {
+      const sp = new URLSearchParams(window.location.search);
+      const st = sp.get('status') || sp.get('tab');
+      if (st) {
+        if (st.includes('อนุมัติ') && !st.includes('ไม่อนุมัติ') && !st.includes('เพิกถอน')) setStatusFilter('อนุมัติ');
+        else if (st.includes('ไม่อนุมัติ')) setStatusFilter('ไม่อนุมัติ');
+        else if (st.includes('เพิกถอน')) setStatusFilter('เพิกถอน');
+        else if (st === 'all') setStatusFilter('all');
+      }
+    }
+  }, []);
+
   // Academic terms
   const academicTerms = useMemo(() => {
     const terms = new Set();

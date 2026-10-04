@@ -83,7 +83,7 @@ export default function TeacherDashboard({
           <div className="grid grid-cols-2 sm:grid-cols-4 divide-y sm:divide-y-0 sm:divide-x border-2 border-neutral-300 dark:border-slate-700 rounded-3xl bg-white dark:bg-slate-900 shadow-xs overflow-hidden">
             {/* Box 1: คำร้องขอลาทั้งหมด */}
             <Link
-              href="/teacher/requests"
+              href="/teacher/requests?tab=all"
               className="p-4 sm:p-5 text-left transition-colors cursor-pointer hover:bg-purple-50/60 dark:hover:bg-slate-800/50 text-neutral-800 dark:text-neutral-200 block group"
               title="ดูรายการคำร้องขอลาทั้งหมด"
             >
@@ -95,7 +95,7 @@ export default function TeacherDashboard({
 
             {/* Box 2: อนุมัติ */}
             <Link
-              href="/teacher/history"
+              href="/teacher/history?status=อนุมัติ"
               className="p-4 sm:p-5 text-left transition-colors cursor-pointer hover:bg-emerald-50/60 dark:hover:bg-slate-800/50 text-neutral-800 dark:text-neutral-200 block group"
               title="ดูประวัติการอนุมัติคำขอลา"
             >
@@ -109,7 +109,7 @@ export default function TeacherDashboard({
 
             {/* Box 3: รออนุมัติ */}
             <Link
-              href="/teacher/requests"
+              href="/teacher/requests?tab=pending"
               className="p-4 sm:p-5 text-left transition-colors cursor-pointer hover:bg-amber-50/60 dark:hover:bg-slate-800/50 text-neutral-800 dark:text-neutral-200 block group"
               title="ดูคำร้องขอลาที่รออนุมัติ"
             >
@@ -123,7 +123,7 @@ export default function TeacherDashboard({
 
             {/* Box 4: ไม่อนุมัติ */}
             <Link
-              href="/teacher/history"
+              href="/teacher/history?status=ไม่อนุมัติ"
               className="p-4 sm:p-5 text-left transition-colors cursor-pointer hover:bg-rose-50/60 dark:hover:bg-slate-800/50 text-neutral-800 dark:text-neutral-200 block group"
               title="ดูรายการที่ไม่อนุมัติ"
             >

@@ -73,6 +73,15 @@ export default function TeacherRequestsView({
   const [isTodayOnly, setIsTodayOnly] = useState(false);
   const [searchQuery, setSearchQuery] = useState('');
 
+  // Sync tab from query param
+  useEffect(() => {
+    if (typeof window !== 'undefined') {
+      const sp = new URLSearchParams(window.location.search);
+      if (sp.get('tab') === 'all') setActiveTab('all');
+      else if (sp.get('tab') === 'pending') setActiveTab('รออนุมัติ');
+    }
+  }, []);
+
   // Modals
   const [actionModal, setActionModal] = useState({ isOpen: false, type: 'approve', leave: null, comment: '' });
   const [detailModal, setDetailModal] = useState({ isOpen: false, leave: null, comment: '' });
