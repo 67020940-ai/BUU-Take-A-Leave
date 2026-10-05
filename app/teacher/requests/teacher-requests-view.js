@@ -143,6 +143,11 @@ export default function TeacherRequestsView({
       }
 
       return true;
+    }).sort((a, b) => {
+      const timeA = new Date(a.createdAt || a.startDate || 0).getTime();
+      const timeB = new Date(b.createdAt || b.startDate || 0).getTime();
+      if (timeB !== timeA) return timeB - timeA;
+      return String(b.id).localeCompare(String(a.id), undefined, { numeric: true });
     });
   }, [leaves, activeTab, selectedTerm, selectedCourseId, typeFilter, isTodayOnly, searchQuery, todayStr, courses]);
 

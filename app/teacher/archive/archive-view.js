@@ -115,6 +115,11 @@ export default function ArchiveView({ courses = [], leaves = [] }) {
         }
       }
       return true;
+    }).sort((a, b) => {
+      const timeA = new Date(a.approvedAt || a.createdAt || a.startDate || 0).getTime();
+      const timeB = new Date(b.approvedAt || b.createdAt || b.startDate || 0).getTime();
+      if (timeB !== timeA) return timeB - timeA;
+      return String(b.id).localeCompare(String(a.id), undefined, { numeric: true });
     });
   }, [termLeaves, selectedCourse, selectedType, selectedStatus, searchQuery]);
 

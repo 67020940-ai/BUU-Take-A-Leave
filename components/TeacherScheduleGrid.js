@@ -15,12 +15,76 @@ const TIME_SLOTS = [
 ];
 
 const DAYS = [
-  { key: 'Monday', label: 'Monday', th: 'วันจันทร์' },
-  { key: 'Tuesday', label: 'Tuesday', th: 'วันอังคาร' },
-  { key: 'Wednesday', label: 'Wednesday', th: 'วันพุธ' },
-  { key: 'Thursday', label: 'Thursday', th: 'วันพฤหัสบดี' },
-  { key: 'Friday', label: 'Friday', th: 'วันศุกร์' },
+  { key: 'Monday', label: 'Monday', th: 'วันจันทร์', bgHeader: 'bg-amber-500/15 text-amber-800 dark:text-amber-300' },
+  { key: 'Tuesday', label: 'Tuesday', th: 'วันอังคาร', bgHeader: 'bg-pink-500/15 text-pink-800 dark:text-pink-300' },
+  { key: 'Wednesday', label: 'Wednesday', th: 'วันพุธ', bgHeader: 'bg-emerald-500/15 text-emerald-800 dark:text-emerald-300' },
+  { key: 'Thursday', label: 'Thursday', th: 'วันพฤหัสบดี', bgHeader: 'bg-orange-500/15 text-orange-800 dark:text-orange-300' },
+  { key: 'Friday', label: 'Friday', th: 'วันศุกร์', bgHeader: 'bg-sky-500/15 text-sky-800 dark:text-sky-300' },
 ];
+
+const COURSE_THEMES = {
+  purple: {
+    card: 'bg-purple-100/90 hover:bg-purple-200/90 dark:bg-purple-950/70 dark:hover:bg-purple-900/80 border-purple-300 dark:border-purple-700 text-purple-950 dark:text-purple-100',
+    title: 'text-purple-950 dark:text-purple-100',
+    room: 'text-purple-900 dark:text-purple-200',
+    time: 'text-purple-700 dark:text-purple-300',
+    badge: 'bg-purple-50 text-[#7749BC] dark:bg-purple-950 dark:text-purple-300 border-purple-200 dark:border-purple-800',
+    dot: 'bg-[#7749BC]',
+  },
+  emerald: {
+    card: 'bg-emerald-100/90 hover:bg-emerald-200/90 dark:bg-emerald-950/70 dark:hover:bg-emerald-900/80 border-emerald-300 dark:border-emerald-700 text-emerald-950 dark:text-emerald-100',
+    title: 'text-emerald-950 dark:text-emerald-100',
+    room: 'text-emerald-900 dark:text-emerald-200',
+    time: 'text-emerald-700 dark:text-emerald-300',
+    badge: 'bg-emerald-50 text-emerald-700 dark:bg-emerald-950 dark:text-emerald-300 border-emerald-200 dark:border-emerald-800',
+    dot: 'bg-emerald-600',
+  },
+  sky: {
+    card: 'bg-sky-100/90 hover:bg-sky-200/90 dark:bg-sky-950/70 dark:hover:bg-sky-900/80 border-sky-300 dark:border-sky-700 text-sky-950 dark:text-sky-100',
+    title: 'text-sky-950 dark:text-sky-100',
+    room: 'text-sky-900 dark:text-sky-200',
+    time: 'text-sky-700 dark:text-sky-300',
+    badge: 'bg-sky-50 text-sky-700 dark:bg-sky-950 dark:text-sky-300 border-sky-200 dark:border-sky-800',
+    dot: 'bg-sky-600',
+  },
+  amber: {
+    card: 'bg-amber-100/90 hover:bg-amber-200/90 dark:bg-amber-950/70 dark:hover:bg-amber-900/80 border-amber-300 dark:border-amber-700 text-amber-950 dark:text-amber-100',
+    title: 'text-amber-950 dark:text-amber-100',
+    room: 'text-amber-900 dark:text-amber-200',
+    time: 'text-amber-700 dark:text-amber-300',
+    badge: 'bg-amber-50 text-amber-700 dark:bg-amber-950 dark:text-amber-300 border-amber-200 dark:border-amber-800',
+    dot: 'bg-amber-600',
+  },
+  rose: {
+    card: 'bg-rose-100/90 hover:bg-rose-200/90 dark:bg-rose-950/70 dark:hover:bg-rose-900/80 border-rose-300 dark:border-rose-700 text-rose-950 dark:text-rose-100',
+    title: 'text-rose-950 dark:text-rose-100',
+    room: 'text-rose-900 dark:text-rose-200',
+    time: 'text-rose-700 dark:text-rose-300',
+    badge: 'bg-rose-50 text-rose-700 dark:bg-rose-950 dark:text-rose-300 border-rose-200 dark:border-rose-800',
+    dot: 'bg-rose-600',
+  },
+};
+
+function getCourseTheme(item) {
+  if (!item) return COURSE_THEMES.purple;
+  const str = `${item.code || ''} ${item.name || ''}`.toLowerCase();
+  if (str.includes('24527664') || str.includes('วิเคราะห์') || str.includes('sa')) {
+    return COURSE_THEMES.purple;
+  }
+  if (str.includes('24527564') || str.includes('โอเพนซอร์ส') || str.includes('oss')) {
+    return COURSE_THEMES.emerald;
+  }
+  if (str.includes('24510164') || str.includes('สารสนเทศเบื้องต้น') || str.includes('oa')) {
+    return COURSE_THEMES.sky;
+  }
+  if (str.includes('24538164') || str.includes('ฐานข้อมูล') || str.includes('db')) {
+    return COURSE_THEMES.amber;
+  }
+  const keys = ['purple', 'emerald', 'sky', 'amber', 'rose'];
+  let sum = 0;
+  for (let i = 0; i < str.length; i++) sum = (sum + str.charCodeAt(i)) % keys.length;
+  return COURSE_THEMES[keys[sum]];
+}
 
 // Default classes matching wireframe S__3366938_0.jpg
 const SCHEDULE_ITEMS = [
@@ -91,9 +155,15 @@ export default function TeacherScheduleGrid({ courses = [], customItems = null, 
             </p>
           </div>
         </div>
-        <div className="flex items-center gap-2 text-xs text-neutral-500 dark:text-neutral-400">
-          <span className="w-3 h-3 rounded-md bg-[#DDD6FE] dark:bg-purple-900/80 border border-purple-300 dark:border-purple-700" />
-          <span className="hidden sm:inline">คาบเรียนที่รับผิดชอบ</span>
+        <div className="flex flex-wrap items-center gap-3 text-xs text-neutral-500 dark:text-neutral-400">
+          <div className="flex items-center gap-1.5">
+            <span className="w-3 h-3 rounded-md bg-purple-200 dark:bg-purple-900/80 border border-purple-300 dark:border-purple-700" />
+            <span className="text-[11px] font-medium text-neutral-700 dark:text-neutral-300">24527664 (SA)</span>
+          </div>
+          <div className="flex items-center gap-1.5">
+            <span className="w-3 h-3 rounded-md bg-emerald-200 dark:bg-emerald-900/80 border border-emerald-300 dark:border-emerald-700" />
+            <span className="text-[11px] font-medium text-neutral-700 dark:text-neutral-300">24527564 (OSS)</span>
+          </div>
         </div>
       </div>
 
@@ -129,12 +199,16 @@ export default function TeacherScheduleGrid({ courses = [], customItems = null, 
                   dayIdx < DAYS.length - 1 ? 'border-b border-neutral-200/70 dark:border-slate-800' : ''
                 }`}
               >
-                {/* Day Label Cell (e.g. Monday) */}
-                <div className="p-3 border-r border-neutral-200/80 dark:border-slate-700 flex flex-col justify-center items-center bg-neutral-50/50 dark:bg-slate-900/40">
-                  <span className="font-sans font-bold text-xs sm:text-sm text-neutral-800 dark:text-neutral-200">
+                {/* Day Label Cell (e.g. Monday) with day color header matching student schedule */}
+                <div
+                  className={`p-3 border-r border-neutral-200/80 dark:border-slate-700 flex flex-col justify-center items-center font-bold transition-colors ${
+                    day.bgHeader || 'bg-neutral-50/50 dark:bg-slate-900/40'
+                  }`}
+                >
+                  <span className="font-sans font-bold text-xs sm:text-sm">
                     {day.label}
                   </span>
-                  <span className="text-[10px] text-neutral-400 dark:text-neutral-500 mt-0.5">
+                  <span className="text-[10px] opacity-85 mt-0.5 font-normal">
                     {day.th}
                   </span>
                 </div>
@@ -151,10 +225,11 @@ export default function TeacherScheduleGrid({ courses = [], customItems = null, 
                     />
                   ))}
 
-                  {/* Render class blocks overlapping the grid */}
+                  {/* Render class blocks overlapping the grid with per-course pastel styling */}
                   {dayClasses.map((item, cIdx) => {
                     const leftPct = (item.startSlot / 8) * 100;
                     const widthPct = (item.slotSpan / 8) * 100;
+                    const theme = getCourseTheme(item);
 
                     return (
                       <div
@@ -164,16 +239,16 @@ export default function TeacherScheduleGrid({ courses = [], customItems = null, 
                           left: `${leftPct}%`,
                           width: `calc(${widthPct}% - 8px)`,
                         }}
-                        className="absolute top-2 bottom-2 ml-1 p-2.5 rounded-xl bg-purple-200/85 hover:bg-purple-200 dark:bg-purple-900/70 dark:hover:bg-purple-900/90 border border-purple-300 dark:border-purple-600/80 text-purple-950 dark:text-purple-100 shadow-xs cursor-pointer transition-all hover:scale-[1.01] hover:shadow-md flex flex-col justify-center"
+                        className={`absolute top-2 bottom-2 ml-1 p-2.5 rounded-xl border shadow-xs cursor-pointer transition-all hover:scale-[1.01] hover:shadow-md flex flex-col justify-center ${theme.card}`}
                         title="คลิกเพื่อดูรายละเอียดวิชา"
                       >
-                        <p className="font-bold text-xs tracking-tight truncate">
+                        <p className={`font-bold text-xs tracking-tight truncate ${theme.title}`}>
                           {item.code}
                         </p>
-                        <p className="text-[11px] font-medium text-purple-900 dark:text-purple-200 mt-0.5 truncate">
+                        <p className={`text-[11px] font-medium mt-0.5 truncate ${theme.room}`}>
                           ห้อง {item.room}
                         </p>
-                        <p className="text-[10px] font-mono text-purple-700 dark:text-purple-300 mt-0.5">
+                        <p className={`text-[10px] font-mono mt-0.5 ${theme.time}`}>
                           {item.time}
                         </p>
                       </div>
@@ -192,7 +267,7 @@ export default function TeacherScheduleGrid({ courses = [], customItems = null, 
           <div className="w-full max-w-sm bg-white dark:bg-slate-900 rounded-3xl border border-neutral-200 dark:border-slate-800 shadow-2xl p-5 space-y-4 animate-in zoom-in-95 duration-150">
             <div className="flex items-start justify-between">
               <div>
-                <span className="font-mono text-xs font-bold text-[#7749BC] dark:text-purple-400 bg-purple-50 dark:bg-purple-950 px-2.5 py-0.5 rounded-md border border-purple-200 dark:border-purple-800">
+                <span className={`font-mono text-xs font-bold px-2.5 py-0.5 rounded-md border ${getCourseTheme(selectedItem).badge}`}>
                   {selectedItem.code}
                 </span>
                 <h4 className="text-base font-bold text-neutral-900 dark:text-neutral-100 mt-2">

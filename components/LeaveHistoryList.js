@@ -15,9 +15,16 @@ export default function LeaveHistoryList({ leaves }) {
     );
   }
 
+  const sortedLeaves = [...leaves].sort((a, b) => {
+    const dateA = new Date(a.startDate || a.createdAt || 0).getTime();
+    const dateB = new Date(b.startDate || b.createdAt || 0).getTime();
+    if (dateB !== dateA) return dateB - dateA;
+    return String(b.id).localeCompare(String(a.id), undefined, { numeric: true });
+  });
+
   return (
     <div className="space-y-3">
-      {leaves.map((leave) => {
+      {sortedLeaves.map((leave) => {
         const status = STATUS_DETAILS[leave.status];
         const typeCls = LEAVE_TYPE_DETAILS[leave.type] || LEAVE_TYPE_DEFAULT;
         return (
