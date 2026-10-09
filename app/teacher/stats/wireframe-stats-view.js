@@ -518,8 +518,61 @@ export default function WireframeStatsView({
               )}
             </div>
 
-            {/* Table */}
-            <div className="overflow-x-auto">
+            {/* 1. Mobile Student Cards List (< md) */}
+            <div className="block md:hidden p-3 space-y-2.5">
+              {paginatedStudents.length === 0 ? (
+                <div className="py-10 text-center text-neutral-400 text-xs">
+                  ไม่พบรายชื่อนิสิตตามเงื่อนไขที่เลือก
+                </div>
+              ) : (
+                paginatedStudents.map((student) => (
+                  <div
+                    key={student.studentId}
+                    className="p-3.5 rounded-2xl bg-white dark:bg-slate-800/80 border border-neutral-200/80 dark:border-slate-700/80 shadow-2xs flex items-center justify-between gap-3"
+                  >
+                    <div className="min-w-0">
+                      <p className="font-bold text-xs text-neutral-900 dark:text-neutral-100 truncate">
+                        {student.studentName}
+                      </p>
+                      <div className="flex items-center gap-2 mt-0.5 text-[11px] text-neutral-500 font-mono">
+                        <span>{student.studentCode}</span>
+                        <span>•</span>
+                        <span>ลาล่าสุด: {student.lastLeaveDate}</span>
+                      </div>
+                    </div>
+
+                    <div className="flex items-center gap-2 shrink-0">
+                      <span
+                        className={`inline-block font-mono font-bold text-xs px-2.5 py-1 rounded-full ${
+                          student.totalLeavesCount > 3
+                            ? 'bg-rose-100 text-rose-700 dark:bg-rose-950 dark:text-rose-300'
+                            : student.totalLeavesCount > 0
+                            ? 'bg-purple-100 text-[#7749BC] dark:bg-purple-950 dark:text-purple-300'
+                            : 'bg-neutral-100 text-neutral-400 dark:bg-slate-700'
+                        }`}
+                      >
+                        {student.totalLeavesCount} ครั้ง
+                      </span>
+
+                      <button
+                        type="button"
+                        onClick={() => {
+                          setModalStudent(student);
+                          setModalLeaveCategory(null);
+                        }}
+                        className="min-h-[44px] min-w-[44px] rounded-xl bg-neutral-100 dark:bg-slate-700 hover:bg-neutral-200 text-neutral-600 dark:text-neutral-200 flex items-center justify-center cursor-pointer shadow-2xs"
+                        title="ดูรายละเอียดการลาเพิ่มเติม"
+                      >
+                        <MoreVertical className="w-4 h-4" />
+                      </button>
+                    </div>
+                  </div>
+                ))
+              )}
+            </div>
+
+            {/* 2. Desktop & Tablet Student Roster Table (>= md) */}
+            <div className="hidden md:block overflow-x-auto">
               <table className="w-full text-left text-xs">
                 <thead>
                   <tr className="border-b border-neutral-200/80 dark:border-slate-800 bg-neutral-100/70 dark:bg-slate-800/70 font-bold text-neutral-700 dark:text-neutral-300">
