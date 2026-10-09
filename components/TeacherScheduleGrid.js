@@ -136,6 +136,11 @@ const SCHEDULE_ITEMS = [
 
 export default function TeacherScheduleGrid({ courses = [], customItems = null, onSelectCourse }) {
   const [selectedItem, setSelectedItem] = useState(null);
+  const [mobileSelectedDay, setMobileSelectedDay] = useState(() => {
+    const dayNum = new Date().getDay();
+    const dayMap = { 1: 'Monday', 2: 'Tuesday', 3: 'Wednesday', 4: 'Thursday', 5: 'Friday' };
+    return dayMap[dayNum] || 'Monday';
+  });
   const scheduleList = customItems || SCHEDULE_ITEMS;
 
   return (
@@ -155,7 +160,7 @@ export default function TeacherScheduleGrid({ courses = [], customItems = null, 
             </p>
           </div>
         </div>
-        <div className="flex flex-wrap items-center gap-3 text-xs text-neutral-500 dark:text-neutral-400">
+        <div className="hidden sm:flex flex-wrap items-center gap-3 text-xs text-neutral-500 dark:text-neutral-400">
           <div className="flex items-center gap-1.5">
             <span className="w-3 h-3 rounded-md bg-purple-200 dark:bg-purple-900/80 border border-purple-300 dark:border-purple-700" />
             <span className="text-[11px] font-medium text-neutral-700 dark:text-neutral-300">24527664 (SA)</span>
@@ -167,8 +172,106 @@ export default function TeacherScheduleGrid({ courses = [], customItems = null, 
         </div>
       </div>
 
-      {/* Grid Container (Scrollable on small devices) */}
-      <div className="overflow-x-auto p-4 sm:p-6">
+      {/* 1. Mobile Day-by-Day View (< md) */}
+      <div className="block md:hidden p-4 space-y-4">
+        {/* Day Selector Tabs */}
+        <div className="flex items-center gap-1.5 p-1 bg-neutral-100 dark:bg-slate-800/80 rounded-2xl overflow-x-auto">
+          {DAYS.map((day) => {
+            const isActive = mobileSelectedDay === day.key;
+            const count = scheduleList.filter((item) => item.day === day.key).length;
+            return (
+              <button
+                key={day.key}
+                type="button"
+                onClick={() => setMobileSelectedDay(day.key)}
+                className={`flex-1 min-w-[62px] py-2 px-1 rounded-xl text-center text-xs font-bold transition-all cursor-pointer select-none ${
+                  isActive
+                    ? 'bg-[#7749BC] text-white shadow-xs'
+                    : 'text-neutral-600 dark:text-neutral-300 hover:bg-white/60 dark:hover:bg-slate-700/60'
+                }`}
+              >
+                <p className="text-[11px] leading-tight font-bold">{day.th.replace('วัน', '')}</p>
+                <span
+                  className={`inline-block mt-0.5 text-[9px] px-1.5 py-0.5 rounded-full font-mono ${
+                    isActive
+                      ? 'bg-white/20 text-white font-bold'
+                      : 'bg-neutral-200/80 dark:bg-slate-700 text-neutral-500 dark:text-neutral-400'
+                  }`}
+                >
+                  {count} คาบ
+                </span>
+              </button>
+            );
+          })}
+        </div>
+
+        {/* Selected Day Class Cards */}
+        {(() => {
+          const mobileDayClasses = scheduleList.filter((item) => item.day === mobileSelectedDay);
+          if (mobileDayClasses.length === 0) {
+            return (
+              <div className="p-8 text-center rounded-2xl border border-dashed border-neutral-200 dark:border-slate-800 bg-neutral-50/50 dark:bg-slate-900/50 space-y-1">
+                <CalendarDays className="w-8 h-8 text-neutral-300 dark:text-neutral-600 mx-auto mb-1" />
+                <p className="text-xs font-bold text-neutral-600 dark:text-neutral-300">
+                  ไม่มีตารางสอนในวันนี้
+                </p>
+                <p className="text-[11px] text-neutral-400">
+                  คุณสามารถเลือกดูวันอื่นได้จากแถบเมนูด้านบน
+                </p>
+              </div>
+            );
+          }
+
+          return (
+            <div className="space-y-3">
+              {mobileDayClasses.map((item, idx) => {
+                const theme = getCourseTheme(item);
+                return (
+                  <div
+                    key={idx}
+                    onClick={() => setSelectedItem(item)}
+                    className="p-4 rounded-2xl border-2 border-purple-200 dark:border-purple-800/80 bg-purple-50/30 dark:bg-slate-900 shadow-2xs space-y-3 cursor-pointer active:scale-98 transition-all"
+                  >
+                    <div className="flex items-start justify-between gap-2">
+                      <div>
+                        <span className="font-mono font-black text-sm text-[#7749BC] dark:text-purple-300">
+                          {item.code}
+                        </span>
+                        <h4 className="font-bold text-xs text-neutral-900 dark:text-white mt-1">
+                          {item.name}
+                        </h4>
+                      </div>
+                      <span className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-purple-100 dark:bg-purple-950 text-[#7749BC] dark:text-purple-300 shrink-0">
+                        {item.studentCount} คน
+                      </span>
+                    </div>
+
+                    <div className="grid grid-cols-2 gap-2 text-[11px] text-neutral-600 dark:text-neutral-400">
+                      <div className="flex items-center gap-1.5">
+                        <Clock className="w-3.5 h-3.5 text-[#7749BC] shrink-0" />
+                        <span>{item.time}</span>
+                      </div>
+                      <div className="flex items-center gap-1.5">
+                        <MapPin className="w-3.5 h-3.5 text-[#7749BC] shrink-0" />
+                        <span>ห้อง {item.room}</span>
+                      </div>
+                    </div>
+
+                    <div className="pt-2 border-t border-purple-100 dark:border-slate-800 flex justify-end">
+                      <span className="text-[11px] font-bold text-[#7749BC] dark:text-purple-300">
+                        แตะเพื่อดูรายละเอียดแผนการสอน &rarr;
+                      </span>
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
+          );
+        })()}
+      </div>
+
+      {/* 2. Desktop & Tablet Full Time Grid (>= md) */}
+      <div className="hidden md:block overflow-x-auto p-4 sm:p-6">
         <div className="min-w-[840px] border border-neutral-200/90 dark:border-slate-700/80 rounded-2xl overflow-hidden bg-white dark:bg-slate-900 shadow-2xs">
           {/* Header Row: Date / Time + 8 Time Slots */}
           <div className="grid grid-cols-9 bg-neutral-100/80 dark:bg-slate-800/80 border-b border-neutral-200/90 dark:border-slate-700/80 text-center font-bold text-xs text-neutral-700 dark:text-neutral-200">

@@ -244,36 +244,42 @@ export default function TeacherHistoryView({
                 <label className="block text-[11px] font-semibold text-neutral-500 mb-1">
                   ภาคเรียน
                 </label>
-                <select
-                  value={selectedTerm}
-                  onChange={(e) => setSelectedTerm(e.target.value)}
-                  className="w-full px-3 py-2 rounded-xl border border-neutral-300 dark:border-slate-700 bg-white dark:bg-slate-800 text-xs font-medium text-neutral-900 dark:text-neutral-100 focus:outline-none focus:border-[#7749BC]"
-                >
-                  <option value="all">ทุกภาคการศึกษา</option>
-                  {academicTerms.map((t) => (
-                    <option key={t} value={t}>
-                      ภาคเรียนที่ {t}
-                    </option>
-                  ))}
-                </select>
+                <div className="relative">
+                  <select
+                    value={selectedTerm}
+                    onChange={(e) => setSelectedTerm(e.target.value)}
+                    className="w-full px-3 py-2 pr-8 rounded-xl border border-neutral-300 dark:border-slate-700 bg-white dark:bg-slate-800 text-xs font-medium text-neutral-900 dark:text-neutral-100 focus:outline-none focus:border-[#7749BC] appearance-none cursor-pointer"
+                  >
+                    <option value="all">ทุกภาคการศึกษา</option>
+                    {academicTerms.map((t) => (
+                      <option key={t} value={t}>
+                        ภาคเรียนที่ {t}
+                      </option>
+                    ))}
+                  </select>
+                  <ChevronDown className="w-4 h-4 text-neutral-400 absolute right-2.5 top-1/2 -translate-y-1/2 pointer-events-none" />
+                </div>
               </div>
 
               <div>
                 <label className="block text-[11px] font-semibold text-neutral-500 mb-1">
                   รายวิชา
                 </label>
-                <select
-                  value={selectedCourseId}
-                  onChange={(e) => setSelectedCourseId(e.target.value)}
-                  className="w-full px-3 py-2 rounded-xl border border-neutral-300 dark:border-slate-700 bg-white dark:bg-slate-800 text-xs font-medium text-neutral-900 dark:text-neutral-100 focus:outline-none focus:border-[#7749BC]"
-                >
-                  <option value="all">ทุกรายวิชา</option>
-                  {courses.map((c) => (
-                    <option key={c.id} value={c.id}>
-                      {c.code} {c.name} {c.group ? `(กลุ่ม ${c.group})` : ''}
-                    </option>
-                  ))}
-                </select>
+                <div className="relative">
+                  <select
+                    value={selectedCourseId}
+                    onChange={(e) => setSelectedCourseId(e.target.value)}
+                    className="w-full px-3 py-2 pr-8 rounded-xl border border-neutral-300 dark:border-slate-700 bg-white dark:bg-slate-800 text-xs font-medium text-neutral-900 dark:text-neutral-100 focus:outline-none focus:border-[#7749BC] appearance-none cursor-pointer"
+                  >
+                    <option value="all">ทุกรายวิชา</option>
+                    {courses.map((c) => (
+                      <option key={c.id} value={c.id}>
+                        {c.code} {c.name} {c.group ? `(กลุ่ม ${c.group})` : ''}
+                      </option>
+                    ))}
+                  </select>
+                  <ChevronDown className="w-4 h-4 text-neutral-400 absolute right-2.5 top-1/2 -translate-y-1/2 pointer-events-none" />
+                </div>
               </div>
 
               <div>

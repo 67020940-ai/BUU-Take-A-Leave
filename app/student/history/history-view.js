@@ -56,7 +56,7 @@ export default function StudentHistoryView({ leaves: initialLeaves = [], summari
       if (l.courseTerm && l.courseTerm !== '-') terms.add(l.courseTerm);
     });
     if (terms.size === 0) terms.add('1/2569');
-    return sortAcademicTerms(Array.from(terms), true);
+    return sortAcademicTerms(Array.from(terms), false);
   }, [summaries, leaves]);
 
   // Filter leaves according to term, status, type, and search query
@@ -369,12 +369,6 @@ export default function StudentHistoryView({ leaves: initialLeaves = [], summari
                     {detailModal.leave.courseName}
                   </h3>
                 </div>
-                <button
-                  onClick={() => setDetailModal({ isOpen: false, leave: null })}
-                  className="p-1.5 text-neutral-400 hover:text-neutral-700 dark:hover:text-neutral-200 rounded-lg cursor-pointer shrink-0"
-                >
-                  <X className="w-4 h-4" />
-                </button>
               </div>
 
               {/* Status Banner */}

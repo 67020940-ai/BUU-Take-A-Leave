@@ -39,7 +39,7 @@ export default function StudentStatsView({ summaries = [], leaves = [] }) {
       if (l.courseTerm && l.courseTerm !== '-') terms.add(l.courseTerm);
     });
     if (terms.size === 0) terms.add('1/2569');
-    return sortAcademicTerms(Array.from(terms), true);
+    return sortAcademicTerms(Array.from(terms), false);
   }, [summaries, leaves]);
 
   const [selectedTerm, setSelectedTerm] = useState('all');

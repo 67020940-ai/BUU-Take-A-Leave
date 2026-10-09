@@ -104,7 +104,7 @@ export default function StudentHomepageView({
       set.add('2/2568');
       set.add('1/2568');
     }
-    return sortAcademicTerms(Array.from(set), true);
+    return sortAcademicTerms(Array.from(set), false);
   }, [summaries, leaves]);
 
   const [selectedTerm, setSelectedTerm] = useState('1/2569');
