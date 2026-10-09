@@ -581,7 +581,50 @@ export default function AdminDashboard({ user, courses = [], leaves = [], ticket
                 </div>
               </div>
 
-              <div className="bg-white dark:bg-slate-900 rounded-3xl border border-neutral-200 dark:border-slate-800 p-5 sm:p-6 shadow-xs overflow-x-auto">
+              {/* 1. Mobile Courses Cards List (< md) */}
+              <div className="block md:hidden space-y-3">
+                {filteredCourses.map((c) => (
+                  <div
+                    key={c.id}
+                    className="p-4 rounded-3xl bg-white dark:bg-slate-900 border border-neutral-200 dark:border-slate-800 shadow-2xs space-y-2.5"
+                  >
+                    <div className="flex items-start justify-between gap-2">
+                      <div>
+                        <div className="flex items-center gap-1.5">
+                          <span className="font-mono font-bold text-sm text-[#7749BC] dark:text-purple-400">
+                            {c.code}
+                          </span>
+                          <span className="px-2 py-0.5 rounded-full bg-slate-100 dark:bg-slate-800 font-bold text-[10px]">
+                            กลุ่ม {c.group || '1'}
+                          </span>
+                        </div>
+                        <h4 className="font-bold text-xs text-neutral-900 dark:text-white mt-0.5">
+                          {c.name}
+                        </h4>
+                      </div>
+                      <span className="font-mono font-bold text-xs text-neutral-700 dark:text-neutral-300 px-2 py-1 rounded-xl bg-neutral-100 dark:bg-slate-800 shrink-0">
+                        {c.studentCount || c.totalStudents || 35} คน
+                      </span>
+                    </div>
+
+                    <div className="grid grid-cols-2 gap-2 text-[11px] text-neutral-600 dark:text-neutral-400 pt-2 border-t border-neutral-100 dark:border-slate-800">
+                      <div>
+                        <span className="text-neutral-400 block text-[10px]">ผู้สอน</span>
+                        <span className="font-medium truncate block">{c.teacherName || c.teacher?.name || '-'}</span>
+                      </div>
+                      <div>
+                        <span className="text-neutral-400 block text-[10px]">วันและเวลา / ห้อง</span>
+                        <span className="font-mono truncate block">
+                          {c.day ? `${DAY_LABEL_TH[c.day] || c.day} ` : ''}{c.time || '-'} ({c.room || '-'})
+                        </span>
+                      </div>
+                    </div>
+                  </div>
+                ))}
+              </div>
+
+              {/* 2. Tablet & Desktop Courses Table (>= md) */}
+              <div className="hidden md:block bg-white dark:bg-slate-900 rounded-3xl border border-neutral-200 dark:border-slate-800 p-5 sm:p-6 shadow-xs overflow-x-auto">
                 <table className="w-full text-left text-xs min-w-[700px]">
                   <thead>
                     <tr className="border-b border-neutral-100 dark:border-slate-800 text-neutral-400 font-bold">
@@ -666,7 +709,64 @@ export default function AdminDashboard({ user, courses = [], leaves = [], ticket
                 </div>
               </div>
 
-              <div className="bg-white dark:bg-slate-900 rounded-3xl border border-neutral-200 dark:border-slate-800 p-5 sm:p-6 shadow-xs overflow-x-auto">
+              {/* 1. Mobile Leaves Cards List (< md) */}
+              <div className="block md:hidden space-y-3">
+                {filteredLeaves.map((l) => (
+                  <div
+                    key={l.id}
+                    className="p-4 rounded-3xl bg-white dark:bg-slate-900 border border-neutral-200 dark:border-slate-800 shadow-2xs space-y-3"
+                  >
+                    <div className="flex items-start justify-between gap-2">
+                      <div className="min-w-0">
+                        <div className="flex items-center gap-1.5">
+                          <span className="font-bold text-xs text-neutral-900 dark:text-white">
+                            {l.studentName || 'นิสิต'}
+                          </span>
+                          <span className="px-2 py-0.5 rounded-full bg-purple-100 dark:bg-purple-950 text-[#7749BC] dark:text-purple-300 font-bold text-[10px]">
+                            {l.type}
+                          </span>
+                        </div>
+                        <p className="text-[11px] font-mono text-[#7749BC] dark:text-purple-400 mt-0.5 truncate">
+                          {l.courseName}
+                        </p>
+                      </div>
+
+                      <span
+                        className={`px-2.5 py-0.5 rounded-full font-bold text-[10px] shrink-0 ${
+                          l.status === 'อนุมัติ'
+                            ? 'bg-emerald-100 text-emerald-700 dark:bg-emerald-950 dark:text-emerald-300'
+                            : l.status === 'รออนุมัติ'
+                            ? 'bg-amber-100 text-amber-700 dark:bg-amber-950 dark:text-amber-300'
+                            : 'bg-rose-100 text-rose-700 dark:bg-rose-950 dark:text-rose-300'
+                        }`}
+                      >
+                        {l.status}
+                      </span>
+                    </div>
+
+                    <div className="text-xs text-neutral-600 dark:text-neutral-300">
+                      <p className="line-clamp-2"><strong>เหตุผล:</strong> {l.reason || '-'}</p>
+                      <p className="text-[11px] text-neutral-400 font-mono mt-1">
+                        วันที่ลา: {formatThaiDate(l.startDate || l.createdAt)}
+                      </p>
+                    </div>
+
+                    <div className="pt-2 border-t border-neutral-100 dark:border-slate-800 flex justify-end">
+                      <button
+                        type="button"
+                        onClick={() => setSelectedLeave(l)}
+                        className="min-h-[44px] w-full rounded-xl bg-purple-50 dark:bg-purple-950/60 hover:bg-[#7749BC] hover:text-white text-[#7749BC] dark:text-purple-300 border border-purple-200 dark:border-purple-800 text-xs font-bold transition-all flex items-center justify-center gap-1.5 cursor-pointer shadow-2xs"
+                      >
+                        <Eye className="w-3.5 h-3.5" />
+                        <span>ดูรายละเอียดคำขอ</span>
+                      </button>
+                    </div>
+                  </div>
+                ))}
+              </div>
+
+              {/* 2. Tablet & Desktop Leaves Table (>= md) */}
+              <div className="hidden md:block bg-white dark:bg-slate-900 rounded-3xl border border-neutral-200 dark:border-slate-800 p-5 sm:p-6 shadow-xs overflow-x-auto">
                 <table className="w-full text-left text-xs min-w-[750px]">
                   <thead>
                     <tr className="border-b border-neutral-100 dark:border-slate-800 text-neutral-400 font-bold">
