@@ -62,4 +62,23 @@ test.describe('BUU Take A Leave - Student Leave Flow', () => {
       page.getByText(/กรุณากรอกข้อมูลในช่องที่มีเครื่องหมายดอกจัน/i)
     ).toBeVisible();
   });
+
+  test('ควรแสดงผล Mobile Bottom Navigation และเมนูได้อย่างถูกต้องบนหน้าจอมือถือ', async ({ page }) => {
+    // กำหนด Viewport เป็นขนาดหน้าจอมือถือ (iPhone 14 / Mobile < 768px)
+    await page.setViewportSize({ width: 390, height: 844 });
+    await page.goto('/student');
+
+    // ตรวจสอบว่ามี Mobile Bottom Nav แสดงอยู่
+    const mobileNav = page.getByRole('navigation', { name: 'เมนูหลักสำหรับมือถือ' });
+    await expect(mobileNav).toBeVisible();
+
+    // ตรวจสอบการสลับแท็บผ่าน Mobile Bottom Nav
+    const scheduleNavBtn = mobileNav.getByRole('button', { name: /ตารางเรียน/i });
+    await scheduleNavBtn.click();
+    await expect(page).toHaveURL(/tab=schedule/);
+
+    // ตรวจสอบว่า Day Selector Tabs ปรากฏใน Mobile View
+    await expect(page.getByRole('button', { name: /จันทร์/i })).toBeVisible();
+  });
 });
+
