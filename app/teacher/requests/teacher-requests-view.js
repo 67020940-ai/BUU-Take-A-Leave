@@ -570,11 +570,11 @@ export default function TeacherRequestsView({
                       </div>
 
                       {/* Right: Actions */}
-                      <div className="flex items-center gap-2 self-end sm:self-center shrink-0">
+                      <div className="flex flex-wrap sm:flex-nowrap items-center gap-2 w-full sm:w-auto pt-3 sm:pt-0 border-t sm:border-t-0 border-neutral-100 dark:border-slate-800 shrink-0">
                         <button
                           type="button"
                           onClick={() => setDetailModal({ isOpen: true, leave, comment: '' })}
-                          className="px-3.5 py-2 rounded-xl bg-neutral-100 hover:bg-neutral-200 dark:bg-slate-800 text-xs font-semibold text-neutral-700 dark:text-neutral-200 cursor-pointer"
+                          className="flex-1 sm:flex-initial min-h-[44px] sm:min-h-[36px] px-3.5 py-2 rounded-xl bg-neutral-100 hover:bg-neutral-200 dark:bg-slate-800 text-xs font-semibold text-neutral-700 dark:text-neutral-200 flex items-center justify-center cursor-pointer shadow-2xs"
                         >
                           ดูข้อมูล
                         </button>
@@ -584,14 +584,14 @@ export default function TeacherRequestsView({
                             <button
                               type="button"
                               onClick={() => setActionModal({ isOpen: true, type: 'reject', leave, comment: '' })}
-                              className="px-3.5 py-2 rounded-xl bg-rose-50 text-rose-700 dark:bg-rose-950/60 dark:text-rose-300 border border-rose-200 dark:border-rose-800 text-xs font-bold hover:bg-rose-100 cursor-pointer"
+                              className="flex-1 sm:flex-initial min-h-[44px] sm:min-h-[36px] px-3.5 py-2 rounded-xl bg-rose-50 text-rose-700 dark:bg-rose-950/60 dark:text-rose-300 border border-rose-200 dark:border-rose-800 text-xs font-bold hover:bg-rose-100 flex items-center justify-center cursor-pointer"
                             >
                               ไม่อนุมัติ
                             </button>
                             <button
                               type="button"
                               onClick={() => handleDecide(leave, 'อนุมัติ')}
-                              className="px-4 py-2 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-bold shadow-xs cursor-pointer"
+                              className="flex-1 sm:flex-initial min-h-[44px] sm:min-h-[36px] px-4 py-2 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-bold shadow-xs flex items-center justify-center cursor-pointer"
                             >
                               อนุมัติ
                             </button>

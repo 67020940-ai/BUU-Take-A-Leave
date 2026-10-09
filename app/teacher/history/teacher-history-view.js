@@ -306,106 +306,191 @@ export default function TeacherHistoryView({
               </p>
             </div>
           ) : (
-            <div className="bg-white/90 dark:bg-slate-900/90 backdrop-blur-xl rounded-3xl border border-neutral-200/80 dark:border-slate-800 shadow-xs overflow-hidden">
-              <div className="overflow-x-auto">
-                <table className="w-full text-left text-xs">
-                  <thead className="bg-neutral-50/80 dark:bg-slate-800/80 text-neutral-700 dark:text-neutral-300 font-bold border-b border-neutral-200/80 dark:border-slate-700">
-                    <tr>
-                      <th className="p-3.5 pl-5">นิสิต</th>
-                      <th className="p-3.5">รายวิชา</th>
-                      <th className="p-3.5">ประเภทการลา</th>
-                      <th className="p-3.5">วันที่ลา</th>
-                      <th className="p-3.5">สถานะ</th>
-                      <th className="p-3.5">ข้อคิดเห็นอาจารย์</th>
-                      <th className="p-3.5 pr-5 text-right">การกระทำ</th>
-                    </tr>
-                  </thead>
-                  <tbody className="divide-y divide-neutral-100 dark:divide-slate-800">
-                    {filteredLeaves.map((leave) => {
-                      const statusInfo = STATUS_DETAILS[leave.status] || STATUS_DETAILS['อนุมัติ'];
-                      const typeBadge = LEAVE_TYPE_DETAILS[leave.type] || LEAVE_TYPE_DEFAULT;
+            <>
+              {/* 1. Mobile Card List (< md) */}
+              <div className="block md:hidden space-y-3">
+                {filteredLeaves.map((leave) => {
+                  const statusInfo = STATUS_DETAILS[leave.status] || STATUS_DETAILS['อนุมัติ'];
+                  const typeBadge = LEAVE_TYPE_DETAILS[leave.type] || LEAVE_TYPE_DEFAULT;
 
-                      return (
-                        <tr key={leave.id} className="hover:bg-neutral-50/50 dark:hover:bg-slate-800/40 transition-colors">
-                          <td className="p-3.5 pl-5">
-                            <div className="flex items-center gap-2.5">
-                              <div className="w-8 h-8 rounded-xl bg-purple-100 dark:bg-purple-950 text-[#7749BC] dark:text-purple-300 font-bold text-[11px] flex items-center justify-center shrink-0">
-                                {initials(leave.studentName)}
-                              </div>
-                              <div>
-                                <p className="font-bold text-neutral-900 dark:text-neutral-100">{leave.studentName}</p>
-                                <p className="font-mono text-[10px] text-neutral-400">{leave.studentCode}</p>
-                              </div>
-                            </div>
-                          </td>
+                  return (
+                    <div
+                      key={leave.id}
+                      className="bg-white/90 dark:bg-slate-900/90 backdrop-blur-xl p-4 rounded-3xl border border-neutral-200/80 dark:border-slate-800 shadow-xs space-y-3"
+                    >
+                      <div className="flex items-start justify-between gap-2">
+                        <div className="flex items-center gap-2.5 min-w-0">
+                          <div className="w-9 h-9 rounded-xl bg-purple-100 dark:bg-purple-950 text-[#7749BC] dark:text-purple-300 font-bold text-xs flex items-center justify-center shrink-0">
+                            {initials(leave.studentName)}
+                          </div>
+                          <div className="min-w-0">
+                            <p className="font-bold text-xs text-neutral-900 dark:text-neutral-100 truncate">{leave.studentName}</p>
+                            <p className="font-mono text-[10px] text-neutral-400">{leave.studentCode}</p>
+                          </div>
+                        </div>
+                        <span className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-[11px] font-semibold border shrink-0 ${statusInfo.badge}`}>
+                          <span className={`w-1.5 h-1.5 rounded-full ${statusInfo.dot}`} />
+                          <span>{statusInfo.label || leave.status}</span>
+                        </span>
+                      </div>
 
-                          <td className="p-3.5 text-neutral-700 dark:text-neutral-300">
-                            <span className="font-mono font-bold text-[#7749BC] dark:text-purple-400">{leave.courseCode}</span>
-                            <span className="block text-[11px] text-neutral-500 truncate max-w-[140px]">{leave.courseName}</span>
-                          </td>
+                      <div className="p-2.5 rounded-2xl bg-neutral-50 dark:bg-slate-800/60 space-y-1 text-xs">
+                        <div className="flex items-center justify-between">
+                          <span className="font-mono font-bold text-[#7749BC] dark:text-purple-400">{leave.courseCode}</span>
+                          <span className={`inline-block text-[10px] font-bold px-2 py-0.5 rounded-full border ${typeBadge}`}>
+                            {leave.type}
+                          </span>
+                        </div>
+                        <p className="text-[11px] text-neutral-600 dark:text-neutral-300 truncate">{leave.courseName}</p>
+                        <p className="text-[11px] text-neutral-400 font-mono">
+                          วันที่ลา: {formatThaiDate(leave.startDate)}
+                          {leave.endDate && leave.endDate !== leave.startDate ? ` - ${formatThaiDate(leave.endDate)}` : ''}
+                        </p>
+                      </div>
 
-                          <td className="p-3.5">
-                            <span className={`inline-block text-[10px] font-bold px-2 py-0.5 rounded-full border ${typeBadge}`}>
-                              {leave.type}
-                            </span>
-                          </td>
+                      {leave.teacherComment && (
+                        <p className="text-[11px] text-neutral-500 italic bg-purple-50/50 dark:bg-purple-950/20 p-2 rounded-xl">
+                          ความเห็น: {leave.teacherComment}
+                        </p>
+                      )}
 
-                          <td className="p-3.5 text-neutral-600 dark:text-neutral-400 font-mono text-[11px]">
-                            {formatThaiDate(leave.startDate)}
-                          </td>
+                      <div className="flex items-center gap-2 pt-2 border-t border-neutral-100 dark:border-slate-800">
+                        <button
+                          type="button"
+                          onClick={() => setDetailModal({ isOpen: true, leave })}
+                          className="flex-1 min-h-[44px] py-2 px-3 rounded-xl bg-neutral-100 dark:bg-slate-800 hover:bg-neutral-200 text-xs font-bold text-neutral-700 dark:text-neutral-200 flex items-center justify-center gap-1.5 cursor-pointer shadow-2xs"
+                        >
+                          <Eye className="w-3.5 h-3.5" />
+                          <span>ดูข้อมูล</span>
+                        </button>
 
-                          <td className="p-3.5">
-                            <span className={`inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-xs font-semibold border ${statusInfo.badge}`}>
-                              <span className={`w-1.5 h-1.5 rounded-full ${statusInfo.dot}`} />
-                              <span>{statusInfo.label || leave.status}</span>
-                            </span>
-                          </td>
-
-                          <td className="p-3.5 text-neutral-500 text-[11px] max-w-[160px] truncate">
-                            {leave.teacherComment || '-'}
-                          </td>
-
-                          <td className="p-3.5 pr-5 text-right">
-                            <div className="flex items-center justify-end gap-1.5">
-                              <button
-                                type="button"
-                                onClick={() => setDetailModal({ isOpen: true, leave })}
-                                className="px-2.5 py-1.5 rounded-lg bg-neutral-100 hover:bg-neutral-200 dark:bg-slate-800 text-xs font-semibold text-neutral-700 dark:text-neutral-200 cursor-pointer"
-                                title="ดูรายละเอียด"
-                              >
-                                ดูข้อมูล
-                              </button>
-
-                              {leave.status === 'อนุมัติ' ? (
-                                <button
-                                  type="button"
-                                  onClick={() => setReconsiderModal({ isOpen: true, leave, type: 'revoke', comment: '' })}
-                                  className="px-2.5 py-1.5 rounded-lg bg-amber-50 hover:bg-amber-100 text-amber-800 dark:bg-amber-950/60 dark:text-amber-300 border border-amber-200 text-xs font-semibold cursor-pointer flex items-center gap-1"
-                                  title="เพิกถอนการอนุมัติ"
-                                >
-                                  <RotateCcw className="w-3 h-3" />
-                                  <span>เพิกถอน</span>
-                                </button>
-                              ) : leave.status === 'ไม่อนุมัติ' || leave.status === 'เพิกถอนการอนุมัติ' ? (
-                                <button
-                                  type="button"
-                                  onClick={() => setReconsiderModal({ isOpen: true, leave, type: 'reconsider', comment: '' })}
-                                  className="px-2.5 py-1.5 rounded-lg bg-purple-50 hover:bg-purple-100 text-[#7749BC] dark:bg-purple-950/60 dark:text-purple-300 border border-purple-200 text-xs font-semibold cursor-pointer flex items-center gap-1"
-                                  title="พิจารณาใหม่"
-                                >
-                                  <RotateCcw className="w-3 h-3" />
-                                  <span>พิจารณาใหม่</span>
-                                </button>
-                              ) : null}
-                            </div>
-                          </td>
-                        </tr>
-                      );
-                    })}
-                  </tbody>
-                </table>
+                        {leave.status === 'อนุมัติ' ? (
+                          <button
+                            type="button"
+                            onClick={() => setReconsiderModal({ isOpen: true, leave, type: 'revoke', comment: '' })}
+                            className="min-h-[44px] py-2 px-3.5 rounded-xl bg-amber-50 hover:bg-amber-100 text-amber-800 dark:bg-amber-950/60 dark:text-amber-300 border border-amber-200 dark:border-amber-800 text-xs font-bold cursor-pointer flex items-center justify-center gap-1.5 shrink-0"
+                          >
+                            <RotateCcw className="w-3.5 h-3.5" />
+                            <span>เพิกถอน</span>
+                          </button>
+                        ) : leave.status === 'ไม่อนุมัติ' || leave.status === 'เพิกถอนการอนุมัติ' ? (
+                          <button
+                            type="button"
+                            onClick={() => setReconsiderModal({ isOpen: true, leave, type: 'reconsider', comment: '' })}
+                            className="min-h-[44px] py-2 px-3.5 rounded-xl bg-purple-50 hover:bg-purple-100 text-[#7749BC] dark:bg-purple-950/60 dark:text-purple-300 border border-purple-200 dark:border-purple-800 text-xs font-bold cursor-pointer flex items-center justify-center gap-1.5 shrink-0"
+                          >
+                            <RotateCcw className="w-3.5 h-3.5" />
+                            <span>พิจารณาใหม่</span>
+                          </button>
+                        ) : null}
+                      </div>
+                    </div>
+                  );
+                })}
               </div>
-            </div>
+
+              {/* 2. Tablet & Desktop Full Data Table (>= md) */}
+              <div className="hidden md:block bg-white/90 dark:bg-slate-900/90 backdrop-blur-xl rounded-3xl border border-neutral-200/80 dark:border-slate-800 shadow-xs overflow-hidden">
+                <div className="overflow-x-auto">
+                  <table className="w-full text-left text-xs">
+                    <thead className="bg-neutral-50/80 dark:bg-slate-800/80 text-neutral-700 dark:text-neutral-300 font-bold border-b border-neutral-200/80 dark:border-slate-700">
+                      <tr>
+                        <th className="p-3.5 pl-5">นิสิต</th>
+                        <th className="p-3.5">รายวิชา</th>
+                        <th className="p-3.5">ประเภทการลา</th>
+                        <th className="p-3.5">วันที่ลา</th>
+                        <th className="p-3.5">สถานะ</th>
+                        <th className="p-3.5">ข้อคิดเห็นอาจารย์</th>
+                        <th className="p-3.5 pr-5 text-right">การกระทำ</th>
+                      </tr>
+                    </thead>
+                    <tbody className="divide-y divide-neutral-100 dark:divide-slate-800">
+                      {filteredLeaves.map((leave) => {
+                        const statusInfo = STATUS_DETAILS[leave.status] || STATUS_DETAILS['อนุมัติ'];
+                        const typeBadge = LEAVE_TYPE_DETAILS[leave.type] || LEAVE_TYPE_DEFAULT;
+
+                        return (
+                          <tr key={leave.id} className="hover:bg-neutral-50/50 dark:hover:bg-slate-800/40 transition-colors">
+                            <td className="p-3.5 pl-5">
+                              <div className="flex items-center gap-2.5">
+                                <div className="w-8 h-8 rounded-xl bg-purple-100 dark:bg-purple-950 text-[#7749BC] dark:text-purple-300 font-bold text-[11px] flex items-center justify-center shrink-0">
+                                  {initials(leave.studentName)}
+                                </div>
+                                <div>
+                                  <p className="font-bold text-neutral-900 dark:text-neutral-100">{leave.studentName}</p>
+                                  <p className="font-mono text-[10px] text-neutral-400">{leave.studentCode}</p>
+                                </div>
+                              </div>
+                            </td>
+
+                            <td className="p-3.5 text-neutral-700 dark:text-neutral-300">
+                              <span className="font-mono font-bold text-[#7749BC] dark:text-purple-400">{leave.courseCode}</span>
+                              <span className="block text-[11px] text-neutral-500 truncate max-w-[140px]">{leave.courseName}</span>
+                            </td>
+
+                            <td className="p-3.5">
+                              <span className={`inline-block text-[10px] font-bold px-2 py-0.5 rounded-full border ${typeBadge}`}>
+                                {leave.type}
+                              </span>
+                            </td>
+
+                            <td className="p-3.5 text-neutral-600 dark:text-neutral-400 font-mono text-[11px]">
+                              {formatThaiDate(leave.startDate)}
+                            </td>
+
+                            <td className="p-3.5">
+                              <span className={`inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-xs font-semibold border ${statusInfo.badge}`}>
+                                <span className={`w-1.5 h-1.5 rounded-full ${statusInfo.dot}`} />
+                                <span>{statusInfo.label || leave.status}</span>
+                              </span>
+                            </td>
+
+                            <td className="p-3.5 text-neutral-500 text-[11px] max-w-[160px] truncate">
+                              {leave.teacherComment || '-'}
+                            </td>
+
+                            <td className="p-3.5 pr-5 text-right">
+                              <div className="flex items-center justify-end gap-1.5">
+                                <button
+                                  type="button"
+                                  onClick={() => setDetailModal({ isOpen: true, leave })}
+                                  className="px-2.5 py-1.5 rounded-lg bg-neutral-100 hover:bg-neutral-200 dark:bg-slate-800 text-xs font-semibold text-neutral-700 dark:text-neutral-200 cursor-pointer"
+                                  title="ดูรายละเอียด"
+                                >
+                                  ดูข้อมูล
+                                </button>
+
+                                {leave.status === 'อนุมัติ' ? (
+                                  <button
+                                    type="button"
+                                    onClick={() => setReconsiderModal({ isOpen: true, leave, type: 'revoke', comment: '' })}
+                                    className="px-2.5 py-1.5 rounded-lg bg-amber-50 hover:bg-amber-100 text-amber-800 dark:bg-amber-950/60 dark:text-amber-300 border border-amber-200 text-xs font-semibold cursor-pointer flex items-center gap-1"
+                                    title="เพิกถอนการอนุมัติ"
+                                  >
+                                    <RotateCcw className="w-3 h-3" />
+                                    <span>เพิกถอน</span>
+                                  </button>
+                                ) : leave.status === 'ไม่อนุมัติ' || leave.status === 'เพิกถอนการอนุมัติ' ? (
+                                  <button
+                                    type="button"
+                                    onClick={() => setReconsiderModal({ isOpen: true, leave, type: 'reconsider', comment: '' })}
+                                    className="px-2.5 py-1.5 rounded-lg bg-purple-50 hover:bg-purple-100 text-[#7749BC] dark:bg-purple-950/60 dark:text-purple-300 border border-purple-200 text-xs font-semibold cursor-pointer flex items-center gap-1"
+                                    title="พิจารณาใหม่"
+                                  >
+                                    <RotateCcw className="w-3 h-3" />
+                                    <span>พิจารณาใหม่</span>
+                                  </button>
+                                ) : null}
+                              </div>
+                            </td>
+                          </tr>
+                        );
+                      })}
+                    </tbody>
+                  </table>
+                </div>
+              </div>
+            </>
           )}
         </main>
       </div>
