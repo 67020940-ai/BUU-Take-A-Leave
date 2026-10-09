@@ -31,6 +31,7 @@ import StudentStatsView from './stats/stats-view';
 import StudentHistoryView from './history/history-view';
 import StudentScheduleView from './schedule/schedule-view';
 import { getCoursePrep } from '@/lib/coursePrepData';
+import { sortAcademicTerms } from '@/lib/ui';
 
 export default function StudentHomepageView({
   user,
@@ -102,7 +103,7 @@ export default function StudentHomepageView({
       set.add('2/2568');
       set.add('1/2568');
     }
-    return Array.from(set).sort().reverse();
+    return sortAcademicTerms(Array.from(set), true);
   }, [summaries, leaves]);
 
   const [selectedTerm, setSelectedTerm] = useState('1/2569');
@@ -140,6 +141,7 @@ export default function StudentHomepageView({
     <div className="min-h-screen bg-slate-50/70 dark:bg-slate-950 flex flex-col lg:flex-row font-sans text-neutral-800 dark:text-neutral-100">
       {/* 1. Left Fixed Sidebar (StudentSidebar) with in-place session tab switching */}
       <StudentSidebar
+        user={user}
         activeTab={activeTab}
         onSelectTab={(tabKey) => handleSwitchTab(tabKey)}
         pendingCount={stats.pending}
@@ -165,63 +167,100 @@ export default function StudentHomepageView({
           {activeTab === 'home' && (
             <div className="space-y-6 animate-in fade-in duration-150">
               {/* 4 Connected Horizontal Summary Boxes (Strictly matching wireframe) */}
-              <div className="grid grid-cols-2 sm:grid-cols-4 divide-y sm:divide-y-0 sm:divide-x border-2 border-neutral-300 dark:border-slate-700 rounded-3xl bg-white dark:bg-slate-900 shadow-xs overflow-hidden">
+              <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 sm:gap-4">
                 {/* Box 1: คำร้องขอลาทั้งหมด */}
                 <button
                   type="button"
                   onClick={() => handleSwitchTab('history', { status: 'all' })}
-                  className="p-4 sm:p-5 text-left transition-colors cursor-pointer hover:bg-purple-50/60 dark:hover:bg-slate-800/50 text-neutral-800 dark:text-neutral-200 block group"
-                  title="ดูประวัติการลาทั้งหมด"
+                  className="p-4 sm:p-5 text-left rounded-3xl bg-white dark:bg-slate-900 border-2 border-neutral-200 dark:border-slate-800 hover:border-[#7749BC] dark:hover:border-purple-500 hover:shadow-md transition-all cursor-pointer text-neutral-800 dark:text-neutral-200 block group shadow-2xs relative"
+                  title="คลิกเพื่อดูประวัติการลาทั้งหมด"
                 >
-                  <p className="text-xs sm:text-sm font-bold truncate group-hover:text-[#7749BC] dark:group-hover:text-purple-300 transition-colors">
-                    คำร้องขอลาทั้งหมด
-                  </p>
-                  <p className="text-lg sm:text-2xl font-black font-mono mt-1">: {stats.total}</p>
+                  <div className="flex items-center justify-between mb-2">
+                    <span className="text-xs sm:text-sm font-bold truncate group-hover:text-[#7749BC] dark:group-hover:text-purple-300 transition-colors">
+                      คำร้องขอลาทั้งหมด
+                    </span>
+                    <ChevronRight className="w-4 h-4 text-neutral-400 group-hover:text-[#7749BC] group-hover:translate-x-0.5 transition-all shrink-0" />
+                  </div>
+                  <div className="flex items-baseline justify-between">
+                    <span className="text-2xl sm:text-3xl font-black font-mono text-neutral-900 dark:text-neutral-100">
+                      {stats.total}
+                    </span>
+                    <span className="text-[11px] text-neutral-400 group-hover:text-[#7749BC] transition-colors">
+                      รายการ
+                    </span>
+                  </div>
                 </button>
 
                 {/* Box 2: อนุมัติ */}
                 <button
                   type="button"
                   onClick={() => handleSwitchTab('history', { status: 'อนุมัติ' })}
-                  className="p-4 sm:p-5 text-left transition-colors cursor-pointer hover:bg-emerald-50/60 dark:hover:bg-slate-800/50 text-neutral-800 dark:text-neutral-200 block group"
-                  title="ดูคำขอที่อนุมัติแล้ว"
+                  className="p-4 sm:p-5 text-left rounded-3xl bg-white dark:bg-slate-900 border-2 border-neutral-200 dark:border-slate-800 hover:border-emerald-500 dark:hover:border-emerald-500 hover:shadow-md transition-all cursor-pointer text-neutral-800 dark:text-neutral-200 block group shadow-2xs relative"
+                  title="คลิกเพื่อดูคำขอที่อนุมัติแล้ว"
                 >
-                  <p className="text-xs sm:text-sm font-bold truncate group-hover:text-emerald-700 dark:group-hover:text-emerald-300 transition-colors">
-                    อนุมัติ
-                  </p>
-                  <p className="text-lg sm:text-2xl font-black font-mono mt-1 text-emerald-600 dark:text-emerald-400">
-                    : {stats.approved}
-                  </p>
+                  <div className="flex items-center justify-between mb-2">
+                    <span className="text-xs sm:text-sm font-bold truncate group-hover:text-emerald-600 dark:group-hover:text-emerald-300 transition-colors flex items-center gap-1.5">
+                      <span className="w-2 h-2 rounded-full bg-emerald-500" />
+                      อนุมัติ
+                    </span>
+                    <ChevronRight className="w-4 h-4 text-neutral-400 group-hover:text-emerald-600 group-hover:translate-x-0.5 transition-all shrink-0" />
+                  </div>
+                  <div className="flex items-baseline justify-between">
+                    <span className="text-2xl sm:text-3xl font-black font-mono text-emerald-600 dark:text-emerald-400">
+                      {stats.approved}
+                    </span>
+                    <span className="text-[11px] text-neutral-400 group-hover:text-emerald-600 transition-colors">
+                      รายการ
+                    </span>
+                  </div>
                 </button>
 
                 {/* Box 3: รออนุมัติ */}
                 <button
                   type="button"
                   onClick={() => handleSwitchTab('history', { status: 'รออนุมัติ' })}
-                  className="p-4 sm:p-5 text-left transition-colors cursor-pointer hover:bg-amber-50/60 dark:hover:bg-slate-800/50 text-neutral-800 dark:text-neutral-200 block group"
-                  title="ดูคำขอที่รออนุมัติ"
+                  className="p-4 sm:p-5 text-left rounded-3xl bg-white dark:bg-slate-900 border-2 border-neutral-200 dark:border-slate-800 hover:border-amber-500 dark:hover:border-amber-500 hover:shadow-md transition-all cursor-pointer text-neutral-800 dark:text-neutral-200 block group shadow-2xs relative"
+                  title="คลิกเพื่อดูคำขอที่รออนุมัติ"
                 >
-                  <p className="text-xs sm:text-sm font-bold truncate group-hover:text-amber-700 dark:group-hover:text-amber-300 transition-colors">
-                    รออนุมัติ
-                  </p>
-                  <p className="text-lg sm:text-2xl font-black font-mono mt-1 text-amber-600 dark:text-amber-400">
-                    : {stats.pending}
-                  </p>
+                  <div className="flex items-center justify-between mb-2">
+                    <span className="text-xs sm:text-sm font-bold truncate group-hover:text-amber-600 dark:group-hover:text-amber-300 transition-colors flex items-center gap-1.5">
+                      <span className="w-2 h-2 rounded-full bg-amber-500" />
+                      รออนุมัติ
+                    </span>
+                    <ChevronRight className="w-4 h-4 text-neutral-400 group-hover:text-amber-600 group-hover:translate-x-0.5 transition-all shrink-0" />
+                  </div>
+                  <div className="flex items-baseline justify-between">
+                    <span className="text-2xl sm:text-3xl font-black font-mono text-amber-600 dark:text-amber-400">
+                      {stats.pending}
+                    </span>
+                    <span className="text-[11px] text-neutral-400 group-hover:text-amber-600 transition-colors">
+                      รายการ
+                    </span>
+                  </div>
                 </button>
 
                 {/* Box 4: ไม่อนุมัติ */}
                 <button
                   type="button"
                   onClick={() => handleSwitchTab('history', { status: 'ไม่อนุมัติ' })}
-                  className="p-4 sm:p-5 text-left transition-colors cursor-pointer hover:bg-rose-50/60 dark:hover:bg-slate-800/50 text-neutral-800 dark:text-neutral-200 block group"
-                  title="ดูคำขอที่ไม่อนุมัติ"
+                  className="p-4 sm:p-5 text-left rounded-3xl bg-white dark:bg-slate-900 border-2 border-neutral-200 dark:border-slate-800 hover:border-rose-500 dark:hover:border-rose-500 hover:shadow-md transition-all cursor-pointer text-neutral-800 dark:text-neutral-200 block group shadow-2xs relative"
+                  title="คลิกเพื่อดูคำขอที่ไม่อนุมัติ"
                 >
-                  <p className="text-xs sm:text-sm font-bold truncate group-hover:text-rose-700 dark:group-hover:text-rose-300 transition-colors">
-                    ไม่อนุมัติ
-                  </p>
-                  <p className="text-lg sm:text-2xl font-black font-mono mt-1 text-rose-600 dark:text-rose-400">
-                    : {stats.rejected}
-                  </p>
+                  <div className="flex items-center justify-between mb-2">
+                    <span className="text-xs sm:text-sm font-bold truncate group-hover:text-rose-600 dark:group-hover:text-rose-300 transition-colors flex items-center gap-1.5">
+                      <span className="w-2 h-2 rounded-full bg-rose-500" />
+                      ไม่อนุมัติ
+                    </span>
+                    <ChevronRight className="w-4 h-4 text-neutral-400 group-hover:text-rose-600 group-hover:translate-x-0.5 transition-all shrink-0" />
+                  </div>
+                  <div className="flex items-baseline justify-between">
+                    <span className="text-2xl sm:text-3xl font-black font-mono text-rose-600 dark:text-rose-400">
+                      {stats.rejected}
+                    </span>
+                    <span className="text-[11px] text-neutral-400 group-hover:text-rose-600 transition-colors">
+                      รายการ
+                    </span>
+                  </div>
                 </button>
               </div>
 
@@ -484,15 +523,6 @@ export default function StudentHomepageView({
                     </p>
                   </div>
                 </div>
-
-                <button
-                  type="button"
-                  onClick={() => handleSwitchTab('leave')}
-                  className="px-3.5 py-2 rounded-2xl bg-[#7749BC] hover:bg-[#683ca8] text-white text-xs font-bold shadow-xs transition-colors flex items-center gap-1.5 cursor-pointer"
-                >
-                  <FileEdit className="w-3.5 h-3.5" />
-                  <span>ยื่นใบลาใหม่</span>
-                </button>
               </div>
 
               <StudentHistoryView leaves={leaves} summaries={summaries} initialStatus={initialStatus} />

@@ -24,6 +24,7 @@ import {
   HeartPulse,
   User,
   HelpCircle,
+  ChevronDown,
 } from 'lucide-react';
 import { STATUS_DETAILS, LEAVE_TYPE_DETAILS, formatThaiDate, initials } from '@/lib/ui';
 import AttachmentPreview from '@/components/AttachmentPreview';
@@ -144,22 +145,25 @@ export default function ArchiveView({ courses = [], leaves = [] }) {
           {/* Academic Term Switcher */}
           <div className="flex items-center gap-2 self-start md:self-auto bg-white/10 backdrop-blur-md p-1.5 rounded-2xl border border-white/20">
             <span className="text-xs text-purple-200 px-2 font-medium">เลือกภาคเรียน:</span>
-            <select
-              value={selectedTerm}
-              onChange={(e) => {
-                setSelectedTerm(e.target.value);
-                setSelectedCourse('all');
-                setSelectedType('all');
-                setSelectedStatus('all');
-              }}
-              className="px-3 py-1.5 rounded-xl bg-white text-neutral-900 font-bold text-xs focus:outline-none cursor-pointer shadow-xs"
-            >
-              {terms.map((t) => (
-                <option key={t} value={t}>
-                  ภาคเรียนที่ {t}
-                </option>
-              ))}
-            </select>
+            <div className="relative">
+              <select
+                value={selectedTerm}
+                onChange={(e) => {
+                  setSelectedTerm(e.target.value);
+                  setSelectedCourse('all');
+                  setSelectedType('all');
+                  setSelectedStatus('all');
+                }}
+                className="px-3 py-1.5 rounded-xl bg-white text-neutral-900 font-bold text-xs focus:outline-none cursor-pointer shadow-xs appearance-none pr-8"
+              >
+                {terms.map((t) => (
+                  <option key={t} value={t}>
+                    ภาคเรียนที่ {t}
+                  </option>
+                ))}
+              </select>
+              <ChevronDown className="w-3.5 h-3.5 text-neutral-500 absolute right-2.5 top-1/2 -translate-y-1/2 pointer-events-none" />
+            </div>
           </div>
         </div>
 
@@ -228,43 +232,52 @@ export default function ArchiveView({ courses = [], leaves = [] }) {
           </div>
 
           {/* Course Filter */}
-          <select
-            value={selectedCourse}
-            onChange={(e) => setSelectedCourse(e.target.value)}
-            className="px-3 py-2 rounded-xl border border-neutral-200 dark:border-slate-700 bg-white dark:bg-slate-800 text-xs text-neutral-900 dark:text-neutral-100 focus:outline-none focus:border-[#7749BC] cursor-pointer"
-          >
-            <option value="all">ทุกรายวิชา</option>
-            {courses.map((c) => (
-              <option key={c.id} value={c.id}>
-                {c.code} {c.name} {c.group ? `(กลุ่ม ${c.group})` : ''}
-              </option>
-            ))}
-          </select>
+          <div className="relative">
+            <select
+              value={selectedCourse}
+              onChange={(e) => setSelectedCourse(e.target.value)}
+              className="w-full px-3 py-2 rounded-xl border border-neutral-200 dark:border-slate-700 bg-white dark:bg-slate-800 text-xs text-neutral-900 dark:text-neutral-100 focus:outline-none focus:border-[#7749BC] appearance-none pr-8 cursor-pointer shadow-2xs"
+            >
+              <option value="all">ทุกรายวิชา</option>
+              {courses.map((c) => (
+                <option key={c.id} value={c.id}>
+                  {c.code} {c.name} {c.group ? `(กลุ่ม ${c.group})` : ''}
+                </option>
+              ))}
+            </select>
+            <ChevronDown className="w-3.5 h-3.5 text-neutral-400 absolute right-2.5 top-1/2 -translate-y-1/2 pointer-events-none" />
+          </div>
 
           {/* Type Filter */}
-          <select
-            value={selectedType}
-            onChange={(e) => setSelectedType(e.target.value)}
-            className="px-3 py-2 rounded-xl border border-neutral-200 dark:border-slate-700 bg-white dark:bg-slate-800 text-xs text-neutral-900 dark:text-neutral-100 focus:outline-none focus:border-[#7749BC] cursor-pointer"
-          >
-            <option value="all">ทุกประเภทการลา</option>
-            <option value="ลาป่วย">ลาป่วย</option>
-            <option value="ลากิจส่วนตัว">ลากิจส่วนตัว</option>
-            <option value="ลากิจกรรม">ลากิจกรรม</option>
-            <option value="อื่น ๆ">อื่น ๆ / ฉุกเฉิน</option>
-          </select>
+          <div className="relative">
+            <select
+              value={selectedType}
+              onChange={(e) => setSelectedType(e.target.value)}
+              className="w-full px-3 py-2 rounded-xl border border-neutral-200 dark:border-slate-700 bg-white dark:bg-slate-800 text-xs text-neutral-900 dark:text-neutral-100 focus:outline-none focus:border-[#7749BC] appearance-none pr-8 cursor-pointer shadow-2xs"
+            >
+              <option value="all">ทุกประเภทการลา</option>
+              <option value="ลาป่วย">ลาป่วย</option>
+              <option value="ลากิจส่วนตัว">ลากิจส่วนตัว</option>
+              <option value="ลากิจกรรม">ลากิจกรรม</option>
+              <option value="อื่น ๆ">อื่น ๆ / ฉุกเฉิน</option>
+            </select>
+            <ChevronDown className="w-3.5 h-3.5 text-neutral-400 absolute right-2.5 top-1/2 -translate-y-1/2 pointer-events-none" />
+          </div>
 
           {/* Status Filter */}
-          <select
-            value={selectedStatus}
-            onChange={(e) => setSelectedStatus(e.target.value)}
-            className="px-3 py-2 rounded-xl border border-neutral-200 dark:border-slate-700 bg-white dark:bg-slate-800 text-xs text-neutral-900 dark:text-neutral-100 focus:outline-none focus:border-[#7749BC] cursor-pointer"
-          >
-            <option value="all">ทุกสถานะคำร้อง</option>
-            <option value="อนุมัติ">อนุมัติแล้ว</option>
-            <option value="ไม่อนุมัติ">ไม่อนุมัติ</option>
-            <option value="รออนุมัติ">รอพิจารณา</option>
-          </select>
+          <div className="relative">
+            <select
+              value={selectedStatus}
+              onChange={(e) => setSelectedStatus(e.target.value)}
+              className="w-full px-3 py-2 rounded-xl border border-neutral-200 dark:border-slate-700 bg-white dark:bg-slate-800 text-xs text-neutral-900 dark:text-neutral-100 focus:outline-none focus:border-[#7749BC] appearance-none pr-8 cursor-pointer shadow-2xs"
+            >
+              <option value="all">ทุกสถานะคำร้อง</option>
+              <option value="อนุมัติ">อนุมัติแล้ว</option>
+              <option value="ไม่อนุมัติ">ไม่อนุมัติ</option>
+              <option value="รออนุมัติ">รอพิจารณา</option>
+            </select>
+            <ChevronDown className="w-3.5 h-3.5 text-neutral-400 absolute right-2.5 top-1/2 -translate-y-1/2 pointer-events-none" />
+          </div>
         </div>
 
         {/* Table Content */}

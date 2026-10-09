@@ -26,6 +26,7 @@ import {
 } from 'lucide-react';
 import LeaveBarChart from '@/components/charts/LeaveBarChart';
 import LeaveDonutChart from '@/components/charts/LeaveDonutChart';
+import { sortAcademicTerms } from '@/lib/ui';
 
 export default function StudentStatsView({ summaries = [], leaves = [] }) {
   // Extract unique academic terms
@@ -38,7 +39,7 @@ export default function StudentStatsView({ summaries = [], leaves = [] }) {
       if (l.courseTerm && l.courseTerm !== '-') terms.add(l.courseTerm);
     });
     if (terms.size === 0) terms.add('1/2569');
-    return Array.from(terms).sort().reverse();
+    return sortAcademicTerms(Array.from(terms), true);
   }, [summaries, leaves]);
 
   const [selectedTerm, setSelectedTerm] = useState('all');
@@ -186,29 +187,9 @@ export default function StudentStatsView({ summaries = [], leaves = [] }) {
 
   return (
     <div className="space-y-6">
-      {/* Top Header & Navigation */}
-      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
-        <div className="flex items-center gap-3">
-          <Link
-            href="/student"
-            className="p-2.5 rounded-2xl bg-white dark:bg-slate-800 border border-neutral-200/80 dark:border-slate-700 text-neutral-600 hover:text-[#7749BC] dark:text-neutral-300 dark:hover:text-purple-400 transition-colors shadow-xs"
-            title="กลับไปหน้าหลัก"
-          >
-            <ArrowLeft className="w-4 h-4" />
-          </Link>
-          <div>
-            <h1 className="text-xl sm:text-2xl font-bold text-neutral-900 dark:text-neutral-100 flex items-center gap-2">
-              <BarChart3 className="w-6 h-6 text-[#7749BC] dark:text-purple-400" />
-              <span>สถิติการลา (Statistics & Analytics Dashboard)</span>
-            </h1>
-            <p className="text-xs text-neutral-500 dark:text-neutral-400 mt-0.5">
-              แดชบอร์ดวิเคราะห์ประวัติการลา สัดส่วนประเภทการลา และเปรียบเทียบสถิติย้อนหลังทุกภาคการศึกษา
-            </p>
-          </div>
-        </div>
-
-        {/* Term Dropdown Selector */}
-        <div className="relative self-start sm:self-auto min-w-[220px]">
+      {/* Term Dropdown Selector Bar */}
+      <div className="flex items-center justify-end">
+        <div className="relative w-full sm:w-auto min-w-[220px]">
           <select
             value={selectedTerm}
             onChange={(e) => setSelectedTerm(e.target.value)}

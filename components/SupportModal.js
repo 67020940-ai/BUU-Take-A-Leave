@@ -1,7 +1,7 @@
 'use client';
 
 import { useState } from 'react';
-import { X, Send, CheckCircle2, AlertCircle, LifeBuoy } from 'lucide-react';
+import { X, Send, CheckCircle2, AlertCircle, LifeBuoy, ChevronDown } from 'lucide-react';
 
 export default function SupportModal({ isOpen, onClose }) {
   const [category, setCategory] = useState('การอนุมัติคำขอลา');
@@ -87,17 +87,20 @@ export default function SupportModal({ isOpen, onClose }) {
 
             <div className="space-y-1.5">
               <label className="font-bold text-neutral-800 dark:text-neutral-200">หมวดหมู่ปัญหา</label>
-              <select
-                value={category}
-                onChange={(e) => setCategory(e.target.value)}
-                className="w-full px-3.5 py-2 rounded-xl border border-neutral-300 dark:border-slate-700 bg-white dark:bg-slate-800 text-neutral-900 dark:text-neutral-100 font-medium focus:outline-none focus:border-[#7749BC]"
-              >
-                <option value="การอนุมัติคำขอลา">การอนุมัติคำขอลา</option>
-                <option value="การแสดงผลข้อมูลนิสิตหรือรายวิชา">การแสดงผลข้อมูลนิสิตหรือรายวิชา</option>
-                <option value="สถิติและการคำนวณโควต้า">สถิติและการคำนวณโควต้า</option>
-                <option value="ไฟล์แนบหรือหลักฐานการลา">ไฟล์แนบหรือหลักฐานการลา</option>
-                <option value="อื่นๆ">อื่นๆ</option>
-              </select>
+              <div className="relative">
+                <select
+                  value={category}
+                  onChange={(e) => setCategory(e.target.value)}
+                  className="w-full px-3.5 py-2.5 rounded-xl border border-neutral-300 dark:border-slate-700 bg-white dark:bg-slate-800 text-neutral-900 dark:text-neutral-100 font-medium focus:outline-none focus:border-[#7749BC] appearance-none pr-10 cursor-pointer shadow-xs"
+                >
+                  <option value="การอนุมัติคำขอลา">การอนุมัติคำขอลา</option>
+                  <option value="การแสดงผลข้อมูลนิสิตหรือรายวิชา">การแสดงผลข้อมูลนิสิตหรือรายวิชา</option>
+                  <option value="สถิติและการคำนวณโควต้า">สถิติและการคำนวณโควต้า</option>
+                  <option value="ไฟล์แนบหรือหลักฐานการลา">ไฟล์แนบหรือหลักฐานการลา</option>
+                  <option value="อื่นๆ">อื่นๆ</option>
+                </select>
+                <ChevronDown className="w-4 h-4 text-neutral-400 absolute right-3.5 top-1/2 -translate-y-1/2 pointer-events-none" />
+              </div>
             </div>
 
             <div className="space-y-1.5">

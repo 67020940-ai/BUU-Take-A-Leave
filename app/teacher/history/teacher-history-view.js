@@ -153,6 +153,7 @@ export default function TeacherHistoryView({
   return (
     <div className="min-h-screen bg-slate-50/70 dark:bg-slate-950 flex flex-col lg:flex-row">
       <TeacherSidebar
+        user={user}
         mode="menu"
         activeTab="history"
         pendingCount={totalPendingCount}

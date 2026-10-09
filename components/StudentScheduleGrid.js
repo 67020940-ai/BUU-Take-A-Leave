@@ -505,7 +505,7 @@ export default function StudentScheduleGrid({
             )}
 
             {/* Action Buttons: ยื่นใบลาสำหรับวิชานี้ */}
-            <div className="pt-2 flex items-center gap-2 border-t border-neutral-100 dark:border-slate-800">
+            <div className="pt-2 flex items-center border-t border-neutral-100 dark:border-slate-800">
               <button
                 type="button"
                 onClick={() => {
@@ -518,17 +518,10 @@ export default function StudentScheduleGrid({
                     window.location.href = `/student?tab=leave&courseId=${targetCourseId}&code=${targetCourseCode}`;
                   }
                 }}
-                className="flex-1 py-2.5 px-4 rounded-2xl bg-[#7749BC] hover:bg-[#653ba6] text-white text-xs font-bold flex items-center justify-center gap-2 shadow-xs transition-colors cursor-pointer"
+                className="w-full py-2.5 px-4 rounded-2xl bg-[#7749BC] hover:bg-[#653ba6] text-white text-xs font-bold flex items-center justify-center gap-2 shadow-xs transition-colors cursor-pointer"
               >
                 <FileEdit className="w-4 h-4" />
                 <span>ยื่นใบลาสำหรับวิชานี้</span>
-              </button>
-              <button
-                type="button"
-                onClick={() => setSelectedCourse(null)}
-                className="py-2.5 px-4 rounded-2xl border border-neutral-200 dark:border-slate-700 text-xs font-semibold text-neutral-600 dark:text-neutral-300 hover:bg-neutral-100 dark:hover:bg-slate-800 transition-colors cursor-pointer"
-              >
-                ปิด
               </button>
             </div>
           </div>

@@ -59,6 +59,7 @@ export default function TeacherDashboard({
     <div className="min-h-screen bg-slate-50/70 dark:bg-slate-950 flex flex-col lg:flex-row">
       {/* 1. Left Sidebar (mode="menu", activeTab="home") */}
       <TeacherSidebar
+        user={user}
         mode="menu"
         activeTab="home"
         pendingCount={totalPendingCount}

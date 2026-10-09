@@ -15,12 +15,15 @@ import {
   X,
   PanelLeftClose,
   PanelLeft,
+  User,
 } from 'lucide-react';
 import BuuLogo from '@/components/BuuLogo';
 import SettingsModal from '@/components/SettingsModal';
 import SupportModal from '@/components/SupportModal';
+import AccountModal from '@/components/AccountModal';
 
 export default function StudentSidebar({
+  user,
   activeTab = 'home', // 'home' | 'leave' | 'stats' | 'history' | 'schedule'
   onSelectTab,
   pendingCount = 0,
@@ -31,6 +34,7 @@ export default function StudentSidebar({
   const pathname = usePathname();
   const [showSettings, setShowSettings] = useState(false);
   const [showSupport, setShowSupport] = useState(false);
+  const [showAccount, setShowAccount] = useState(false);
   const [collapsed, setCollapsed] = useState(false);
 
   async function handleLogout() {
@@ -151,6 +155,27 @@ export default function StudentSidebar({
             </div>
           </div>
 
+          {/* Student Profile Card when not collapsed */}
+          {!collapsed && user && (
+            <div className="mx-3 mt-3 p-3 rounded-2xl bg-purple-50/70 dark:bg-purple-950/30 border border-purple-100 dark:border-purple-900/40 flex items-center gap-3">
+              <div className="w-9 h-9 rounded-xl bg-gradient-to-tr from-[#7749BC] to-[#582B9E] text-white flex items-center justify-center font-bold text-xs shadow-xs shrink-0">
+                {(user.name || 'นิสิต')
+                  .split(' ')
+                  .map((w) => w[0])
+                  .slice(0, 2)
+                  .join('') || <User className="w-4 h-4" />}
+              </div>
+              <div className="flex flex-col min-w-0">
+                <span className="text-xs font-bold text-neutral-900 dark:text-neutral-100 truncate">
+                  {user.name || 'นิสิต'}
+                </span>
+                <span className="text-[10px] text-neutral-500 dark:text-neutral-400 font-mono truncate">
+                  {user.studentCode || user.email || 'นิสิตมหาวิทยาลัยบูรพา'}
+                </span>
+              </div>
+            </div>
+          )}
+
           {/* Navigation Links Body */}
           <div className="p-3 sm:p-4 space-y-6 overflow-y-auto max-h-[calc(100vh-140px)]">
             <div className="space-y-1.5">
@@ -209,6 +234,17 @@ export default function StudentSidebar({
               )}
 
               <nav className="flex flex-col gap-1">
+                {/* ข้อมูลบัญชีผู้ใช้ */}
+                <button
+                  type="button"
+                  onClick={() => setShowAccount(true)}
+                  className="w-full flex items-center gap-2.5 px-3 py-2 rounded-2xl text-xs font-semibold text-neutral-700 dark:text-neutral-300 hover:bg-neutral-100 dark:hover:bg-slate-800 transition-colors cursor-pointer text-left"
+                  title="ข้อมูลบัญชีผู้ใช้"
+                >
+                  <User className="w-4 h-4 shrink-0 text-[#7749BC] dark:text-purple-400" />
+                  {!collapsed && <span className="truncate">ข้อมูลบัญชีผู้ใช้</span>}
+                </button>
+
                 {/* แจ้งปัญหาระบบ */}
                 <button
                   type="button"
@@ -248,6 +284,9 @@ export default function StudentSidebar({
           </button>
         </div>
       </aside>
+
+      {/* Account Profile Modal */}
+      <AccountModal isOpen={showAccount} onClose={() => setShowAccount(false)} user={user} />
 
       {/* Settings Modal */}
       <SettingsModal isOpen={showSettings} onClose={() => setShowSettings(false)} />

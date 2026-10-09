@@ -19,12 +19,16 @@ import {
   X,
   PanelLeftClose,
   PanelLeft,
+  LayoutDashboard,
+  User,
+  ArrowLeft,
 } from 'lucide-react';
 import BuuLogo from '@/components/BuuLogo';
 import SettingsModal from '@/components/SettingsModal';
 import SupportModal from '@/components/SupportModal';
 
 export default function TeacherSidebar({
+  user,
   mode = 'menu', // 'menu' for Teacher Home, 'stats' for Leave Statistics
   activeTab = 'requests', // 'home' | 'requests' | 'stats' | 'history' | 'schedule'
   onSelectTab, // callback for in-page navigation (e.g. scrollTo or switch view)
@@ -122,6 +126,27 @@ export default function TeacherSidebar({
             </div>
           </div>
 
+          {/* Teacher Profile Card when not collapsed */}
+          {!collapsed && user && (
+            <div className="mx-3 mt-3 p-3 rounded-2xl bg-purple-50/70 dark:bg-purple-950/30 border border-purple-100 dark:border-purple-900/40 flex items-center gap-3">
+              <div className="w-9 h-9 rounded-xl bg-gradient-to-tr from-[#7749BC] to-[#582B9E] text-white flex items-center justify-center font-bold text-xs shadow-xs shrink-0">
+                {(user.name || 'อาจารย์')
+                  .split(' ')
+                  .map((w) => w[0])
+                  .slice(0, 2)
+                  .join('') || <User className="w-4 h-4" />}
+              </div>
+              <div className="flex flex-col min-w-0">
+                <span className="text-xs font-bold text-neutral-900 dark:text-neutral-100 truncate">
+                  {user.name || 'อาจารย์ผู้สอน'}
+                </span>
+                <span className="text-[10px] text-neutral-500 dark:text-neutral-400 truncate">
+                  {user.faculty || 'คณะวิทยาการสารสนเทศ'}
+                </span>
+              </div>
+            </div>
+          )}
+
           {/* Navigation Links Body */}
           <div className="p-3 sm:p-4 space-y-6 overflow-y-auto max-h-[calc(100vh-140px)]">
             {/* ──────── MODE 1: MENU (Dashboard/Home) ──────── */}
@@ -136,6 +161,23 @@ export default function TeacherSidebar({
                 )}
 
                 <nav className="flex flex-col gap-1">
+                  {/* หน้าหลัก */}
+                  <Link
+                    href="/teacher"
+                    onClick={onCloseMobile}
+                    className={`w-full flex items-center justify-between px-3 py-2.5 rounded-2xl text-xs font-semibold transition-all cursor-pointer ${
+                      activeTab === 'home' || (pathname === '/teacher' && activeTab !== 'requests' && activeTab !== 'stats' && activeTab !== 'history' && activeTab !== 'schedule')
+                        ? 'bg-[#7749BC] text-white shadow-md shadow-purple-900/20'
+                        : 'text-neutral-700 dark:text-neutral-300 hover:bg-neutral-100 dark:hover:bg-slate-800'
+                    }`}
+                    title="หน้าหลัก"
+                  >
+                    <div className="flex items-center gap-2.5 min-w-0">
+                      <LayoutDashboard className="w-4 h-4 shrink-0" />
+                      {!collapsed && <span className="truncate">หน้าหลัก</span>}
+                    </div>
+                  </Link>
+
                   {/* คำขอร้องลาเรียน */}
                   <Link
                     href="/teacher/requests"
@@ -230,6 +272,19 @@ export default function TeacherSidebar({
                 )}
 
                 <div className="space-y-1">
+                  {/* กลับไปหน้าหลัก (Teacher Home) */}
+                  <Link
+                    href="/teacher"
+                    onClick={onCloseMobile}
+                    className="w-full flex items-center justify-between px-3 py-2.5 rounded-2xl text-xs font-semibold text-neutral-700 dark:text-neutral-300 hover:bg-neutral-100 dark:hover:bg-slate-800 transition-colors mb-1.5"
+                    title="กลับไปหน้าหลักอาจารย์"
+                  >
+                    <div className="flex items-center gap-2.5 min-w-0">
+                      <ArrowLeft className="w-4 h-4 shrink-0 text-[#7749BC] dark:text-purple-400" />
+                      {!collapsed && <span className="truncate font-bold">กลับไปหน้าหลัก</span>}
+                    </div>
+                  </Link>
+
                   {/* รายวิชาที่สอน (Dropdown/Toggleable) */}
                   <div className="rounded-2xl border border-neutral-200/80 dark:border-slate-800 bg-neutral-50/70 dark:bg-slate-800/40 p-1.5">
                     <button

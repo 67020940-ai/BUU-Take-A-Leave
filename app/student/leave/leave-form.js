@@ -406,8 +406,8 @@ export default function LeaveForm({ courses, initialCourseId, lockCourse, initia
       <section>
         <p className={sectionTitleCls}>2. วันที่ลา (Leave Dates)</p>
         <div className="space-y-4">
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-            <div>
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 min-w-0">
+            <div className="min-w-0">
               <label className={labelCls}>
                 <CalendarRange className="w-3.5 h-3.5 text-[#7749BC] dark:text-purple-400" />
                 <span>วันที่เริ่มลา</span>
@@ -428,7 +428,7 @@ export default function LeaveForm({ courses, initialCourseId, lockCourse, initia
                 }}
                 onChange={(e) => update('startDate', e.target.value)}
                 onBlur={() => handleBlur('startDate')}
-                className={`${fieldCls(!!fieldErrors.startDate)} cursor-pointer`}
+                className={`${fieldCls(!!fieldErrors.startDate)} cursor-pointer w-full min-w-0 max-w-full`}
               />
               {fieldErrors.startDate && (
                 <p className="text-xs font-semibold text-rose-600 dark:text-rose-400 mt-1.5 flex items-center gap-1">
@@ -437,7 +437,7 @@ export default function LeaveForm({ courses, initialCourseId, lockCourse, initia
                 </p>
               )}
             </div>
-            <div>
+            <div className="min-w-0">
               <label className={labelCls}>
                 <CalendarRange className="w-3.5 h-3.5 text-[#7749BC] dark:text-purple-400" />
                 <span>วันที่สิ้นสุด</span>
@@ -458,7 +458,7 @@ export default function LeaveForm({ courses, initialCourseId, lockCourse, initia
                 }}
                 onChange={(e) => update('endDate', e.target.value)}
                 onBlur={() => handleBlur('endDate')}
-                className={`${fieldCls(!!fieldErrors.endDate)} cursor-pointer`}
+                className={`${fieldCls(!!fieldErrors.endDate)} cursor-pointer w-full min-w-0 max-w-full`}
               />
               {fieldErrors.endDate && (
                 <p className="text-xs font-semibold text-rose-600 dark:text-rose-400 mt-1.5 flex items-center gap-1">

@@ -172,64 +172,23 @@ export default function LoginPage() {
               </button>
             </form>
 
-            {/* Quick Demo Accounts Switcher */}
-            <div className="mt-5 pt-4 border-t border-slate-100 dark:border-slate-800">
-              <div className="flex items-center justify-between mb-2">
-                <span className="text-[11px] font-semibold text-slate-500 uppercase tracking-wider">
-                  บัญชีทดสอบระบบ (Demo)
-                </span>
-                <span className="text-[10px] text-[#7749BC] dark:text-purple-300 font-mono">
-                  รหัสผ่าน: 1234
-                </span>
-              </div>
-              <div className="grid grid-cols-3 gap-2">
-                <button
-                  type="button"
-                  onClick={() => {
-                    setEmail('66000001@go.buu.ac.th');
-                    setPassword('1234');
-                    setError('');
-                  }}
-                  className="p-2 rounded-xl border border-slate-200 dark:border-slate-800 bg-slate-50 dark:bg-slate-850 hover:bg-purple-50 hover:border-purple-300 dark:hover:bg-purple-950/40 text-left transition-all cursor-pointer group shadow-2xs"
-                  title="คลิกเพื่อกรอกบัญชีนิสิต"
-                >
-                  <p className="font-semibold text-xs text-slate-800 dark:text-slate-200 group-hover:text-[#7749BC]">
-                    🎓 นิสิต
-                  </p>
-                  <p className="text-[10px] text-slate-500 truncate mt-0.5">จุฑามาศ</p>
-                </button>
-
-                <button
-                  type="button"
-                  onClick={() => {
-                    setEmail('teacher-teeradech@buu.ac.th');
-                    setPassword('1234');
-                    setError('');
-                  }}
-                  className="p-2 rounded-xl border border-slate-200 dark:border-slate-800 bg-slate-50 dark:bg-slate-850 hover:bg-purple-50 hover:border-purple-300 dark:hover:bg-purple-950/40 text-left transition-all cursor-pointer group shadow-2xs"
-                  title="คลิกเพื่อกรอกบัญชีอาจารย์"
-                >
-                  <p className="font-semibold text-xs text-slate-800 dark:text-slate-200 group-hover:text-[#7749BC]">
-                    👨‍🏫 อาจารย์
-                  </p>
-                  <p className="text-[10px] text-slate-500 truncate mt-0.5">ดร.ธีรเดช</p>
-                </button>
-
-                <button
-                  type="button"
-                  onClick={() => {
-                    setEmail('admin@buu.ac.th');
-                    setPassword('1234');
-                    setError('');
-                  }}
-                  className="p-2 rounded-xl border border-slate-200 dark:border-slate-800 bg-slate-50 dark:bg-slate-850 hover:bg-purple-50 hover:border-purple-300 dark:hover:bg-purple-950/40 text-left transition-all cursor-pointer group shadow-2xs"
-                  title="คลิกเพื่อกรอกบัญชีแอดมิน"
-                >
-                  <p className="font-semibold text-xs text-slate-800 dark:text-slate-200 group-hover:text-[#7749BC]">
-                    🛡️ แอดมิน
-                  </p>
-                  <p className="text-[10px] text-slate-500 truncate mt-0.5">ผู้ดูแลระบบ</p>
-                </button>
+            {/* Mobile Feature Highlights */}
+            <div className="md:hidden mt-6 pt-4 border-t border-slate-100 dark:border-slate-800">
+              <p className="text-[11px] font-bold text-neutral-500 dark:text-neutral-400 uppercase tracking-wider mb-2.5">
+                จุดเด่นระบบ Take A Leave
+              </p>
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
+                {FEATURES.map(({ icon: Icon, text }) => (
+                  <div
+                    key={text}
+                    className="p-2.5 rounded-xl bg-purple-50/60 dark:bg-slate-800/60 border border-purple-100/80 dark:border-slate-700 text-left flex items-start gap-2"
+                  >
+                    <Icon className="w-3.5 h-3.5 text-[#7749BC] dark:text-purple-400 shrink-0 mt-0.5" />
+                    <span className="text-[11px] leading-tight text-neutral-700 dark:text-neutral-300 font-medium">
+                      {text}
+                    </span>
+                  </div>
+                ))}
               </div>
             </div>
           </div>

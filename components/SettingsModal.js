@@ -1,8 +1,7 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import { X, Moon, Sun, Bell, Volume2, Save, Check } from 'lucide-react';
-import ThemeToggle from '@/components/ThemeToggle';
+import { X, Moon, Sun, Bell, Volume2, Save, Check, ChevronDown } from 'lucide-react';
 
 export default function SettingsModal({ isOpen, onClose }) {
   const [emailNotify, setEmailNotify] = useState(true);
@@ -59,27 +58,21 @@ export default function SettingsModal({ isOpen, onClose }) {
         </div>
 
         <div className="p-6 space-y-5 text-xs text-neutral-700 dark:text-neutral-300">
-          {/* Theme Mode */}
-          <div className="flex items-center justify-between p-3.5 rounded-2xl bg-neutral-50 dark:bg-slate-800/60 border border-neutral-200/60 dark:border-slate-700/60">
-            <div>
-              <p className="font-bold text-neutral-900 dark:text-neutral-100">โหมดการแสดงผล (Theme)</p>
-              <p className="text-[11px] text-neutral-500 dark:text-neutral-400">สลับระหว่างโหมดสว่าง (Light) และโหมดมืด (Dark)</p>
-            </div>
-            <ThemeToggle />
-          </div>
-
           {/* Default Semester */}
           <div className="space-y-1.5">
             <label className="font-bold text-neutral-900 dark:text-neutral-100 block">ภาคเรียนเริ่มต้น</label>
-            <select
-              value={defaultSemester}
-              onChange={(e) => setDefaultSemester(e.target.value)}
-              className="w-full px-3.5 py-2 rounded-xl border border-neutral-300 dark:border-slate-700 bg-white dark:bg-slate-800 text-xs font-semibold text-neutral-900 dark:text-neutral-100 focus:outline-none focus:border-[#7749BC]"
-            >
-              <option value="1/2569">ภาคเรียนที่ 1/2569 (ปัจจุบัน)</option>
-              <option value="2/2568">ภาคเรียนที่ 2/2568</option>
-              <option value="1/2568">ภาคเรียนที่ 1/2568</option>
-            </select>
+            <div className="relative">
+              <select
+                value={defaultSemester}
+                onChange={(e) => setDefaultSemester(e.target.value)}
+                className="w-full px-3.5 py-2.5 rounded-xl border border-neutral-300 dark:border-slate-700 bg-white dark:bg-slate-800 text-xs font-semibold text-neutral-900 dark:text-neutral-100 focus:outline-none focus:border-[#7749BC] appearance-none pr-10 cursor-pointer shadow-xs"
+              >
+                <option value="1/2568">ภาคเรียนที่ 1/2568</option>
+                <option value="2/2568">ภาคเรียนที่ 2/2568</option>
+                <option value="1/2569">ภาคเรียนที่ 1/2569 (ปัจจุบัน)</option>
+              </select>
+              <ChevronDown className="w-4 h-4 text-neutral-400 absolute right-3.5 top-1/2 -translate-y-1/2 pointer-events-none" />
+            </div>
           </div>
 
           {/* Notifications */}

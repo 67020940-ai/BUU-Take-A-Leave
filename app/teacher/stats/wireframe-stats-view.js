@@ -64,7 +64,13 @@ export default function WireframeStatsView({
           sections: [],
         });
       }
-      map.get(key).sections.push(c);
+      const existing = map.get(key);
+      const isDuplicate = existing.sections.some(
+        (s) => (s.group || '').toString() === (c.group || '').toString()
+      );
+      if (!isDuplicate) {
+        existing.sections.push(c);
+      }
     });
     return Array.from(map.values());
   }, [courses]);
@@ -261,6 +267,7 @@ export default function WireframeStatsView({
     <div className="min-h-screen bg-slate-50/70 dark:bg-slate-950 flex flex-col lg:flex-row">
       {/* 1. Left Sidebar (mode="stats") */}
       <TeacherSidebar
+        user={user}
         mode="stats"
         subjects={subjectGroups}
         selectedSubjectKey={selectedSubjectKey}

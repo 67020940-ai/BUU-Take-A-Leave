@@ -9,3 +9,6 @@ prisma/*.db-journal
 .neon
 .vercel
 .env*
+/test-results/
+/playwright-report/
+.superpowers/

@@ -29,7 +29,7 @@ import {
   ChevronDown,
   Search,
 } from 'lucide-react';
-import { STATUS_DETAILS, LEAVE_TYPE_DETAILS, LEAVE_TYPE_DEFAULT, DAY_LABEL_TH, formatThaiDate, formatThaiDateTime } from '@/lib/ui';
+import { STATUS_DETAILS, LEAVE_TYPE_DETAILS, LEAVE_TYPE_DEFAULT, DAY_LABEL_TH, formatThaiDate, formatThaiDateTime, sortAcademicTerms } from '@/lib/ui';
 import AttachmentPreview from '@/components/AttachmentPreview';
 import CancelLeaveButton from '@/components/CancelLeaveButton';
 
@@ -61,7 +61,7 @@ export default function StudentDashboard({ summaries = [], leaves: initialLeaves
       if (l.courseTerm && l.courseTerm !== '-') terms.add(l.courseTerm);
     });
     if (terms.size === 0) terms.add('1/2569');
-    return Array.from(terms).sort().reverse();
+    return sortAcademicTerms(Array.from(terms), true);
   }, [summaries, leaves]);
 
   // Filter summaries according to term

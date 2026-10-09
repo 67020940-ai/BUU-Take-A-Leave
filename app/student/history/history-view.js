@@ -22,7 +22,7 @@ import {
   ArrowLeft,
   Filter,
 } from 'lucide-react';
-import { STATUS_DETAILS, LEAVE_TYPE_DETAILS, LEAVE_TYPE_DEFAULT, formatThaiDate, formatThaiDateTime } from '@/lib/ui';
+import { STATUS_DETAILS, LEAVE_TYPE_DETAILS, LEAVE_TYPE_DEFAULT, formatThaiDate, formatThaiDateTime, sortAcademicTerms } from '@/lib/ui';
 import AttachmentPreview from '@/components/AttachmentPreview';
 import CancelLeaveButton from '@/components/CancelLeaveButton';
 
@@ -34,19 +34,19 @@ const LEAVE_CATEGORIES = [
   { key: 'อื่น ๆ', label: 'อื่น ๆ', icon: HelpCircle },
 ];
 
-export default function StudentHistoryView({ leaves: initialLeaves = [], summaries = [] }) {
+export default function StudentHistoryView({ leaves: initialLeaves = [], summaries = [], initialStatus = 'all' }) {
   const [leaves, setLeaves] = useState(initialLeaves);
 
   useEffect(() => {
     setLeaves(initialLeaves);
   }, [initialLeaves]);
   const [selectedTerm, setSelectedTerm] = useState('all');
-  const [selectedStatus, setSelectedStatus] = useState('all');
+  const [selectedStatus, setSelectedStatus] = useState(initialStatus || 'all');
   const [selectedType, setSelectedType] = useState('all');
   const [searchQuery, setSearchQuery] = useState('');
   const [detailModal, setDetailModal] = useState({ isOpen: false, leave: null });
 
-  // Extract unique academic terms
+  // Extract unique academic terms sorted chronologically
   const academicTerms = useMemo(() => {
     const terms = new Set();
     summaries.forEach((s) => {
@@ -56,7 +56,7 @@ export default function StudentHistoryView({ leaves: initialLeaves = [], summari
       if (l.courseTerm && l.courseTerm !== '-') terms.add(l.courseTerm);
     });
     if (terms.size === 0) terms.add('1/2569');
-    return Array.from(terms).sort().reverse();
+    return sortAcademicTerms(Array.from(terms), true);
   }, [summaries, leaves]);
 
   // Filter leaves according to term, status, type, and search query
@@ -103,57 +103,71 @@ export default function StudentHistoryView({ leaves: initialLeaves = [], summari
 
   const pendingCount = useMemo(() => leaves.filter((l) => l.status === 'รออนุมัติ').length, [leaves]);
   const approvedCount = useMemo(() => leaves.filter((l) => l.status === 'อนุมัติ').length, [leaves]);
+  const rejectedCount = useMemo(() => leaves.filter((l) => l.status === 'ไม่อนุมัติ').length, [leaves]);
 
   return (
     <div className="space-y-6">
-      {/* Top Breadcrumb & Action bar */}
-      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
-        <div className="flex items-center gap-3">
-          <Link
-            href="/student"
-            className="p-2.5 rounded-2xl bg-white dark:bg-slate-800 border border-neutral-200/80 dark:border-slate-700 text-neutral-600 hover:text-[#7749BC] dark:text-neutral-300 dark:hover:text-purple-400 transition-colors shadow-xs"
-            title="กลับไปหน้าหลัก"
-          >
-            <ArrowLeft className="w-4 h-4" />
-          </Link>
-          <div>
-            <h1 className="text-xl sm:text-2xl font-bold text-neutral-900 dark:text-neutral-100 flex items-center gap-2">
-              <History className="w-6 h-6 text-[#7749BC] dark:text-purple-400" />
-              <span>ประวัติการลา (Leave History)</span>
-            </h1>
-            <p className="text-xs text-neutral-500 dark:text-neutral-400 mt-0.5">
-              ตรวจสอบสถานะคำขอลา รายละเอียดความเห็นอาจารย์ และจัดการคำขอลา
-            </p>
-          </div>
-        </div>
-
-        <Link
-          href="/student/leave"
-          className="self-start sm:self-auto px-5 py-2.5 rounded-2xl bg-[#7749BC] hover:bg-[#653ba6] active:scale-95 text-white text-xs sm:text-sm font-bold shadow-md shadow-purple-800/20 transition-all flex items-center gap-2"
-        >
-          <Plus className="w-4 h-4" />
-          <span>ยื่นใบลาใหม่</span>
-        </Link>
-      </div>
-
-      {/* Quick Summary Pill Bar */}
+      {/* Quick Summary Pill Bar (Interactive filter cards) */}
       <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
-        <div className="p-4 rounded-2xl bg-white/80 dark:bg-slate-900/80 border border-neutral-200/80 dark:border-slate-800 shadow-xs">
-          <p className="text-[11px] font-semibold text-neutral-400">คำขอทั้งหมด</p>
-          <p className="text-xl font-bold text-neutral-900 dark:text-neutral-100 mt-0.5">{leaves.length} รายการ</p>
-        </div>
-        <div className="p-4 rounded-2xl bg-amber-50/70 dark:bg-amber-950/40 border border-amber-200 dark:border-amber-800 shadow-xs">
+        {/* Box 1: คำขอทั้งหมด */}
+        <button
+          type="button"
+          onClick={() => setSelectedStatus('all')}
+          className={`p-4 rounded-2xl border text-left transition-all cursor-pointer shadow-xs ${
+            selectedStatus === 'all'
+              ? 'bg-purple-50 dark:bg-purple-950/60 border-[#7749BC] ring-2 ring-[#7749BC]/30 shadow-md'
+              : 'bg-white/80 dark:bg-slate-900/80 border-neutral-200/80 dark:border-slate-800 hover:border-purple-300'
+          }`}
+          title="คลิกเพื่อแสดงคำขอทั้งหมด"
+        >
+          <p className="text-[11px] font-semibold text-neutral-500 dark:text-neutral-400">คำร้องขอลาทั้งหมด</p>
+          <p className="text-xl font-bold text-neutral-900 dark:text-neutral-100 mt-0.5">: {leaves.length} รายการ</p>
+        </button>
+
+        {/* Box 2: อนุมัติแล้ว */}
+        <button
+          type="button"
+          onClick={() => setSelectedStatus(selectedStatus === 'อนุมัติ' ? 'all' : 'อนุมัติ')}
+          className={`p-4 rounded-2xl border text-left transition-all cursor-pointer shadow-xs ${
+            selectedStatus === 'อนุมัติ'
+              ? 'bg-emerald-50 dark:bg-emerald-950/60 border-emerald-500 ring-2 ring-emerald-500/30 shadow-md'
+              : 'bg-emerald-50/70 dark:bg-emerald-950/30 border-emerald-200 dark:border-emerald-800/80 hover:border-emerald-400'
+          }`}
+          title="คลิกเพื่อกรองเฉพาะที่อนุมัติแล้ว"
+        >
+          <p className="text-[11px] font-semibold text-emerald-600 dark:text-emerald-400">อนุมัติ</p>
+          <p className="text-xl font-bold text-emerald-700 dark:text-emerald-300 mt-0.5">: {approvedCount} รายการ</p>
+        </button>
+
+        {/* Box 3: รออนุมัติ */}
+        <button
+          type="button"
+          onClick={() => setSelectedStatus(selectedStatus === 'รออนุมัติ' ? 'all' : 'รออนุมัติ')}
+          className={`p-4 rounded-2xl border text-left transition-all cursor-pointer shadow-xs ${
+            selectedStatus === 'รออนุมัติ'
+              ? 'bg-amber-50 dark:bg-amber-950/60 border-amber-500 ring-2 ring-amber-500/30 shadow-md'
+              : 'bg-amber-50/70 dark:bg-amber-950/30 border-amber-200 dark:border-amber-800/80 hover:border-amber-400'
+          }`}
+          title="คลิกเพื่อกรองเฉพาะที่รออนุมัติ"
+        >
           <p className="text-[11px] font-semibold text-amber-600 dark:text-amber-400">รออนุมัติ</p>
-          <p className="text-xl font-bold text-amber-700 dark:text-amber-300 mt-0.5">{pendingCount} รายการ</p>
-        </div>
-        <div className="p-4 rounded-2xl bg-emerald-50/70 dark:bg-emerald-950/40 border border-emerald-200 dark:border-emerald-800 shadow-xs">
-          <p className="text-[11px] font-semibold text-emerald-600 dark:text-emerald-400">อนุมัติแล้ว</p>
-          <p className="text-xl font-bold text-emerald-700 dark:text-emerald-300 mt-0.5">{approvedCount} รายการ</p>
-        </div>
-        <div className="p-4 rounded-2xl bg-purple-50/70 dark:bg-purple-950/40 border border-purple-200 dark:border-purple-800 shadow-xs">
-          <p className="text-[11px] font-semibold text-[#7749BC] dark:text-purple-400">ผลการกรอง</p>
-          <p className="text-xl font-bold text-[#7749BC] dark:text-purple-300 mt-0.5">{filteredLeaves.length} รายการ</p>
-        </div>
+          <p className="text-xl font-bold text-amber-700 dark:text-amber-300 mt-0.5">: {pendingCount} รายการ</p>
+        </button>
+
+        {/* Box 4: ไม่อนุมัติ */}
+        <button
+          type="button"
+          onClick={() => setSelectedStatus(selectedStatus === 'ไม่อนุมัติ' ? 'all' : 'ไม่อนุมัติ')}
+          className={`p-4 rounded-2xl border text-left transition-all cursor-pointer shadow-xs ${
+            selectedStatus === 'ไม่อนุมัติ'
+              ? 'bg-rose-50 dark:bg-rose-950/60 border-rose-500 ring-2 ring-rose-500/30 shadow-md'
+              : 'bg-rose-50/70 dark:bg-rose-950/30 border-rose-200 dark:border-rose-800/80 hover:border-rose-400'
+          }`}
+          title="คลิกเพื่อกรองเฉพาะที่ไม่อนุมัติ"
+        >
+          <p className="text-[11px] font-semibold text-rose-600 dark:text-rose-400">ไม่อนุมัติ</p>
+          <p className="text-xl font-bold text-rose-700 dark:text-rose-300 mt-0.5">: {rejectedCount} รายการ</p>
+        </button>
       </div>
 
       {/* Filter and Search Box */}
