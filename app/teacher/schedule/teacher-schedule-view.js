@@ -24,6 +24,7 @@ import {
 import TeacherSidebar from '@/components/TeacherSidebar';
 import TeacherTopBar from '@/components/TeacherTopBar';
 import TeacherScheduleGrid from '@/components/TeacherScheduleGrid';
+import MobileBottomNav from '@/components/MobileBottomNav';
 
 const SAMPLE_LESSON_PLANS = {
   '24527664': [
@@ -270,7 +271,7 @@ export default function TeacherScheduleView({
           onToggleMobileSidebar={() => setMobileSidebarOpen(true)}
         />
 
-        <main className="flex-1 p-4 sm:p-6 lg:p-8 space-y-8 max-w-7xl w-full mx-auto">
+        <main className="flex-1 p-4 sm:p-6 lg:p-8 pb-24 md:pb-8 space-y-8 max-w-7xl w-full mx-auto">
           {/* Header Banner */}
           <div className="bg-white/90 dark:bg-slate-900/90 backdrop-blur-xl p-5 sm:p-6 rounded-3xl border border-neutral-200/80 dark:border-slate-800 shadow-xs flex flex-col sm:flex-row sm:items-center justify-between gap-4">
             <div className="flex items-center gap-3">
@@ -561,6 +562,14 @@ export default function TeacherScheduleView({
           <span>{toast}</span>
         </div>
       )}
+
+      {/* Mobile Bottom Navigation Bar (< md) */}
+      <MobileBottomNav
+        role="teacher"
+        activeTab="schedule"
+        pendingCount={totalPendingCount}
+        onOpenDrawer={() => setMobileSidebarOpen(true)}
+      />
     </div>
   );
 }

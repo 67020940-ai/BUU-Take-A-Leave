@@ -26,6 +26,7 @@ import {
 import StudentSidebar from '@/components/StudentSidebar';
 import StudentTopBar from '@/components/StudentTopBar';
 import StudentScheduleGrid from '@/components/StudentScheduleGrid';
+import MobileBottomNav from '@/components/MobileBottomNav';
 import LeaveForm from './leave/leave-form';
 import StudentStatsView from './stats/stats-view';
 import StudentHistoryView from './history/history-view';
@@ -162,7 +163,7 @@ export default function StudentHomepageView({
           onToggleMobileSidebar={() => setMobileSidebarOpen(true)}
         />
 
-        <main className="flex-1 p-4 sm:p-6 lg:p-8 space-y-6 max-w-7xl w-full mx-auto">
+        <main className="flex-1 p-4 sm:p-6 lg:p-8 pb-24 md:pb-8 space-y-6 max-w-7xl w-full mx-auto">
           {/* ================= SESSION 1: HOME (หน้าหลัก) ================= */}
           {activeTab === 'home' && (
             <div className="space-y-6 animate-in fade-in duration-150">
@@ -670,6 +671,15 @@ export default function StudentHomepageView({
           )}
         </main>
       </div>
+
+      {/* Mobile Bottom Navigation Bar (< md) */}
+      <MobileBottomNav
+        role="student"
+        activeTab={activeTab}
+        onSelectTab={(tabKey) => handleSwitchTab(tabKey)}
+        onOpenDrawer={() => setMobileSidebarOpen(true)}
+        pendingCount={stats.pending}
+      />
     </div>
   );
 }

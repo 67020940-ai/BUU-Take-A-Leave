@@ -27,6 +27,7 @@ import {
 import TeacherSidebar from '@/components/TeacherSidebar';
 import TeacherTopBar from '@/components/TeacherTopBar';
 import AttachmentPreview from '@/components/AttachmentPreview';
+import MobileBottomNav from '@/components/MobileBottomNav';
 import {
   STATUS_DETAILS,
   LEAVE_TYPE_DETAILS,
@@ -262,7 +263,7 @@ export default function TeacherRequestsView({
           onToggleMobileSidebar={() => setMobileSidebarOpen(true)}
         />
 
-        <main className="flex-1 p-4 sm:p-6 lg:p-8 space-y-6 max-w-7xl w-full mx-auto">
+        <main className="flex-1 p-4 sm:p-6 lg:p-8 pb-24 md:pb-8 space-y-6 max-w-7xl w-full mx-auto">
           {/* Header Banner */}
           <div className="bg-white/90 dark:bg-slate-900/90 backdrop-blur-xl p-5 sm:p-6 rounded-3xl border border-neutral-200/80 dark:border-slate-800 shadow-xs flex flex-col sm:flex-row sm:items-center justify-between gap-4">
             <div className="flex items-center gap-3">
@@ -798,6 +799,14 @@ export default function TeacherRequestsView({
           <span>{toast.message}</span>
         </div>
       )}
+
+      {/* Mobile Bottom Navigation Bar (< md) */}
+      <MobileBottomNav
+        role="teacher"
+        activeTab="requests"
+        pendingCount={totalPendingCount}
+        onOpenDrawer={() => setMobileSidebarOpen(true)}
+      />
     </div>
   );
 }

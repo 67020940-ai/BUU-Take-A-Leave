@@ -15,6 +15,7 @@ import {
 import TeacherSidebar from '@/components/TeacherSidebar';
 import TeacherTopBar from '@/components/TeacherTopBar';
 import TeacherScheduleGrid from '@/components/TeacherScheduleGrid';
+import MobileBottomNav from '@/components/MobileBottomNav';
 
 export default function TeacherDashboard({
   user,
@@ -79,7 +80,7 @@ export default function TeacherDashboard({
           onToggleMobileSidebar={() => setMobileSidebarOpen(true)}
         />
 
-        <main className="flex-1 p-4 sm:p-6 lg:p-8 space-y-6 max-w-7xl w-full mx-auto">
+        <main className="flex-1 p-4 sm:p-6 lg:p-8 pb-24 md:pb-8 space-y-6 max-w-7xl w-full mx-auto">
           {/* 4 Connected Horizontal Boxes (Strictly matching wireframe S__3366938_0.jpg & Screenshot 3) */}
           <div className="grid grid-cols-2 sm:grid-cols-4 divide-y sm:divide-y-0 sm:divide-x border-2 border-neutral-300 dark:border-slate-700 rounded-3xl bg-white dark:bg-slate-900 shadow-xs overflow-hidden">
             {/* Box 1: คำร้องขอลาทั้งหมด */}
@@ -169,6 +170,14 @@ export default function TeacherDashboard({
           )}
         </main>
       </div>
+
+      {/* Mobile Bottom Navigation Bar (< md) */}
+      <MobileBottomNav
+        role="teacher"
+        activeTab="home"
+        pendingCount={totalPendingCount}
+        onOpenDrawer={() => setMobileSidebarOpen(true)}
+      />
     </div>
   );
 }

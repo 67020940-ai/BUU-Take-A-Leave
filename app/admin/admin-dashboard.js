@@ -28,6 +28,7 @@ import {
 } from 'lucide-react';
 import AdminSidebar from '@/components/AdminSidebar';
 import AdminTopBar from '@/components/AdminTopBar';
+import MobileBottomNav from '@/components/MobileBottomNav';
 import { DAY_LABEL_TH, formatThaiDateTime, formatThaiDate } from '@/lib/ui';
 
 export default function AdminDashboard({ user, courses = [], leaves = [], tickets: initialTickets = [] }) {
@@ -193,7 +194,7 @@ export default function AdminDashboard({ user, courses = [], leaves = [], ticket
           onToggleMobileSidebar={() => setMobileSidebarOpen(true)}
         />
 
-        <main className="flex-1 p-4 sm:p-6 lg:p-8 space-y-6 max-w-7xl w-full mx-auto">
+        <main className="flex-1 p-4 sm:p-6 lg:p-8 pb-24 md:pb-8 space-y-6 max-w-7xl w-full mx-auto">
           {/* ================= SESSION 1: OVERVIEW (ภาพรวมระบบ) ================= */}
           {activeTab === 'overview' && (
             <div className="space-y-6 animate-in fade-in duration-150">
@@ -881,6 +882,15 @@ export default function AdminDashboard({ user, courses = [], leaves = [], ticket
           </div>
         </div>
       )}
+
+      {/* Mobile Bottom Navigation Bar (< md) */}
+      <MobileBottomNav
+        role="admin"
+        activeTab={activeTab}
+        onSelectTab={handleSwitchTab}
+        pendingCount={openTicketsCount}
+        onOpenDrawer={() => setMobileSidebarOpen(true)}
+      />
     </div>
   );
 }
