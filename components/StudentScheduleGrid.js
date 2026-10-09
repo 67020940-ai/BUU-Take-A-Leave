@@ -55,6 +55,11 @@ export default function StudentScheduleGrid({
 }) {
   const [selectedCourse, setSelectedCourse] = useState(null);
   const [modalTab, setModalTab] = useState('prep'); // 'prep' | 'exam' | 'syllabus' | 'info'
+  const [mobileSelectedDay, setMobileSelectedDay] = useState(() => {
+    const dayNum = new Date().getDay();
+    const dayMap = { 1: 'MO', 2: 'TU', 3: 'WE', 4: 'TH', 5: 'FR' };
+    return dayMap[dayNum] || 'MO';
+  });
 
   // Normalize courses from summaries
   const parsedCourses = useMemo(() => {
@@ -142,8 +147,126 @@ export default function StudentScheduleGrid({
         </div>
       </div>
 
-      {/* Grid Container (Scrollable on small devices) */}
-      <div className="overflow-x-auto">
+      {/* 1. Mobile Day-by-Day View (< md) */}
+      <div className="block md:hidden p-4 space-y-4">
+        {/* Day Selector Tabs */}
+        <div className="flex items-center gap-1.5 p-1 bg-neutral-100 dark:bg-slate-800/80 rounded-2xl overflow-x-auto">
+          {DAYS.map((day) => {
+            const isActive = mobileSelectedDay === day.key;
+            const count = parsedCourses.filter((c) => c.dayKey === day.key).length;
+            return (
+              <button
+                key={day.key}
+                type="button"
+                onClick={() => setMobileSelectedDay(day.key)}
+                className={`flex-1 min-w-[62px] py-2 px-1 rounded-xl text-center text-xs font-bold transition-all cursor-pointer select-none ${
+                  isActive
+                    ? 'bg-[#7749BC] text-white shadow-xs'
+                    : 'text-neutral-600 dark:text-neutral-300 hover:bg-white/60 dark:hover:bg-slate-700/60'
+                }`}
+              >
+                <p className="text-[11px] leading-tight font-bold">{day.dayTh.replace('วัน', '')}</p>
+                <span
+                  className={`inline-block mt-0.5 text-[9px] px-1.5 py-0.5 rounded-full font-mono ${
+                    isActive
+                      ? 'bg-white/20 text-white font-bold'
+                      : 'bg-neutral-200/80 dark:bg-slate-700 text-neutral-500 dark:text-neutral-400'
+                  }`}
+                >
+                  {count} วิชา
+                </span>
+              </button>
+            );
+          })}
+        </div>
+
+        {/* Selected Day Course Cards */}
+        {(() => {
+          const mobileDayCourses = parsedCourses.filter((c) => c.dayKey === mobileSelectedDay);
+          if (mobileDayCourses.length === 0) {
+            return (
+              <div className="p-8 text-center rounded-2xl border border-dashed border-neutral-200 dark:border-slate-800 bg-neutral-50/50 dark:bg-slate-900/50 space-y-1">
+                <CalendarDays className="w-8 h-8 text-neutral-300 dark:text-neutral-600 mx-auto mb-1" />
+                <p className="text-xs font-bold text-neutral-600 dark:text-neutral-300">
+                  ไม่มีตารางเรียนในวันนี้
+                </p>
+                <p className="text-[11px] text-neutral-400">
+                  คุณสามารถเลือกดูวันอื่นได้จากแถบเมนูด้านบน
+                </p>
+              </div>
+            );
+          }
+
+          return (
+            <div className="space-y-3">
+              {mobileDayCourses.map((c) => (
+                <div
+                  key={c.id}
+                  className="p-4 rounded-2xl border-2 border-purple-200 dark:border-purple-800/80 bg-purple-50/30 dark:bg-slate-900 shadow-2xs space-y-3"
+                >
+                  <div className="flex items-start justify-between gap-2">
+                    <div>
+                      <div className="flex items-center gap-1.5">
+                        <span className="font-mono font-black text-sm text-[#7749BC] dark:text-purple-300">
+                          {c.code}
+                        </span>
+                        <span className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-purple-100 dark:bg-purple-950 text-[#7749BC] dark:text-purple-300">
+                          กลุ่ม {c.group}
+                        </span>
+                      </div>
+                      <h4 className="font-bold text-xs text-neutral-900 dark:text-white mt-1">
+                        {c.name}
+                      </h4>
+                    </div>
+                  </div>
+
+                  <div className="grid grid-cols-2 gap-2 text-[11px] text-neutral-600 dark:text-neutral-400">
+                    <div className="flex items-center gap-1.5">
+                      <Clock className="w-3.5 h-3.5 text-[#7749BC] shrink-0" />
+                      <span>{c.time || '13:00 - 15:50 น.'}</span>
+                    </div>
+                    <div className="flex items-center gap-1.5">
+                      <MapPin className="w-3.5 h-3.5 text-[#7749BC] shrink-0" />
+                      <span className="truncate">ห้อง {c.room || '-'}</span>
+                    </div>
+                    <div className="flex items-center gap-1.5 col-span-2">
+                      <User className="w-3.5 h-3.5 text-[#7749BC] shrink-0" />
+                      <span className="truncate">{c.teacherName || '-'}</span>
+                    </div>
+                  </div>
+
+                  <div className="flex items-center gap-2 pt-2 border-t border-purple-100 dark:border-slate-800">
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setSelectedCourse(c);
+                        setModalTab('prep');
+                      }}
+                      className="flex-1 min-h-[44px] py-2 px-3 rounded-xl bg-white dark:bg-slate-800 border border-neutral-200 dark:border-slate-700 text-xs font-bold text-neutral-700 dark:text-neutral-200 flex items-center justify-center gap-1.5 active:bg-neutral-100 cursor-pointer shadow-2xs"
+                    >
+                      <Sparkles className="w-3.5 h-3.5 text-[#7749BC]" />
+                      <span>เตรียมตัว / แนวข้อสอบ</span>
+                    </button>
+                    {onSelectCourseForLeave && (
+                      <button
+                        type="button"
+                        onClick={() => onSelectCourseForLeave(c.id, c.code)}
+                        className="min-h-[44px] py-2 px-3.5 rounded-xl bg-[#7749BC] hover:bg-[#653ba6] text-white text-xs font-bold flex items-center justify-center gap-1.5 shadow-sm active:scale-95 cursor-pointer shrink-0"
+                      >
+                        <FileEdit className="w-3.5 h-3.5" />
+                        <span>ยื่นใบลา</span>
+                      </button>
+                    )}
+                  </div>
+                </div>
+              ))}
+            </div>
+          );
+        })()}
+      </div>
+
+      {/* 2. Desktop & iPad Full Grid Container (>= md) */}
+      <div className="hidden md:block overflow-x-auto">
         <div className="min-w-[850px] p-4">
           {/* Header Row: Days label + Time Slots */}
           <div className="grid grid-cols-12 gap-1.5 mb-2 text-center text-xs font-bold text-neutral-500 dark:text-neutral-400">
