@@ -77,14 +77,19 @@ export default function MobileBottomNav({
     }
   }
 
-  // Determine current active item
-  let currentActiveKey = activeTab;
+  // Determine current active item strictly
+  let currentActiveKey = activeTab || 'home';
   if (role === 'teacher') {
-    if (pathname === '/teacher/requests') currentActiveKey = 'requests';
-    else if (pathname === '/teacher/stats') currentActiveKey = 'stats';
-    else if (pathname === '/teacher/history') currentActiveKey = 'history';
-    else if (pathname === '/teacher/schedule') currentActiveKey = 'schedule';
-    else if (pathname === '/teacher') currentActiveKey = 'home';
+    if (pathname.startsWith('/teacher/requests')) currentActiveKey = 'requests';
+    else if (pathname.startsWith('/teacher/stats')) currentActiveKey = 'stats';
+    else if (pathname.startsWith('/teacher/history')) currentActiveKey = 'history';
+    else if (pathname.startsWith('/teacher/schedule')) currentActiveKey = 'schedule';
+    else if (pathname === '/teacher' || pathname.startsWith('/teacher/archive')) currentActiveKey = 'home';
+    else if (activeTab) currentActiveKey = activeTab;
+  } else if (role === 'admin') {
+    currentActiveKey = activeTab || 'overview';
+  } else if (role === 'student') {
+    currentActiveKey = activeTab || 'home';
   }
 
   return (
@@ -96,15 +101,13 @@ export default function MobileBottomNav({
       <div className="flex items-center justify-around px-1 pt-1.5 pb-1">
         {items.map((item) => {
           const Icon = item.icon;
-          const isActive =
-            currentActiveKey === item.key ||
-            (!item.isAction && pathname === item.href);
+          const isActive = currentActiveKey === item.key;
 
           const content = (
             <>
               <div className="relative">
                 <Icon
-                  className={`w-5 h-5 transition-transform ${
+                  className={`w-5 h-5 transition-transform duration-200 ${
                     isActive ? 'scale-110 stroke-[2.4]' : 'stroke-[1.8]'
                   }`}
                 />
@@ -115,19 +118,19 @@ export default function MobileBottomNav({
                 )}
               </div>
               <span
-                className={`text-[10px] mt-1 truncate max-w-full leading-none tracking-tight ${
+                className={`text-[10px] mt-1 truncate max-w-full leading-none tracking-tight transition-colors duration-200 ${
                   isActive ? 'font-bold' : 'font-medium'
                 }`}
               >
                 {item.label}
               </span>
               {isActive && (
-                <span className="w-1 h-1 rounded-full bg-[#7749BC] dark:bg-purple-400 mt-1" />
+                <span className="w-1 h-1 rounded-full bg-[#7749BC] dark:bg-purple-400 mt-1 animate-in fade-in zoom-in-50 duration-200" />
               )}
             </>
           );
 
-          const className = `flex-1 min-w-0 flex flex-col items-center justify-center py-1 px-1 rounded-xl transition-all cursor-pointer relative select-none ${
+          const className = `flex-1 min-w-0 flex flex-col items-center justify-center py-1 px-1 rounded-xl transition-all duration-200 cursor-pointer relative select-none ${
             isActive
               ? 'text-[#7749BC] dark:text-purple-400 font-bold'
               : 'text-neutral-500 dark:text-neutral-400 hover:text-neutral-800 dark:hover:text-neutral-200'
@@ -151,8 +154,11 @@ export default function MobileBottomNav({
               key={item.key}
               href={item.href}
               prefetch={true}
-              onClick={() => {
-                if (onSelectTab) onSelectTab(item.key);
+              onClick={(e) => {
+                if (onSelectTab) {
+                  e.preventDefault();
+                  onSelectTab(item.key);
+                }
               }}
               className={className}
             >

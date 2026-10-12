@@ -44,6 +44,14 @@ export default function TeacherSidebar({
 }) {
   const router = useRouter();
   const pathname = usePathname();
+  const currentTab = (() => {
+    if (pathname.startsWith('/teacher/requests')) return 'requests';
+    if (pathname.startsWith('/teacher/stats')) return 'stats';
+    if (pathname.startsWith('/teacher/history')) return 'history';
+    if (pathname.startsWith('/teacher/schedule')) return 'schedule';
+    if (pathname === '/teacher' || pathname.startsWith('/teacher/archive')) return 'home';
+    return activeTab || 'home';
+  })();
   const [coursesDropdownOpen, setCoursesDropdownOpen] = useState(true);
   const [showSettings, setShowSettings] = useState(false);
   const [showSupport, setShowSupport] = useState(false);
@@ -191,7 +199,7 @@ export default function TeacherSidebar({
                     href="/teacher"
                     onClick={onCloseMobile}
                     className={`w-full flex items-center justify-between px-3 py-2.5 rounded-2xl text-xs font-semibold transition-all cursor-pointer ${
-                      activeTab === 'home' || (pathname === '/teacher' && activeTab !== 'requests' && activeTab !== 'stats' && activeTab !== 'history' && activeTab !== 'schedule')
+                      currentTab === 'home'
                         ? 'bg-[#7749BC] text-white shadow-md shadow-purple-900/20'
                         : 'text-neutral-700 dark:text-neutral-300 hover:bg-neutral-100 dark:hover:bg-slate-800'
                     }`}
@@ -208,7 +216,7 @@ export default function TeacherSidebar({
                     href="/teacher/requests"
                     onClick={onCloseMobile}
                     className={`w-full flex items-center justify-between px-3 py-2.5 rounded-2xl text-xs font-semibold transition-all cursor-pointer ${
-                      activeTab === 'requests' || pathname === '/teacher/requests'
+                      currentTab === 'requests'
                         ? 'bg-[#7749BC] text-white shadow-md shadow-purple-900/20'
                         : 'text-neutral-700 dark:text-neutral-300 hover:bg-neutral-100 dark:hover:bg-slate-800'
                     }`}
@@ -221,7 +229,7 @@ export default function TeacherSidebar({
                     {!collapsed && pendingCount > 0 && (
                       <span
                         className={`text-[10px] font-bold px-2 py-0.5 rounded-full ${
-                          activeTab === 'requests' || pathname === '/teacher/requests'
+                          currentTab === 'requests'
                             ? 'bg-white/20 text-white'
                             : 'bg-amber-100 text-amber-800 dark:bg-amber-950 dark:text-amber-300'
                         }`}
@@ -236,7 +244,7 @@ export default function TeacherSidebar({
                     href="/teacher/stats"
                     onClick={onCloseMobile}
                     className={`w-full flex items-center justify-between px-3 py-2.5 rounded-2xl text-xs font-semibold transition-all cursor-pointer ${
-                      activeTab === 'stats' || pathname === '/teacher/stats'
+                      currentTab === 'stats'
                         ? 'bg-[#7749BC] text-white shadow-md shadow-purple-900/20'
                         : 'text-neutral-700 dark:text-neutral-300 hover:bg-neutral-100 dark:hover:bg-slate-800'
                     }`}
@@ -253,7 +261,7 @@ export default function TeacherSidebar({
                     href="/teacher/history"
                     onClick={onCloseMobile}
                     className={`w-full flex items-center justify-between px-3 py-2.5 rounded-2xl text-xs font-semibold transition-all cursor-pointer ${
-                      activeTab === 'history' || pathname === '/teacher/history'
+                      currentTab === 'history'
                         ? 'bg-[#7749BC] text-white shadow-md shadow-purple-900/20'
                         : 'text-neutral-700 dark:text-neutral-300 hover:bg-neutral-100 dark:hover:bg-slate-800'
                     }`}
@@ -270,7 +278,7 @@ export default function TeacherSidebar({
                     href="/teacher/schedule"
                     onClick={onCloseMobile}
                     className={`w-full flex items-center justify-between px-3 py-2.5 rounded-2xl text-xs font-semibold transition-all cursor-pointer ${
-                      activeTab === 'schedule' || pathname === '/teacher/schedule'
+                      currentTab === 'schedule'
                         ? 'bg-[#7749BC] text-white shadow-md shadow-purple-900/20'
                         : 'text-neutral-700 dark:text-neutral-300 hover:bg-neutral-100 dark:hover:bg-slate-800'
                     }`}
