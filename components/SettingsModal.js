@@ -67,9 +67,9 @@ export default function SettingsModal({ isOpen, onClose }) {
                 onChange={(e) => setDefaultSemester(e.target.value)}
                 className="w-full px-3.5 py-2.5 rounded-xl border border-neutral-300 dark:border-slate-700 bg-white dark:bg-slate-800 text-xs font-semibold text-neutral-900 dark:text-neutral-100 focus:outline-none focus:border-[#7749BC] appearance-none pr-10 cursor-pointer shadow-xs"
               >
-                <option value="1/2568">ภาคเรียนที่ 1/2568</option>
-                <option value="2/2568">ภาคเรียนที่ 2/2568</option>
                 <option value="1/2569">ภาคเรียนที่ 1/2569 (ปัจจุบัน)</option>
+                <option value="2/2568">ภาคเรียนที่ 2/2568</option>
+                <option value="1/2568">ภาคเรียนที่ 1/2568</option>
               </select>
               <ChevronDown className="w-4 h-4 text-neutral-400 absolute right-3.5 top-1/2 -translate-y-1/2 pointer-events-none" />
             </div>

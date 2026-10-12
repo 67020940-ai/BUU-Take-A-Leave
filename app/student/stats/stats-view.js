@@ -310,7 +310,7 @@ export default function StudentStatsView({ summaries = [], leaves = [] }) {
       {/* 1.3 Two-Column Grid: Left Bar Chart & Right Donut Chart */}
       <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 items-start">
         {/* LEFT COLUMN: Bar Chart (Semester Comparison) */}
-        <div className="lg:col-span-7 bg-white/80 dark:bg-slate-900/80 backdrop-blur-xl rounded-3xl border border-neutral-200/80 dark:border-slate-800 p-6 shadow-xs space-y-4">
+        <div className="lg:col-span-7 bg-white/80 dark:bg-slate-900/80 backdrop-blur-xl rounded-3xl border border-neutral-200/80 dark:border-slate-800 p-6 shadow-xs space-y-4 overflow-hidden min-w-0">
           <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pb-2 border-b border-neutral-100 dark:border-slate-800">
             <div>
               <h2 className="text-sm sm:text-base font-bold text-neutral-900 dark:text-neutral-100 flex items-center gap-2">
@@ -364,7 +364,7 @@ export default function StudentStatsView({ summaries = [], leaves = [] }) {
         </div>
 
         {/* RIGHT COLUMN: Donut Chart (Category Breakdown & Quota) */}
-        <div className="lg:col-span-5 bg-white/80 dark:bg-slate-900/80 backdrop-blur-xl rounded-3xl border border-neutral-200/80 dark:border-slate-800 p-6 shadow-xs space-y-4">
+        <div className="lg:col-span-5 bg-white/80 dark:bg-slate-900/80 backdrop-blur-xl rounded-3xl border border-neutral-200/80 dark:border-slate-800 p-6 shadow-xs space-y-4 overflow-hidden min-w-0">
           <div className="pb-2 border-b border-neutral-100 dark:border-slate-800">
             <h2 className="text-sm sm:text-base font-bold text-neutral-900 dark:text-neutral-100 flex items-center gap-2">
               <HeartPulse className="w-4 h-4 text-sky-500" />

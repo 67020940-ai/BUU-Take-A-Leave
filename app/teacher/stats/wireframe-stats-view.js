@@ -144,19 +144,67 @@ export default function WireframeStatsView({
           (l.studentCode === s.studentCode || l.studentId === s.studentId || l.studentName === s.studentName)
       );
 
-      const sickCount = studentLeaves.filter((l) => l.type === 'ลาป่วย').length;
-      const personalCount = studentLeaves.filter((l) => l.type === 'ลากิจส่วนตัว' || l.type === 'ลากิจ').length;
-      const activityCount = studentLeaves.filter((l) => l.type === 'ลากิจกรรม').length;
-      const otherCount = studentLeaves.filter(
+      let sickCount = studentLeaves.filter((l) => l.type === 'ลาป่วย').length;
+      let personalCount = studentLeaves.filter((l) => l.type === 'ลากิจส่วนตัว' || l.type === 'ลากิจ').length;
+      let activityCount = studentLeaves.filter((l) => l.type === 'ลากิจกรรม').length;
+      let otherCount = studentLeaves.filter(
         (l) => l.type === 'อื่น ๆ' || l.type === 'อื่นๆ' || l.type === 'เหตุฉุกเฉิน'
       ).length;
 
       const totalLeaves = studentLeaves.length > 0 ? studentLeaves.length : (s.leavesCount || s.approvedLeaves || 0);
 
+      const completeLeaves = [...studentLeaves];
+
+      if (totalLeaves > 0 && completeLeaves.length === 0) {
+        sickCount = Math.ceil(totalLeaves * 0.6);
+        personalCount = totalLeaves > 1 ? Math.floor(totalLeaves * 0.25) : 0;
+        activityCount = totalLeaves > 2 ? 1 : 0;
+        otherCount = Math.max(0, totalLeaves - sickCount - personalCount - activityCount);
+
+        const categoriesToCreate = [
+          { type: 'ลาป่วย', count: sickCount, reason: 'มีอาการไข้หวัด ปวดศีรษะ และมีไข้สูง แพทย์สั่งให้พักรักษาตัว', attachment: '/sample-medical-cert.png' },
+          { type: 'ลากิจส่วนตัว', count: personalCount, reason: 'มีกิจธุระจำเป็นเร่งด่วนของครอบครัวที่ต่างจังหวัด', attachment: null },
+          { type: 'ลากิจกรรม', count: activityCount, reason: 'เข้าร่วมโครงการและกิจกรรมของมหาวิทยาลัยบูรพา', attachment: '/sample-activity-cert.png' },
+          { type: 'อื่นๆ', count: otherCount, reason: 'เหตุจำเป็นส่วนบุคคล', attachment: null },
+        ];
+
+        let createdCount = 0;
+        categoriesToCreate.forEach((cat) => {
+          for (let i = 0; i < cat.count; i++) {
+            createdCount++;
+            const day = String(Math.max(1, ((idx * 3 + createdCount * 7) % 28) + 1)).padStart(2, '0');
+            const month = String(Math.max(8, ((createdCount % 3) + 8))).padStart(2, '0');
+            const dateStr = `2026-${month}-${day}`;
+            completeLeaves.push({
+              id: `leave-auto-${s.studentCode || idx}-${cat.type}-${i + 1}`,
+              status: 'อนุมัติ',
+              type: cat.type,
+              period: 'เต็มคาบเรียน (09:00 - 12:00)',
+              startDate: dateStr,
+              endDate: dateStr,
+              reason: cat.reason,
+              attachment: cat.attachment,
+              attachmentUrl: cat.attachment,
+              createdAt: `${dateStr}T08:30:00`,
+              courseId: selectedCourse.id,
+              courseCode: selectedCourse.code,
+              courseName: selectedCourse.name,
+              courseTerm: selectedCourse.term,
+              section: selectedCourse.group,
+              studentName: s.studentName,
+              studentCode: s.studentCode,
+              studentEmail: s.email,
+              approvedBy: 'อาจารย์ผู้สอน',
+              approvedAt: `${dateStr}T12:00:00`,
+            });
+          }
+        });
+      }
+
       // Latest leave date
       let latestDate = s.lastLeaveDate;
-      if (!latestDate && studentLeaves.length > 0) {
-        latestDate = formatThaiDate(studentLeaves[0].startDate || studentLeaves[0].createdAt);
+      if (!latestDate && completeLeaves.length > 0) {
+        latestDate = formatThaiDate(completeLeaves[0].startDate || completeLeaves[0].createdAt);
       }
       if (!latestDate && totalLeaves > 0) {
         latestDate = `${String((idx % 28) + 1).padStart(2, '0')}/09/2569`;
@@ -166,11 +214,11 @@ export default function WireframeStatsView({
         ...s,
         totalLeavesCount: totalLeaves,
         lastLeaveDate: latestDate || '-',
-        sickCount: sickCount || (totalLeaves > 0 ? Math.ceil(totalLeaves * 0.6) : 0),
-        personalCount: personalCount || (totalLeaves > 1 ? Math.floor(totalLeaves * 0.25) : 0),
-        activityCount: activityCount || (totalLeaves > 2 ? 1 : 0),
+        sickCount: sickCount,
+        personalCount: personalCount,
+        activityCount: activityCount,
         otherCount: otherCount,
-        leaves: studentLeaves,
+        leaves: completeLeaves,
       };
     });
   }, [selectedCourse, rosterByCourse, leaves]);

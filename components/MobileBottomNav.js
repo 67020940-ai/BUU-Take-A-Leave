@@ -32,9 +32,9 @@ export default function MobileBottomNav({
     items = [
       { key: 'home', label: 'หน้าหลัก', icon: LayoutDashboard, href: '/student' },
       { key: 'leave', label: 'ยื่นใบลา', icon: FileEdit, href: '/student?tab=leave' },
-      { key: 'schedule', label: 'ตารางเรียน', icon: CalendarDays, href: '/student?tab=schedule' },
+      { key: 'stats', label: 'สถิติ', icon: BarChart3, href: '/student?tab=stats' },
       { key: 'history', label: 'ประวัติ', icon: History, href: '/student?tab=history', badge: pendingCount },
-      { key: 'more', label: 'เพิ่มเติม', icon: Menu, isAction: true },
+      { key: 'schedule', label: 'ตารางเรียน', icon: CalendarDays, href: '/student?tab=schedule' },
     ];
   } else if (role === 'teacher') {
     items = [
@@ -60,13 +60,31 @@ export default function MobileBottomNav({
       if (onOpenDrawer) onOpenDrawer();
       return;
     }
+
     if (onSelectTab) {
-      e?.preventDefault();
       onSelectTab(item.key);
-      if (item.href && pathname !== item.href.split('?')[0]) {
+    }
+
+    if (item.href) {
+      if (typeof window !== 'undefined') {
+        const cur = window.location.pathname + window.location.search;
+        if (cur !== item.href) {
+          router.push(item.href);
+        }
+      } else {
         router.push(item.href);
       }
     }
+  }
+
+  // Determine current active item
+  let currentActiveKey = activeTab;
+  if (role === 'teacher') {
+    if (pathname === '/teacher/requests') currentActiveKey = 'requests';
+    else if (pathname === '/teacher/stats') currentActiveKey = 'stats';
+    else if (pathname === '/teacher/history') currentActiveKey = 'history';
+    else if (pathname === '/teacher/schedule') currentActiveKey = 'schedule';
+    else if (pathname === '/teacher') currentActiveKey = 'home';
   }
 
   return (
@@ -79,7 +97,7 @@ export default function MobileBottomNav({
         {items.map((item) => {
           const Icon = item.icon;
           const isActive =
-            activeTab === item.key ||
+            currentActiveKey === item.key ||
             (!item.isAction && pathname === item.href);
 
           return (

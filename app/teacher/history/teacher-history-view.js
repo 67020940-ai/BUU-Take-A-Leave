@@ -31,6 +31,7 @@ import {
   LEAVE_TYPE_DEFAULT,
   formatThaiDate,
   formatThaiDateTime,
+  sortAcademicTerms,
 } from '@/lib/ui';
 
 function initials(name) {
@@ -78,7 +79,7 @@ export default function TeacherHistoryView({
       if (l.courseTerm && l.courseTerm !== '-') terms.add(l.courseTerm);
     });
     if (terms.size === 0) terms.add('1/2569');
-    return Array.from(terms).sort().reverse();
+    return sortAcademicTerms(Array.from(terms), false);
   }, [courses, leaves]);
 
   // History leaves (items that have been acted upon, or all)

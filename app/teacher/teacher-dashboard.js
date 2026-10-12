@@ -11,6 +11,7 @@ import {
   CalendarDays,
   ArrowRight,
   ClipboardCheck,
+  ChevronRight,
 } from 'lucide-react';
 import TeacherSidebar from '@/components/TeacherSidebar';
 import TeacherTopBar from '@/components/TeacherTopBar';
@@ -81,60 +82,97 @@ export default function TeacherDashboard({
         />
 
         <main className="flex-1 p-4 sm:p-6 lg:p-8 pb-24 md:pb-8 space-y-6 max-w-7xl w-full mx-auto">
-          {/* 4 Connected Horizontal Boxes (Strictly matching wireframe S__3366938_0.jpg & Screenshot 3) */}
-          <div className="grid grid-cols-2 sm:grid-cols-4 divide-y sm:divide-y-0 sm:divide-x border-2 border-neutral-300 dark:border-slate-700 rounded-3xl bg-white dark:bg-slate-900 shadow-xs overflow-hidden">
+          {/* 4 Connected Horizontal Summary Boxes (Matching Student View & Screenshot 3) */}
+          <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 sm:gap-4">
             {/* Box 1: คำร้องขอลาทั้งหมด */}
             <Link
               href="/teacher/requests?tab=all"
-              className="p-4 sm:p-5 text-left transition-colors cursor-pointer hover:bg-purple-50/60 dark:hover:bg-slate-800/50 text-neutral-800 dark:text-neutral-200 block group"
+              className="p-4 sm:p-5 text-left rounded-3xl bg-white dark:bg-slate-900 border-2 border-neutral-200 dark:border-slate-800 hover:border-[#7749BC] dark:hover:border-purple-500 hover:shadow-md transition-all cursor-pointer text-neutral-800 dark:text-neutral-200 block group shadow-2xs relative"
               title="ดูรายการคำร้องขอลาทั้งหมด"
             >
-              <p className="text-xs sm:text-sm font-bold truncate group-hover:text-[#7749BC] dark:group-hover:text-purple-300 transition-colors">
-                คำร้องขอลาทั้งหมด
-              </p>
-              <p className="text-lg sm:text-2xl font-black font-mono mt-1">: {leaves.length}</p>
+              <div className="flex items-center justify-between mb-2">
+                <span className="text-xs sm:text-sm font-bold truncate group-hover:text-[#7749BC] dark:group-hover:text-purple-300 transition-colors">
+                  คำร้องขอลาทั้งหมด
+                </span>
+                <ChevronRight className="w-4 h-4 text-neutral-400 group-hover:text-[#7749BC] group-hover:translate-x-0.5 transition-all shrink-0" />
+              </div>
+              <div className="flex items-baseline justify-between">
+                <span className="text-2xl sm:text-3xl font-black font-mono text-neutral-900 dark:text-neutral-100">
+                  {leaves.length}
+                </span>
+                <span className="text-[11px] text-neutral-400 group-hover:text-[#7749BC] transition-colors">
+                  รายการ
+                </span>
+              </div>
             </Link>
 
             {/* Box 2: อนุมัติ */}
             <Link
               href="/teacher/history?status=อนุมัติ"
-              className="p-4 sm:p-5 text-left transition-colors cursor-pointer hover:bg-emerald-50/60 dark:hover:bg-slate-800/50 text-neutral-800 dark:text-neutral-200 block group"
+              className="p-4 sm:p-5 text-left rounded-3xl bg-white dark:bg-slate-900 border-2 border-neutral-200 dark:border-slate-800 hover:border-emerald-500 dark:hover:border-emerald-500 hover:shadow-md transition-all cursor-pointer text-neutral-800 dark:text-neutral-200 block group shadow-2xs relative"
               title="ดูประวัติการอนุมัติคำขอลา"
             >
-              <p className="text-xs sm:text-sm font-bold truncate group-hover:text-emerald-700 dark:group-hover:text-emerald-300 transition-colors">
-                อนุมัติ
-              </p>
-              <p className="text-lg sm:text-2xl font-black font-mono mt-1 text-emerald-600 dark:text-emerald-400">
-                : {totalApprovedCount}
-              </p>
+              <div className="flex items-center justify-between mb-2">
+                <span className="text-xs sm:text-sm font-bold truncate group-hover:text-emerald-600 dark:group-hover:text-emerald-300 transition-colors flex items-center gap-1.5">
+                  <span className="w-2 h-2 rounded-full bg-emerald-500" />
+                  อนุมัติ
+                </span>
+                <ChevronRight className="w-4 h-4 text-neutral-400 group-hover:text-emerald-600 group-hover:translate-x-0.5 transition-all shrink-0" />
+              </div>
+              <div className="flex items-baseline justify-between">
+                <span className="text-2xl sm:text-3xl font-black font-mono text-emerald-600 dark:text-emerald-400">
+                  {totalApprovedCount}
+                </span>
+                <span className="text-[11px] text-neutral-400 group-hover:text-emerald-600 transition-colors">
+                  รายการ
+                </span>
+              </div>
             </Link>
 
             {/* Box 3: รออนุมัติ */}
             <Link
               href="/teacher/requests?tab=pending"
-              className="p-4 sm:p-5 text-left transition-colors cursor-pointer hover:bg-amber-50/60 dark:hover:bg-slate-800/50 text-neutral-800 dark:text-neutral-200 block group"
+              className="p-4 sm:p-5 text-left rounded-3xl bg-white dark:bg-slate-900 border-2 border-neutral-200 dark:border-slate-800 hover:border-amber-500 dark:hover:border-amber-500 hover:shadow-md transition-all cursor-pointer text-neutral-800 dark:text-neutral-200 block group shadow-2xs relative"
               title="ดูคำร้องขอลาที่รออนุมัติ"
             >
-              <p className="text-xs sm:text-sm font-bold truncate group-hover:text-amber-700 dark:group-hover:text-amber-300 transition-colors">
-                รออนุมัติ
-              </p>
-              <p className="text-lg sm:text-2xl font-black font-mono mt-1 text-amber-600 dark:text-amber-400">
-                : {totalPendingCount}
-              </p>
+              <div className="flex items-center justify-between mb-2">
+                <span className="text-xs sm:text-sm font-bold truncate group-hover:text-amber-600 dark:group-hover:text-amber-300 transition-colors flex items-center gap-1.5">
+                  <span className="w-2 h-2 rounded-full bg-amber-500" />
+                  รออนุมัติ
+                </span>
+                <ChevronRight className="w-4 h-4 text-neutral-400 group-hover:text-amber-600 group-hover:translate-x-0.5 transition-all shrink-0" />
+              </div>
+              <div className="flex items-baseline justify-between">
+                <span className="text-2xl sm:text-3xl font-black font-mono text-amber-600 dark:text-amber-400">
+                  {totalPendingCount}
+                </span>
+                <span className="text-[11px] text-neutral-400 group-hover:text-amber-600 transition-colors">
+                  รายการ
+                </span>
+              </div>
             </Link>
 
             {/* Box 4: ไม่อนุมัติ */}
             <Link
               href="/teacher/history?status=ไม่อนุมัติ"
-              className="p-4 sm:p-5 text-left transition-colors cursor-pointer hover:bg-rose-50/60 dark:hover:bg-slate-800/50 text-neutral-800 dark:text-neutral-200 block group"
+              className="p-4 sm:p-5 text-left rounded-3xl bg-white dark:bg-slate-900 border-2 border-neutral-200 dark:border-slate-800 hover:border-rose-500 dark:hover:border-rose-500 hover:shadow-md transition-all cursor-pointer text-neutral-800 dark:text-neutral-200 block group shadow-2xs relative"
               title="ดูรายการที่ไม่อนุมัติ"
             >
-              <p className="text-xs sm:text-sm font-bold truncate group-hover:text-rose-700 dark:group-hover:text-rose-300 transition-colors">
-                ไม่อนุมัติ
-              </p>
-              <p className="text-lg sm:text-2xl font-black font-mono mt-1 text-rose-600 dark:text-rose-400">
-                : {totalRejectedCount}
-              </p>
+              <div className="flex items-center justify-between mb-2">
+                <span className="text-xs sm:text-sm font-bold truncate group-hover:text-rose-600 dark:group-hover:text-rose-300 transition-colors flex items-center gap-1.5">
+                  <span className="w-2 h-2 rounded-full bg-rose-500" />
+                  ไม่อนุมัติ
+                </span>
+                <ChevronRight className="w-4 h-4 text-neutral-400 group-hover:text-rose-600 group-hover:translate-x-0.5 transition-all shrink-0" />
+              </div>
+              <div className="flex items-baseline justify-between">
+                <span className="text-2xl sm:text-3xl font-black font-mono text-rose-600 dark:text-rose-400">
+                  {totalRejectedCount}
+                </span>
+                <span className="text-[11px] text-neutral-400 group-hover:text-rose-600 transition-colors">
+                  รายการ
+                </span>
+              </div>
             </Link>
           </div>
 

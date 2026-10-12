@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useRef } from 'react';
+import { useState, useRef, useEffect } from 'react';
 import { X, User, Mail, Phone, GraduationCap, Building2, ShieldCheck, Check, Save, Camera, Upload } from 'lucide-react';
 
 export default function AccountModal({ isOpen, onClose, user }) {
@@ -10,10 +10,27 @@ export default function AccountModal({ isOpen, onClose, user }) {
   const [saved, setSaved] = useState(false);
   const fileInputRef = useRef(null);
 
+  useEffect(() => {
+    if (isOpen) {
+      try {
+        const stored = localStorage.getItem('buu_user_avatar');
+        if (stored) setAvatar(stored);
+      } catch {}
+    }
+  }, [isOpen]);
+
   if (!isOpen) return null;
 
   function handleSave(e) {
     e.preventDefault();
+    if (avatar) {
+      try {
+        localStorage.setItem('buu_user_avatar', avatar);
+        window.dispatchEvent(new Event('buu_avatar_updated'));
+      } catch (err) {
+        console.error('Error saving avatar:', err);
+      }
+    }
     setSaved(true);
     setTimeout(() => {
       setSaved(false);
@@ -24,8 +41,13 @@ export default function AccountModal({ isOpen, onClose, user }) {
   function handleAvatarChange(e) {
     const file = e.target.files?.[0];
     if (file) {
-      const url = URL.createObjectURL(file);
-      setAvatar(url);
+      const reader = new FileReader();
+      reader.onloadend = () => {
+        if (reader.result) {
+          setAvatar(reader.result);
+        }
+      };
+      reader.readAsDataURL(file);
     }
   }
 

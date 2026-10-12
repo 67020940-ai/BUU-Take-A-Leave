@@ -28,6 +28,19 @@ export default function TeacherTopBar({
   const router = useRouter();
   const [notifications, setNotifications] = useState([]);
   const [showNotifications, setShowNotifications] = useState(false);
+  const [avatar, setAvatar] = useState(user?.avatar || null);
+
+  useEffect(() => {
+    function loadAvatar() {
+      try {
+        const stored = localStorage.getItem('buu_user_avatar');
+        if (stored) setAvatar(stored);
+      } catch {}
+    }
+    loadAvatar();
+    window.addEventListener('buu_avatar_updated', loadAvatar);
+    return () => window.removeEventListener('buu_avatar_updated', loadAvatar);
+  }, []);
 
   useEffect(() => {
     let active = true;
@@ -199,8 +212,12 @@ export default function TeacherTopBar({
 
           {/* User Profile Avatar with Name "ธีรเดช" / user.name */}
           <div className="flex items-center gap-2 pl-1 sm:pl-2">
-            <div className="w-9 h-9 sm:w-10 sm:h-10 rounded-2xl bg-gradient-to-tr from-[#7749BC] to-[#582B9E] text-white flex items-center justify-center font-bold text-xs sm:text-sm shadow-md shadow-purple-900/20 shrink-0">
-              {teacherInitials || <User className="w-4 h-4" />}
+            <div className="w-9 h-9 sm:w-10 sm:h-10 rounded-2xl bg-gradient-to-tr from-[#7749BC] to-[#582B9E] text-white flex items-center justify-center font-bold text-xs sm:text-sm shadow-md shadow-purple-900/20 shrink-0 overflow-hidden">
+              {avatar ? (
+                <img src={avatar} alt="Profile" className="w-full h-full object-cover" />
+              ) : (
+                teacherInitials || <User className="w-4 h-4" />
+              )}
             </div>
             <div className="hidden sm:flex flex-col min-w-0">
               <span className="text-xs font-bold text-neutral-900 dark:text-neutral-100 truncate max-w-[120px]">

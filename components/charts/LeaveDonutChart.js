@@ -119,9 +119,12 @@ export default function LeaveDonutChart({
   };
 
   return (
-    <div className="flex flex-col sm:flex-row items-center justify-center gap-6">
+    <div className="flex flex-col xl:flex-row items-center justify-center gap-6 w-full">
       {/* Chart Canvas with Center Stat */}
-      <div style={{ height, width: height }} className="relative flex items-center justify-center shrink-0">
+      <div
+        style={{ height, maxWidth: '100%' }}
+        className="relative flex items-center justify-center shrink-0 aspect-square max-w-[240px] w-full mx-auto"
+      >
         <Doughnut data={data} options={options} />
         <div className="absolute inset-0 flex flex-col items-center justify-center pointer-events-none">
           <span className="text-2xl sm:text-3xl font-extrabold text-neutral-900 dark:text-neutral-100">
@@ -134,7 +137,7 @@ export default function LeaveDonutChart({
       </div>
 
       {/* Legend & Percentages */}
-      <div className="flex-1 w-full space-y-2.5">
+      <div className="flex-1 w-full space-y-2.5 min-w-0">
         {labels.map((lbl, idx) => {
           const val = dataValues[idx] || 0;
           const pct = total > 0 ? Math.round((val / total) * 100) : 0;

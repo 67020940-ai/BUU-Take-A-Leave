@@ -58,6 +58,10 @@
   color-scheme: dark;
 }
 
+@theme {
+  --color-slate-850: #172033;
+}
+
 .dark body {
   background-color: var(--color-paper);
   color: var(--color-ink);

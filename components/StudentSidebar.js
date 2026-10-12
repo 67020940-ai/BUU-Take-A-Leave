@@ -89,25 +89,43 @@ export default function StudentSidebar({
     }
   }
 
+  const [avatar, setAvatar] = useState(user?.avatar || null);
+
+  useEffect(() => {
+    function loadAvatar() {
+      try {
+        const stored = localStorage.getItem('buu_user_avatar');
+        if (stored) setAvatar(stored);
+      } catch {}
+    }
+    loadAvatar();
+    window.addEventListener('buu_avatar_updated', loadAvatar);
+    return () => window.removeEventListener('buu_avatar_updated', loadAvatar);
+  }, []);
+
   return (
     <>
       {/* Backdrop for mobile drawer */}
       {isOpenMobile && (
         <div
           onClick={onCloseMobile}
-          className="fixed inset-0 z-40 bg-slate-900/60 backdrop-blur-xs lg:hidden transition-opacity"
+          className="fixed inset-0 z-50 bg-slate-900/60 backdrop-blur-xs lg:hidden transition-opacity"
         />
       )}
 
       {/* Main Sidebar Container */}
       <aside
-        className={`fixed top-0 bottom-0 left-0 z-40 bg-white/95 dark:bg-slate-900/95 backdrop-blur-xl border-r border-neutral-200/80 dark:border-slate-800 transition-all duration-300 flex flex-col justify-between ${
+        className={`fixed top-0 bottom-0 left-0 z-50 lg:z-40 bg-white/95 dark:bg-slate-900/95 backdrop-blur-xl border-r border-neutral-200/80 dark:border-slate-800 transition-all duration-300 flex flex-col justify-between overflow-hidden ${
           isOpenMobile ? 'translate-x-0' : '-translate-x-full lg:translate-x-0'
         } ${collapsed ? 'w-20' : 'w-64 sm:w-68'}`}
       >
         {/* Top Header: Logo + Take A Leave + Collapse Button */}
-        <div>
-          <div className="h-20 px-4 sm:px-5 flex items-center justify-between border-b border-neutral-100 dark:border-slate-800/80">
+        <div className="shrink-0">
+          <div className={`border-b border-neutral-100 dark:border-slate-800/80 transition-all ${
+            collapsed
+              ? 'py-3 px-2 flex flex-col items-center justify-center gap-1.5'
+              : 'h-20 px-4 sm:px-5 flex items-center justify-between'
+          }`}>
             <Link
               href="/student"
               onClick={(e) => {
@@ -118,10 +136,10 @@ export default function StudentSidebar({
                   window.history.pushState(null, '', '/student');
                 }
               }}
-              className="flex items-center gap-3 group min-w-0"
+              className={`flex items-center gap-3 group min-w-0 ${collapsed ? 'justify-center' : ''}`}
               title="หน้าแรกนิสิต Take A Leave"
             >
-              <BuuLogo size={36} className="shrink-0 group-hover:scale-105 transition-transform" />
+              <BuuLogo size={collapsed ? 32 : 36} className="shrink-0 group-hover:scale-105 transition-transform" />
               {!collapsed && (
                 <div className="flex flex-col min-w-0">
                   <span className="font-extrabold text-neutral-900 dark:text-neutral-100 tracking-tight text-base leading-none group-hover:text-[#7749BC] dark:group-hover:text-purple-300 transition-colors truncate">
@@ -135,14 +153,14 @@ export default function StudentSidebar({
             </Link>
 
             {/* Desktop collapse toggle / Mobile close */}
-            <div className="flex items-center gap-1">
+            <div className={`flex items-center ${collapsed ? 'justify-center mt-0.5' : 'gap-1'}`}>
               <button
                 type="button"
                 onClick={() => setCollapsed(!collapsed)}
                 className="hidden lg:flex p-1.5 rounded-xl text-neutral-400 hover:text-neutral-700 dark:hover:text-neutral-200 hover:bg-neutral-100 dark:hover:bg-slate-800 transition-colors cursor-pointer"
                 title={collapsed ? 'ขยายเมนู' : 'ย่อเมนู'}
               >
-                {collapsed ? <PanelLeft className="w-4 h-4" /> : <PanelLeftClose className="w-4 h-4" />}
+                {collapsed ? <PanelLeft className="w-4 h-4 text-[#7749BC] dark:text-purple-300" /> : <PanelLeftClose className="w-4 h-4" />}
               </button>
               <button
                 type="button"
@@ -158,12 +176,16 @@ export default function StudentSidebar({
           {/* Student Profile Card when not collapsed */}
           {!collapsed && user && (
             <div className="mx-3 mt-3 p-3 rounded-2xl bg-purple-50/70 dark:bg-purple-950/30 border border-purple-100 dark:border-purple-900/40 flex items-center gap-3">
-              <div className="w-9 h-9 rounded-xl bg-gradient-to-tr from-[#7749BC] to-[#582B9E] text-white flex items-center justify-center font-bold text-xs shadow-xs shrink-0">
-                {(user.name || 'นิสิต')
-                  .split(' ')
-                  .map((w) => w[0])
-                  .slice(0, 2)
-                  .join('') || <User className="w-4 h-4" />}
+              <div className="w-9 h-9 rounded-xl bg-gradient-to-tr from-[#7749BC] to-[#582B9E] text-white flex items-center justify-center font-bold text-xs shadow-xs shrink-0 overflow-hidden">
+                {avatar ? (
+                  <img src={avatar} alt="Profile" className="w-full h-full object-cover" />
+                ) : (
+                  (user.name || 'นิสิต')
+                    .split(' ')
+                    .map((w) => w[0])
+                    .slice(0, 2)
+                    .join('') || <User className="w-4 h-4" />
+                )}
               </div>
               <div className="flex flex-col min-w-0">
                 <span className="text-xs font-bold text-neutral-900 dark:text-neutral-100 truncate">
@@ -175,9 +197,10 @@ export default function StudentSidebar({
               </div>
             </div>
           )}
+        </div>
 
-          {/* Navigation Links Body */}
-          <div className="p-3 sm:p-4 space-y-6 overflow-y-auto max-h-[calc(100vh-140px)]">
+        {/* Navigation Links Body */}
+        <div className="p-3 sm:p-4 space-y-6 overflow-y-auto flex-1 min-h-0">
             <div className="space-y-1.5">
               {!collapsed ? (
                 <h3 className="px-3 text-xs font-bold uppercase tracking-wider text-neutral-400 dark:text-neutral-500 flex items-center gap-2">
@@ -269,10 +292,9 @@ export default function StudentSidebar({
               </nav>
             </div>
           </div>
-        </div>
 
         {/* Bottom Section: Log out Button */}
-        <div className="p-3 sm:p-4 border-t border-neutral-100 dark:border-slate-800/80 bg-neutral-50/50 dark:bg-slate-900/50">
+        <div className="shrink-0 p-3 sm:p-4 pb-6 sm:pb-4 border-t border-neutral-100 dark:border-slate-800/80 bg-neutral-50/50 dark:bg-slate-900/50">
           <button
             type="button"
             onClick={handleLogout}

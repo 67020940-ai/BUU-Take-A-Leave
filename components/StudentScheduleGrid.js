@@ -531,7 +531,7 @@ export default function StudentScheduleGrid({
                     {selectedCourse.prep.materials.map((m, idx) => (
                       <div
                         key={idx}
-                        className="p-2.5 rounded-xl border border-neutral-200 dark:border-slate-800 bg-white dark:bg-slate-850 flex items-center justify-between text-xs"
+                        className="p-2.5 rounded-xl border border-neutral-200 dark:border-slate-800 bg-white dark:bg-slate-800/80 flex items-center justify-between text-xs"
                       >
                         <div className="flex items-center gap-2 truncate">
                           <FileText className="w-4 h-4 text-[#7749BC] shrink-0" />
@@ -568,7 +568,7 @@ export default function StudentScheduleGrid({
                   {selectedCourse.prep.examHighlights.map((hl, idx) => (
                     <div
                       key={idx}
-                      className="p-3 rounded-2xl border border-neutral-200 dark:border-slate-800 bg-white dark:bg-slate-850 flex items-start gap-2.5 text-xs text-neutral-800 dark:text-neutral-200"
+                      className="p-3 rounded-2xl border border-neutral-200 dark:border-slate-800 bg-white dark:bg-slate-800/80 flex items-start gap-2.5 text-xs text-neutral-800 dark:text-neutral-200"
                     >
                       <span className="w-5 h-5 rounded-lg bg-purple-100 dark:bg-purple-950 text-[#7749BC] dark:text-purple-300 flex items-center justify-center font-bold text-[10px] shrink-0">
                         0{idx + 1}
@@ -590,7 +590,7 @@ export default function StudentScheduleGrid({
                       item.status === 'current'
                         ? 'bg-purple-50 dark:bg-purple-950/40 border-purple-300 dark:border-purple-700 font-bold text-neutral-900 dark:text-white'
                         : item.status === 'done'
-                        ? 'bg-neutral-50/60 dark:bg-slate-850/40 border-neutral-200/60 dark:border-slate-800 text-neutral-500'
+                        ? 'bg-neutral-50/60 dark:bg-slate-800/40 border-neutral-200/60 dark:border-slate-800 text-neutral-500'
                         : item.status === 'exam'
                         ? 'bg-rose-50/60 dark:bg-rose-950/40 border-rose-200 dark:border-rose-900 text-rose-700 dark:text-rose-300 font-bold'
                         : 'bg-white dark:bg-slate-800/60 border-neutral-200 dark:border-slate-700 text-neutral-700 dark:text-neutral-300'

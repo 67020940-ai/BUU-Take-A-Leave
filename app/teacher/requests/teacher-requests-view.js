@@ -34,6 +34,7 @@ import {
   LEAVE_TYPE_DEFAULT,
   formatThaiDate,
   formatThaiDateTime,
+  sortAcademicTerms,
 } from '@/lib/ui';
 
 function initials(name) {
@@ -102,7 +103,7 @@ export default function TeacherRequestsView({
       if (l.courseTerm && l.courseTerm !== '-') terms.add(l.courseTerm);
     });
     if (terms.size === 0) terms.add('1/2569');
-    return Array.from(terms).sort().reverse();
+    return sortAcademicTerms(Array.from(terms), false);
   }, [courses, leaves]);
 
   const totalPendingCount = useMemo(() => leaves.filter((l) => l.status === 'รออนุมัติ').length, [leaves]);

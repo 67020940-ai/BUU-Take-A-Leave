@@ -26,7 +26,7 @@ import {
   HelpCircle,
   ChevronDown,
 } from 'lucide-react';
-import { STATUS_DETAILS, LEAVE_TYPE_DETAILS, formatThaiDate, initials } from '@/lib/ui';
+import { STATUS_DETAILS, LEAVE_TYPE_DETAILS, formatThaiDate, initials, sortAcademicTerms } from '@/lib/ui';
 import AttachmentPreview from '@/components/AttachmentPreview';
 
 export default function ArchiveView({ courses = [], leaves = [] }) {
@@ -45,7 +45,7 @@ export default function ArchiveView({ courses = [], leaves = [] }) {
       set.add('2/2568');
       set.add('1/2568');
     }
-    return Array.from(set).sort().reverse();
+    return sortAcademicTerms(Array.from(set), false);
   }, [courses, leaves]);
 
   const [selectedTerm, setSelectedTerm] = useState(terms[0] || '1/2569');

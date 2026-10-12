@@ -89,8 +89,12 @@ export default function AdminSidebar({
         } ${collapsed ? 'w-20' : 'w-64 sm:w-68'}`}
       >
         {/* Top Header: Logo + Take A Leave + Collapse Button */}
-        <div>
-          <div className="h-20 px-4 sm:px-5 flex items-center justify-between border-b border-neutral-100 dark:border-slate-800/80">
+        <div className="shrink-0">
+          <div className={`border-b border-neutral-100 dark:border-slate-800/80 transition-all ${
+            collapsed
+              ? 'py-3 px-2 flex flex-col items-center justify-center gap-1.5'
+              : 'h-20 px-4 sm:px-5 flex items-center justify-between'
+          }`}>
             <Link
               href="/admin"
               onClick={(e) => {
@@ -101,10 +105,10 @@ export default function AdminSidebar({
                   window.history.pushState(null, '', '/admin');
                 }
               }}
-              className="flex items-center gap-3 group min-w-0"
+              className={`flex items-center gap-3 group min-w-0 ${collapsed ? 'justify-center' : ''}`}
               title="ภาพรวมผู้ดูแลระบบ Take A Leave"
             >
-              <BuuLogo size={36} className="shrink-0 group-hover:scale-105 transition-transform" />
+              <BuuLogo size={collapsed ? 32 : 36} className="shrink-0 group-hover:scale-105 transition-transform" />
               {!collapsed && (
                 <div className="flex flex-col min-w-0">
                   <span className="font-extrabold text-neutral-900 dark:text-neutral-100 tracking-tight text-base leading-none group-hover:text-[#7749BC] dark:group-hover:text-purple-300 transition-colors truncate">
@@ -119,14 +123,14 @@ export default function AdminSidebar({
             </Link>
 
             {/* Desktop collapse toggle / Mobile close */}
-            <div className="flex items-center gap-1">
+            <div className={`flex items-center ${collapsed ? 'justify-center mt-0.5' : 'gap-1'}`}>
               <button
                 type="button"
                 onClick={() => setCollapsed(!collapsed)}
                 className="hidden lg:flex p-1.5 rounded-xl text-neutral-400 hover:text-neutral-700 dark:hover:text-neutral-200 hover:bg-neutral-100 dark:hover:bg-slate-800 transition-colors cursor-pointer"
                 title={collapsed ? 'ขยายเมนู' : 'ย่อเมนู'}
               >
-                {collapsed ? <PanelLeft className="w-4 h-4" /> : <PanelLeftClose className="w-4 h-4" />}
+                {collapsed ? <PanelLeft className="w-4 h-4 text-[#7749BC] dark:text-purple-300" /> : <PanelLeftClose className="w-4 h-4" />}
               </button>
               <button
                 type="button"
@@ -138,6 +142,7 @@ export default function AdminSidebar({
               </button>
             </div>
           </div>
+        </div>
 
           {/* Navigation Links Body */}
           <div className="p-3 sm:p-4 space-y-6 overflow-y-auto max-h-[calc(100vh-140px)]">
@@ -210,7 +215,6 @@ export default function AdminSidebar({
               </nav>
             </div>
           </div>
-        </div>
 
         {/* Bottom Section: Log out Button */}
         <div className="p-3 sm:p-4 border-t border-neutral-100 dark:border-slate-800/80 bg-neutral-50/50 dark:bg-slate-900/50">
