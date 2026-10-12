@@ -331,7 +331,7 @@ export default function WireframeStatsView({
       />
 
       {/* 2. Main Content Column */}
-      <div className="flex-1 lg:pl-64 sm:lg:pl-68 flex flex-col min-w-0">
+      <div className="flex-1 lg:pl-64 flex flex-col min-w-0 w-full">
         {/* Top Bar with Semester & Search Pill */}
         <TeacherTopBar
           user={user}

@@ -173,9 +173,9 @@ export default function TeacherScheduleGrid({ courses = [], customItems = null, 
       </div>
 
       {/* 1. Mobile Day-by-Day View (< md) */}
-      <div className="block md:hidden p-4 space-y-4">
+      <div className="block md:hidden p-3.5 sm:p-4 space-y-4">
         {/* Day Selector Tabs */}
-        <div className="flex items-center gap-1.5 p-1 bg-neutral-100 dark:bg-slate-800/80 rounded-2xl overflow-x-auto">
+        <div className="grid grid-cols-5 gap-1 p-1 bg-neutral-100 dark:bg-slate-800/80 rounded-2xl w-full">
           {DAYS.map((day) => {
             const isActive = mobileSelectedDay === day.key;
             const count = scheduleList.filter((item) => item.day === day.key).length;

@@ -263,7 +263,7 @@ export default function TeacherScheduleView({
         onCloseMobile={() => setMobileSidebarOpen(false)}
       />
 
-      <div className="flex-1 lg:pl-64 sm:lg:pl-68 flex flex-col min-w-0">
+      <div className="flex-1 lg:pl-64 flex flex-col min-w-0 w-full">
         <TeacherTopBar
           user={user}
           semester="1/2569"

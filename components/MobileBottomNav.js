@@ -100,17 +100,8 @@ export default function MobileBottomNav({
             currentActiveKey === item.key ||
             (!item.isAction && pathname === item.href);
 
-          return (
-            <button
-              key={item.key}
-              type="button"
-              onClick={(e) => handleItemClick(item, e)}
-              className={`flex-1 min-w-0 flex flex-col items-center justify-center py-1 px-1 rounded-xl transition-all cursor-pointer relative select-none ${
-                isActive
-                  ? 'text-[#7749BC] dark:text-purple-400 font-bold'
-                  : 'text-neutral-500 dark:text-neutral-400 hover:text-neutral-800 dark:hover:text-neutral-200'
-              }`}
-            >
+          const content = (
+            <>
               <div className="relative">
                 <Icon
                   className={`w-5 h-5 transition-transform ${
@@ -133,7 +124,40 @@ export default function MobileBottomNav({
               {isActive && (
                 <span className="w-1 h-1 rounded-full bg-[#7749BC] dark:bg-purple-400 mt-1" />
               )}
-            </button>
+            </>
+          );
+
+          const className = `flex-1 min-w-0 flex flex-col items-center justify-center py-1 px-1 rounded-xl transition-all cursor-pointer relative select-none ${
+            isActive
+              ? 'text-[#7749BC] dark:text-purple-400 font-bold'
+              : 'text-neutral-500 dark:text-neutral-400 hover:text-neutral-800 dark:hover:text-neutral-200'
+          }`;
+
+          if (item.isAction) {
+            return (
+              <button
+                key={item.key}
+                type="button"
+                onClick={() => onOpenDrawer && onOpenDrawer()}
+                className={className}
+              >
+                {content}
+              </button>
+            );
+          }
+
+          return (
+            <Link
+              key={item.key}
+              href={item.href}
+              prefetch={true}
+              onClick={() => {
+                if (onSelectTab) onSelectTab(item.key);
+              }}
+              className={className}
+            >
+              {content}
+            </Link>
           );
         })}
       </div>
