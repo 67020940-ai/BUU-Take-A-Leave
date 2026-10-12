@@ -29,7 +29,7 @@ import {
 import AdminSidebar from '@/components/AdminSidebar';
 import AdminTopBar from '@/components/AdminTopBar';
 import MobileBottomNav from '@/components/MobileBottomNav';
-import { DAY_LABEL_TH, formatThaiDateTime, formatThaiDate } from '@/lib/ui';
+import { DAY_LABEL_TH, formatThaiDay, formatThaiDateTime, formatThaiDate } from '@/lib/ui';
 
 export default function AdminDashboard({ user, courses = [], leaves = [], tickets: initialTickets = [] }) {
   const router = useRouter();
@@ -615,7 +615,7 @@ export default function AdminDashboard({ user, courses = [], leaves = [], ticket
                       <div>
                         <span className="text-neutral-400 block text-[10px]">วันและเวลา / ห้อง</span>
                         <span className="font-mono truncate block">
-                          {c.day ? `${DAY_LABEL_TH[c.day] || c.day} ` : ''}{c.time || '-'} ({c.room || '-'})
+                          {c.day ? `${formatThaiDay(c.day)} ` : ''}{c.time || '-'} ({c.room || '-'})
                         </span>
                       </div>
                     </div>
@@ -655,7 +655,7 @@ export default function AdminDashboard({ user, courses = [], leaves = [], ticket
                           {c.teacherName || c.teacher?.name || '-'}
                         </td>
                         <td className="py-3 font-mono text-[11px] text-neutral-500">
-                          {c.day ? `${DAY_LABEL_TH[c.day] || c.day} ` : ''}
+                          {c.day ? `${formatThaiDay(c.day)} ` : ''}
                           {c.time || '-'}
                         </td>
                         <td className="py-3 font-mono text-neutral-600 dark:text-neutral-300">

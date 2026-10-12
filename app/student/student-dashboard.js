@@ -29,7 +29,7 @@ import {
   ChevronDown,
   Search,
 } from 'lucide-react';
-import { STATUS_DETAILS, LEAVE_TYPE_DETAILS, LEAVE_TYPE_DEFAULT, DAY_LABEL_TH, formatThaiDate, formatThaiDateTime, sortAcademicTerms } from '@/lib/ui';
+import { STATUS_DETAILS, LEAVE_TYPE_DETAILS, LEAVE_TYPE_DEFAULT, DAY_LABEL_TH, formatThaiDay, formatThaiDate, formatThaiDateTime, sortAcademicTerms } from '@/lib/ui';
 import AttachmentPreview from '@/components/AttachmentPreview';
 import CancelLeaveButton from '@/components/CancelLeaveButton';
 
@@ -455,7 +455,7 @@ export default function StudentDashboard({ summaries = [], leaves: initialLeaves
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
             {filteredSummaries.map((s) => {
               const teacherName = s.course?.teacher?.name || s.course?.teacherName || null;
-              const dayTime = s.course?.day ? `${DAY_LABEL_TH[s.course.day] || s.course.day} ${s.course.time || ''} น.` : null;
+              const dayTime = s.course?.day ? `${formatThaiDay(s.course.day)} ${s.course.time || ''} น.` : null;
               const room = s.course?.room || null;
               const hasInfoBox = dayTime || room || teacherName;
               return (

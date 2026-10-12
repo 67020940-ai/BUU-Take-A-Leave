@@ -15,7 +15,7 @@ import {
   CheckCircle2,
   TrendingUp,
 } from 'lucide-react';
-import { DAY_LABEL_TH } from '@/lib/ui';
+import { DAY_LABEL_TH, formatThaiDay } from '@/lib/ui';
 
 export default function StudentScheduleView({ summaries = [] }) {
   // Extract unique academic terms
@@ -184,7 +184,7 @@ export default function StudentScheduleView({ summaries = [] }) {
                       <div className="flex items-center gap-2 text-neutral-700 dark:text-neutral-300">
                         <Clock className="w-4 h-4 text-[#7749BC] dark:text-purple-400 shrink-0" />
                         <span className="font-semibold">
-                          วัน{DAY_LABEL_TH[course.day] || course.day || 'ตามตาราง'}:
+                          {formatThaiDay(course.day || 'ตามตาราง')}:
                         </span>
                         <span>{course.time || '13:00 - 15:50'} น.</span>
                       </div>

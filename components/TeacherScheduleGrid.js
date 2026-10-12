@@ -2,6 +2,7 @@
 
 import { useState } from 'react';
 import { CalendarDays, Clock, MapPin, Users, BookOpen, Info, ExternalLink } from 'lucide-react';
+import { formatThaiDay } from '@/lib/ui';
 
 const TIME_SLOTS = [
   '9:00 - 10:00',
@@ -309,10 +310,10 @@ export default function TeacherScheduleGrid({ courses = [], customItems = null, 
                   }`}
                 >
                   <span className="font-sans font-bold text-xs sm:text-sm">
-                    {day.label}
-                  </span>
-                  <span className="text-[10px] opacity-85 mt-0.5 font-normal">
                     {day.th}
+                  </span>
+                  <span className="text-[10px] opacity-75 mt-0.5 font-normal">
+                    {day.label}
                   </span>
                 </div>
 
@@ -382,7 +383,7 @@ export default function TeacherScheduleGrid({ courses = [], customItems = null, 
             <div className="p-3.5 rounded-2xl bg-neutral-50 dark:bg-slate-800/60 border border-neutral-200/60 dark:border-slate-700/60 space-y-2 text-xs">
               <div className="flex items-center gap-2 text-neutral-700 dark:text-neutral-300">
                 <Clock className="w-4 h-4 text-[#7749BC]" />
-                <span className="font-semibold">วัน{selectedItem.day} :</span>
+                <span className="font-semibold">{formatThaiDay(selectedItem.day)} :</span>
                 <span>{selectedItem.time}</span>
               </div>
               <div className="flex items-center gap-2 text-neutral-700 dark:text-neutral-300">
