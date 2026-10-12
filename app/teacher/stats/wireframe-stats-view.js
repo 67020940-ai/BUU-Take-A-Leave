@@ -345,26 +345,30 @@ export default function WireframeStatsView({
 
         <main className="flex-1 p-4 sm:p-6 lg:p-8 pb-24 md:pb-8 space-y-6 max-w-7xl w-full mx-auto">
           {activeStatsView === 'archive' ? (
-            <div className="space-y-6">
-              <div className="bg-white/90 dark:bg-slate-900/90 backdrop-blur-xl p-5 sm:p-6 rounded-3xl border border-neutral-200/80 dark:border-slate-800 shadow-xs">
-                <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
-                  <div>
-                    <h2 className="text-lg sm:text-xl font-black text-neutral-900 dark:text-neutral-100 tracking-tight flex items-center gap-2.5">
-                      <span className="w-9 h-9 rounded-2xl bg-purple-100 dark:bg-purple-950 text-[#7749BC] dark:text-purple-300 flex items-center justify-center text-sm font-bold">
-                        <Archive className="w-5 h-5" />
-                      </span>
-                      <span>คลังสถิติย้อนหลัง (Historical Archive)</span>
-                    </h2>
-                    <p className="text-xs text-neutral-500 dark:text-neutral-400 mt-1">
-                      สืบค้นข้อมูลการลาเรียนย้อนหลัง สรุปอัตราส่วนการอนุมัติ และสถิติสะสมตามภาคการศึกษา
-                    </p>
+            <div className="space-y-4 sm:space-y-6">
+              <div className="bg-white/90 dark:bg-slate-900/90 backdrop-blur-xl p-3.5 sm:p-6 rounded-2xl sm:rounded-3xl border border-neutral-200/80 dark:border-slate-800 shadow-xs">
+                <div className="flex items-center justify-between gap-3">
+                  <div className="flex items-center gap-2.5 min-w-0">
+                    <span className="w-8 h-8 sm:w-9 sm:h-9 rounded-xl sm:rounded-2xl bg-purple-100 dark:bg-purple-950 text-[#7749BC] dark:text-purple-300 flex items-center justify-center text-xs sm:text-sm font-bold shrink-0">
+                      <Archive className="w-4 h-4 sm:w-5 sm:h-5" />
+                    </span>
+                    <div className="min-w-0">
+                      <h2 className="text-sm sm:text-xl font-black text-neutral-900 dark:text-neutral-100 tracking-tight truncate">
+                        คลังสถิติย้อนหลัง
+                      </h2>
+                      <p className="text-xs text-neutral-500 dark:text-neutral-400 mt-0.5 hidden sm:block">
+                        สืบค้นข้อมูลการลาเรียนย้อนหลัง สรุปอัตราส่วนการอนุมัติ และสถิติสะสมตามภาคการศึกษา
+                      </p>
+                    </div>
                   </div>
                   <button
                     type="button"
                     onClick={() => setActiveStatsView('current')}
-                    className="px-4 py-2 rounded-2xl bg-[#7749BC] hover:bg-[#683ca8] text-white text-xs font-bold shadow-xs cursor-pointer self-start sm:self-auto"
+                    className="px-3 py-1.5 sm:px-4 sm:py-2 rounded-xl sm:rounded-2xl bg-[#7749BC] hover:bg-[#683ca8] text-white text-xs font-bold shadow-xs cursor-pointer flex items-center gap-1.5 shrink-0"
                   >
-                    กลับไปดูรายวิชาปัจจุบัน
+                    <ArrowLeft className="w-3.5 h-3.5" />
+                    <span className="hidden sm:inline">กลับไปดูรายวิชาปัจจุบัน</span>
+                    <span className="sm:hidden">กลับ</span>
                   </button>
                 </div>
               </div>

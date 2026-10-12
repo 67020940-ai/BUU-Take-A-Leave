@@ -26,7 +26,7 @@ import {
   HelpCircle,
   ChevronDown,
 } from 'lucide-react';
-import { STATUS_DETAILS, LEAVE_TYPE_DETAILS, formatThaiDate, initials, sortAcademicTerms } from '@/lib/ui';
+import { STATUS_DETAILS, LEAVE_TYPE_DETAILS, LEAVE_TYPE_DEFAULT, formatThaiDate, initials, sortAcademicTerms } from '@/lib/ui';
 import AttachmentPreview from '@/components/AttachmentPreview';
 
 export default function ArchiveView({ courses = [], leaves = [] }) {
@@ -54,13 +54,14 @@ export default function ArchiveView({ courses = [], leaves = [] }) {
   const [selectedStatus, setSelectedStatus] = useState('all');
   const [searchQuery, setSearchQuery] = useState('');
   const [previewLeave, setPreviewLeave] = useState(null);
+  const [showMobileFilters, setShowMobileFilters] = useState(false);
+  const [mobilePageSize, setMobilePageSize] = useState(10);
 
   // Term-specific leaves
   const termLeaves = useMemo(() => {
     return leaves.filter((l) => {
       const course = courses.find((c) => c.id === l.courseId);
       const leaveTerm = l.courseTerm || course?.term || '1/2569';
-      // If term matches directly or is current
       if (selectedTerm === '1/2569') {
         return leaveTerm === '1/2569' || !leaveTerm;
       }
@@ -97,7 +98,7 @@ export default function ArchiveView({ courses = [], leaves = [] }) {
     };
   }, [termLeaves]);
 
-  // Filtered leaves for the table
+  // Filtered leaves for table / cards
   const filteredLeaves = useMemo(() => {
     return termLeaves.filter((l) => {
       if (selectedCourse !== 'all' && l.courseId !== selectedCourse && l.courseCode !== selectedCourse) return false;
@@ -124,27 +125,34 @@ export default function ArchiveView({ courses = [], leaves = [] }) {
     });
   }, [termLeaves, selectedCourse, selectedType, selectedStatus, searchQuery]);
 
+  // Paginated list for mobile
+  const displayedMobileLeaves = useMemo(() => {
+    return filteredLeaves.slice(0, mobilePageSize);
+  }, [filteredLeaves, mobilePageSize]);
+
+  const hasActiveAdvancedFilters = selectedCourse !== 'all' || selectedType !== 'all';
+
   return (
-    <div className="space-y-6">
+    <div className="space-y-4 sm:space-y-6">
       {/* Term Selector & Quick Summary Banner */}
-      <div className="bg-gradient-to-br from-[#7749BC] to-indigo-950 text-white rounded-3xl p-6 shadow-md relative overflow-hidden">
-        <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 relative z-10">
+      <div className="bg-gradient-to-br from-[#7749BC] to-indigo-950 text-white rounded-2xl sm:rounded-3xl p-4 sm:p-6 shadow-md relative overflow-hidden">
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 relative z-10">
           <div className="space-y-1">
-            <div className="flex items-center gap-2 text-purple-200 text-xs font-semibold uppercase tracking-wider">
-              <Archive className="w-4 h-4" />
-              <span>คลังจัดเก็บข้อมูลและสถิติการลารายภาคการศึกษา</span>
+            <div className="flex items-center gap-1.5 text-purple-200 text-[11px] sm:text-xs font-semibold uppercase tracking-wider">
+              <Archive className="w-3.5 h-3.5 sm:w-4 sm:h-4" />
+              <span>คลังจัดเก็บข้อมูลและสถิติการลารายภาคเรียน</span>
             </div>
-            <h2 className="text-xl sm:text-2xl font-black">
+            <h2 className="text-lg sm:text-2xl font-black">
               ภาคเรียนที่ {selectedTerm}
             </h2>
-            <p className="text-xs sm:text-sm text-purple-200/80">
+            <p className="text-xs sm:text-sm text-purple-200/80 hidden sm:block">
               รวบรวมประวัติการลา เอกสารแนบ และสถิติความถี่การลาของนิสิตทุกกลุ่มเรียนที่ท่านรับผิดชอบ
             </p>
           </div>
 
           {/* Academic Term Switcher */}
-          <div className="flex items-center gap-2 self-start md:self-auto bg-white/10 backdrop-blur-md p-1.5 rounded-2xl border border-white/20">
-            <span className="text-xs text-purple-200 px-2 font-medium">เลือกภาคเรียน:</span>
+          <div className="flex items-center gap-2 self-start sm:self-auto bg-white/10 backdrop-blur-md p-1.5 rounded-2xl border border-white/20">
+            <span className="text-[11px] sm:text-xs text-purple-200 px-1.5 sm:px-2 font-medium">ภาคเรียน:</span>
             <div className="relative">
               <select
                 value={selectedTerm}
@@ -153,72 +161,206 @@ export default function ArchiveView({ courses = [], leaves = [] }) {
                   setSelectedCourse('all');
                   setSelectedType('all');
                   setSelectedStatus('all');
+                  setMobilePageSize(10);
                 }}
-                className="px-3 py-1.5 rounded-xl bg-white text-neutral-900 font-bold text-xs focus:outline-none cursor-pointer shadow-xs appearance-none pr-8"
+                className="px-2.5 sm:px-3 py-1 sm:py-1.5 rounded-xl bg-white text-neutral-900 font-bold text-xs focus:outline-none cursor-pointer shadow-xs appearance-none pr-7 sm:pr-8"
               >
                 {terms.map((t) => (
                   <option key={t} value={t}>
-                    ภาคเรียนที่ {t}
+                    ภาคเรียน {t}
                   </option>
                 ))}
               </select>
-              <ChevronDown className="w-3.5 h-3.5 text-neutral-500 absolute right-2.5 top-1/2 -translate-y-1/2 pointer-events-none" />
+              <ChevronDown className="w-3.5 h-3.5 text-neutral-500 absolute right-2 top-1/2 -translate-y-1/2 pointer-events-none" />
             </div>
           </div>
         </div>
 
-        {/* Term KPI Quick Stats */}
-        <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 mt-6 pt-5 border-t border-white/10 text-xs">
-          <div className="bg-white/10 rounded-2xl p-3 backdrop-blur-xs">
-            <span className="text-purple-200 text-[11px] block">คำร้องทั้งหมดในเทอม</span>
-            <span className="text-2xl font-extrabold text-white mt-0.5 block">{termStats.total}</span>
-            <span className="text-[10px] text-purple-200/70">จากนิสิต {termStats.uniqueStudents} คน</span>
+        {/* Term KPI Quick Stats - Compact on mobile */}
+        <div className="grid grid-cols-2 sm:grid-cols-4 gap-2 sm:gap-3 mt-4 sm:mt-6 pt-3 sm:pt-5 border-t border-white/10 text-xs">
+          <div className="bg-white/10 rounded-xl sm:rounded-2xl p-2.5 sm:p-3 backdrop-blur-xs">
+            <span className="text-purple-200 text-[10px] sm:text-[11px] block">คำร้องทั้งหมด</span>
+            <span className="text-lg sm:text-2xl font-extrabold text-white mt-0.5 block">{termStats.total}</span>
+            <span className="text-[9px] sm:text-[10px] text-purple-200/70 block truncate">นิสิต {termStats.uniqueStudents} คน</span>
           </div>
-          <div className="bg-white/10 rounded-2xl p-3 backdrop-blur-xs">
-            <span className="text-purple-200 text-[11px] block">อนุมัติแล้ว</span>
-            <span className="text-2xl font-extrabold text-emerald-300 mt-0.5 block">{termStats.approved}</span>
-            <span className="text-[10px] text-purple-200/70">อัตราอนุมัติ {termStats.approvalRate}%</span>
+          <div className="bg-white/10 rounded-xl sm:rounded-2xl p-2.5 sm:p-3 backdrop-blur-xs">
+            <span className="text-purple-200 text-[10px] sm:text-[11px] block">อนุมัติแล้ว</span>
+            <span className="text-lg sm:text-2xl font-extrabold text-emerald-300 mt-0.5 block">{termStats.approved}</span>
+            <span className="text-[9px] sm:text-[10px] text-purple-200/70 block truncate">อนุมัติ {termStats.approvalRate}%</span>
           </div>
-          <div className="bg-white/10 rounded-2xl p-3 backdrop-blur-xs">
-            <span className="text-purple-200 text-[11px] block">ลาป่วย / ลากิจ</span>
-            <span className="text-2xl font-extrabold text-sky-300 mt-0.5 block">
-              {termStats.sick} <span className="text-sm font-normal text-purple-200">/ {termStats.personal}</span>
+          <div className="bg-white/10 rounded-xl sm:rounded-2xl p-2.5 sm:p-3 backdrop-blur-xs">
+            <span className="text-purple-200 text-[10px] sm:text-[11px] block">ลาป่วย / ลากิจ</span>
+            <span className="text-lg sm:text-2xl font-extrabold text-sky-300 mt-0.5 block">
+              {termStats.sick} <span className="text-xs sm:text-sm font-normal text-purple-200">/ {termStats.personal}</span>
             </span>
-            <span className="text-[10px] text-purple-200/70">ป่วย {termStats.sick} • กิจ {termStats.personal}</span>
+            <span className="text-[9px] sm:text-[10px] text-purple-200/70 block truncate">ป่วย {termStats.sick} • กิจ {termStats.personal}</span>
           </div>
-          <div className="bg-white/10 rounded-2xl p-3 backdrop-blur-xs">
-            <span className="text-purple-200 text-[11px] block">ลากิจกรรม / อื่นๆ</span>
-            <span className="text-2xl font-extrabold text-amber-300 mt-0.5 block">
-              {termStats.activity} <span className="text-sm font-normal text-purple-200">/ {termStats.others}</span>
+          <div className="bg-white/10 rounded-xl sm:rounded-2xl p-2.5 sm:p-3 backdrop-blur-xs">
+            <span className="text-purple-200 text-[10px] sm:text-[11px] block">กิจกรรม / อื่นๆ</span>
+            <span className="text-lg sm:text-2xl font-extrabold text-amber-300 mt-0.5 block">
+              {termStats.activity} <span className="text-xs sm:text-sm font-normal text-purple-200">/ {termStats.others}</span>
             </span>
-            <span className="text-[10px] text-purple-200/70">กิจกรรม {termStats.activity} • อื่นๆ {termStats.others}</span>
+            <span className="text-[9px] sm:text-[10px] text-purple-200/70 block truncate">กิจกรรม {termStats.activity} • อื่นๆ {termStats.others}</span>
           </div>
         </div>
       </div>
 
-      {/* Filter and Table Toolbar */}
-      <div className="bg-white/80 dark:bg-slate-900/80 backdrop-blur-xl rounded-3xl border border-neutral-200/80 dark:border-slate-800 p-5 space-y-4 shadow-xs">
-        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
-          <div className="flex items-center gap-2">
-            <Archive className="w-5 h-5 text-[#7749BC]" />
-            <h3 className="text-base font-bold text-neutral-900 dark:text-neutral-100">
-              บันทึกประวัติการลาในคลังย้อนหลัง ({filteredLeaves.length} รายการ)
+      {/* Filter and Content Container */}
+      <div className="bg-white/80 dark:bg-slate-900/80 backdrop-blur-xl rounded-2xl sm:rounded-3xl border border-neutral-200/80 dark:border-slate-800 p-3.5 sm:p-5 space-y-3.5 sm:space-y-4 shadow-xs">
+        <div className="flex items-center justify-between gap-3">
+          <div className="flex items-center gap-2 min-w-0">
+            <Archive className="w-4 h-4 sm:w-5 sm:h-5 text-[#7749BC] shrink-0" />
+            <h3 className="text-sm sm:text-base font-bold text-neutral-900 dark:text-neutral-100 truncate">
+              ประวัติการลาในคลัง ({filteredLeaves.length} รายการ)
             </h3>
           </div>
 
-          <div className="flex items-center gap-2">
-            <a
-              href={`/api/export?term=${encodeURIComponent(selectedTerm)}`}
-              className="px-3.5 py-2 rounded-xl bg-purple-50 hover:bg-purple-100 dark:bg-purple-950/60 dark:hover:bg-purple-900 text-[#7749BC] dark:text-purple-300 border border-purple-200 dark:border-purple-800 text-xs font-semibold transition-all inline-flex items-center gap-1.5 cursor-pointer shadow-xs"
-            >
-              <Download className="w-3.5 h-3.5" />
-              <span>ส่งออก CSV เทอม {selectedTerm}</span>
-            </a>
-          </div>
+          <a
+            href={`/api/export?term=${encodeURIComponent(selectedTerm)}`}
+            className="px-2.5 sm:px-3.5 py-1.5 sm:py-2 rounded-xl bg-purple-50 hover:bg-purple-100 dark:bg-purple-950/60 dark:hover:bg-purple-900 text-[#7749BC] dark:text-purple-300 border border-purple-200 dark:border-purple-800 text-[11px] sm:text-xs font-semibold transition-all inline-flex items-center gap-1.5 cursor-pointer shadow-xs shrink-0"
+          >
+            <Download className="w-3.5 h-3.5" />
+            <span className="hidden sm:inline">ส่งออก CSV เทอม {selectedTerm}</span>
+            <span className="sm:hidden">ส่งออก CSV</span>
+          </a>
         </div>
 
-        {/* Filter Inputs */}
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3 pt-2">
+        {/* ─── MOBILE SEARCH & QUICK STATUS CHIPS (< sm) ─── */}
+        <div className="space-y-2.5 sm:hidden">
+          <div className="flex items-center gap-2">
+            <div className="relative flex-1">
+              <Search className="w-4 h-4 text-neutral-400 absolute left-3 top-1/2 -translate-y-1/2" />
+              <input
+                type="text"
+                value={searchQuery}
+                onChange={(e) => {
+                  setSearchQuery(e.target.value);
+                  setMobilePageSize(10);
+                }}
+                placeholder="ค้นหารหัสนิสิต, ชื่อ, วิชา, เหตุผล..."
+                className="w-full pl-9 pr-8 py-2 rounded-xl border border-neutral-200 dark:border-slate-700 bg-white dark:bg-slate-800 text-xs text-neutral-900 dark:text-neutral-100 placeholder:text-neutral-400 focus:outline-none focus:border-[#7749BC]"
+              />
+              {searchQuery && (
+                <button
+                  type="button"
+                  onClick={() => setSearchQuery('')}
+                  className="absolute right-2.5 top-1/2 -translate-y-1/2 text-neutral-400 hover:text-neutral-600 p-0.5"
+                >
+                  <X className="w-3.5 h-3.5" />
+                </button>
+              )}
+            </div>
+
+            <button
+              type="button"
+              onClick={() => setShowMobileFilters(!showMobileFilters)}
+              className={`p-2 rounded-xl border text-xs font-bold flex items-center gap-1 shrink-0 transition-colors ${
+                showMobileFilters || hasActiveAdvancedFilters
+                  ? 'bg-purple-50 dark:bg-purple-950 text-[#7749BC] dark:text-purple-300 border-purple-200 dark:border-purple-800'
+                  : 'bg-neutral-50 dark:bg-slate-800 text-neutral-600 dark:text-neutral-300 border-neutral-200 dark:border-slate-700'
+              }`}
+              title="ตัวกรองเพิ่มเติม"
+            >
+              <Filter className="w-4 h-4" />
+              {hasActiveAdvancedFilters && (
+                <span className="w-2 h-2 rounded-full bg-[#7749BC] dark:bg-purple-400" />
+              )}
+            </button>
+          </div>
+
+          {/* Quick Status Chips */}
+          <div className="flex items-center gap-1.5 overflow-x-auto pb-1 scrollbar-none">
+            {[
+              { key: 'all', label: 'ทั้งหมด' },
+              { key: 'อนุมัติ', label: 'อนุมัติแล้ว' },
+              { key: 'ไม่อนุมัติ', label: 'ไม่อนุมัติ' },
+              { key: 'รออนุมัติ', label: 'รอพิจารณา' },
+            ].map((s) => {
+              const isActive = selectedStatus === s.key;
+              return (
+                <button
+                  key={s.key}
+                  type="button"
+                  onClick={() => {
+                    setSelectedStatus(s.key);
+                    setMobilePageSize(10);
+                  }}
+                  className={`px-3 py-1.5 rounded-xl text-xs font-bold whitespace-nowrap transition-all cursor-pointer ${
+                    isActive
+                      ? 'bg-[#7749BC] text-white shadow-xs'
+                      : 'bg-neutral-100 dark:bg-slate-800 text-neutral-600 dark:text-neutral-400'
+                  }`}
+                >
+                  {s.label}
+                </button>
+              );
+            })}
+          </div>
+
+          {/* Collapsible Mobile Dropdowns (Course & Leave Type) */}
+          {showMobileFilters && (
+            <div className="p-3 rounded-2xl bg-neutral-50/80 dark:bg-slate-800/60 border border-neutral-200/80 dark:border-slate-700/80 space-y-2.5 animate-in fade-in slide-in-from-top-2 duration-150">
+              <div className="space-y-1">
+                <span className="text-[10px] font-bold text-neutral-400 uppercase tracking-wider">เลือกรายวิชา</span>
+                <div className="relative">
+                  <select
+                    value={selectedCourse}
+                    onChange={(e) => {
+                      setSelectedCourse(e.target.value);
+                      setMobilePageSize(10);
+                    }}
+                    className="w-full px-3 py-2 rounded-xl border border-neutral-200 dark:border-slate-700 bg-white dark:bg-slate-800 text-xs text-neutral-900 dark:text-neutral-100 focus:outline-none focus:border-[#7749BC] appearance-none pr-8 cursor-pointer shadow-2xs"
+                  >
+                    <option value="all">ทุกรายวิชา</option>
+                    {courses.map((c) => (
+                      <option key={c.id} value={c.id}>
+                        {c.code} {c.name} {c.group ? `(กลุ่ม ${c.group})` : ''}
+                      </option>
+                    ))}
+                  </select>
+                  <ChevronDown className="w-3.5 h-3.5 text-neutral-400 absolute right-2.5 top-1/2 -translate-y-1/2 pointer-events-none" />
+                </div>
+              </div>
+
+              <div className="space-y-1">
+                <span className="text-[10px] font-bold text-neutral-400 uppercase tracking-wider">ประเภทการลา</span>
+                <div className="relative">
+                  <select
+                    value={selectedType}
+                    onChange={(e) => {
+                      setSelectedType(e.target.value);
+                      setMobilePageSize(10);
+                    }}
+                    className="w-full px-3 py-2 rounded-xl border border-neutral-200 dark:border-slate-700 bg-white dark:bg-slate-800 text-xs text-neutral-900 dark:text-neutral-100 focus:outline-none focus:border-[#7749BC] appearance-none pr-8 cursor-pointer shadow-2xs"
+                  >
+                    <option value="all">ทุกประเภทการลา</option>
+                    <option value="ลาป่วย">ลาป่วย</option>
+                    <option value="ลากิจส่วนตัว">ลากิจส่วนตัว</option>
+                    <option value="ลากิจกรรม">ลากิจกรรม</option>
+                    <option value="อื่น ๆ">อื่น ๆ / ฉุกเฉิน</option>
+                  </select>
+                  <ChevronDown className="w-3.5 h-3.5 text-neutral-400 absolute right-2.5 top-1/2 -translate-y-1/2 pointer-events-none" />
+                </div>
+              </div>
+
+              {hasActiveAdvancedFilters && (
+                <button
+                  type="button"
+                  onClick={() => {
+                    setSelectedCourse('all');
+                    setSelectedType('all');
+                  }}
+                  className="w-full py-1.5 text-xs text-[#7749BC] dark:text-purple-400 font-bold hover:underline text-center"
+                >
+                  ล้างตัวกรองวิชาและประเภท
+                </button>
+              )}
+            </div>
+          )}
+        </div>
+
+        {/* ─── DESKTOP FILTER GRID (sm:grid) ─── */}
+        <div className="hidden sm:grid sm:grid-cols-2 lg:grid-cols-4 gap-3 pt-2">
           {/* Search Input */}
           <div className="relative">
             <Search className="w-4 h-4 text-neutral-400 absolute left-3 top-1/2 -translate-y-1/2" />
@@ -280,8 +422,8 @@ export default function ArchiveView({ courses = [], leaves = [] }) {
           </div>
         </div>
 
-        {/* Table Content */}
-        <div className="overflow-x-auto rounded-2xl border border-neutral-200 dark:border-slate-800">
+        {/* ─── 1. DESKTOP TABLE VIEW (>= md) ─── */}
+        <div className="hidden md:block overflow-x-auto rounded-2xl border border-neutral-200 dark:border-slate-800">
           <table className="w-full text-left text-xs">
             <thead className="bg-neutral-50 dark:bg-slate-800/80 text-neutral-600 dark:text-neutral-300 font-bold border-b border-neutral-200 dark:border-slate-700 uppercase tracking-wider">
               <tr>
@@ -305,9 +447,6 @@ export default function ArchiveView({ courses = [], leaves = [] }) {
                 </tr>
               ) : (
                 filteredLeaves.map((leave) => {
-                  const statusConf = STATUS_DETAILS[leave.status] || STATUS_DETAILS['รออนุมัติ'];
-                  const typeConf = LEAVE_TYPE_DETAILS[leave.type] || LEAVE_TYPE_DETAILS['อื่น ๆ'];
-
                   return (
                     <tr
                       key={leave.id}
@@ -411,13 +550,154 @@ export default function ArchiveView({ courses = [], leaves = [] }) {
             </tbody>
           </table>
         </div>
+
+        {/* ─── 2. MOBILE CARD LIST (< md) — NO HORIZONTAL SCROLL ─── */}
+        <div className="block md:hidden space-y-3">
+          {filteredLeaves.length === 0 ? (
+            <div className="py-12 text-center text-neutral-400 bg-neutral-50/50 dark:bg-slate-800/30 rounded-2xl border border-dashed border-neutral-200 dark:border-slate-700">
+              <Archive className="w-8 h-8 mx-auto mb-2 text-neutral-300 opacity-60" />
+              <p className="text-xs font-semibold">ไม่พบประวัติการลาในเงื่อนไขที่เลือก</p>
+              <p className="text-[11px] text-neutral-400 mt-0.5">ภาคเรียนที่ {selectedTerm}</p>
+            </div>
+          ) : (
+            <>
+              <div className="flex items-center justify-between text-[11px] text-neutral-500 dark:text-neutral-400 px-1 font-medium">
+                <span>แสดง {Math.min(mobilePageSize, filteredLeaves.length)} จาก {filteredLeaves.length} รายการ</span>
+                {hasActiveAdvancedFilters && (
+                  <span className="text-[#7749BC] dark:text-purple-400 font-bold">กำลังกรองข้อมูล</span>
+                )}
+              </div>
+
+              {displayedMobileLeaves.map((leave) => {
+                const statusConf = STATUS_DETAILS[leave.status] || STATUS_DETAILS['รออนุมัติ'];
+                const typeConf = LEAVE_TYPE_DETAILS[leave.type] || LEAVE_TYPE_DEFAULT;
+
+                return (
+                  <div
+                    key={leave.id}
+                    onClick={() => setPreviewLeave(leave)}
+                    className="bg-white/95 dark:bg-slate-900/95 backdrop-blur-xl p-4 rounded-2xl border border-neutral-200/90 dark:border-slate-800 shadow-xs hover:border-[#7749BC]/60 dark:hover:border-purple-500/60 transition-all cursor-pointer active:scale-[0.99] space-y-3"
+                  >
+                    {/* Header: Student Info & Status Badge */}
+                    <div className="flex items-start justify-between gap-2.5">
+                      <div className="flex items-center gap-2.5 min-w-0">
+                        <div className="w-9 h-9 rounded-xl bg-purple-100 dark:bg-purple-950 text-[#7749BC] dark:text-purple-300 font-bold text-xs flex items-center justify-center shrink-0">
+                          {initials(leave.studentName)}
+                        </div>
+                        <div className="min-w-0">
+                          <p className="font-bold text-xs text-neutral-900 dark:text-neutral-100 truncate">
+                            {leave.studentName}
+                          </p>
+                          <p className="font-mono text-[10px] text-neutral-400 truncate">
+                            {leave.studentCode || '-'}
+                          </p>
+                        </div>
+                      </div>
+
+                      {/* Status Badge in top right corner */}
+                      <span
+                        className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-[11px] font-bold border shrink-0 ${statusConf.badge}`}
+                      >
+                        <span className={`w-1.5 h-1.5 rounded-full ${statusConf.dot}`} />
+                        <span>{statusConf.label || leave.status}</span>
+                      </span>
+                    </div>
+
+                    {/* Middle: Course, Date, and Type */}
+                    <div className="p-3 rounded-xl bg-neutral-50 dark:bg-slate-800/60 border border-neutral-100 dark:border-slate-800/80 space-y-2 text-xs">
+                      <div className="flex items-center justify-between gap-2">
+                        <div className="flex items-center gap-1.5 min-w-0">
+                          <BookOpen className="w-3.5 h-3.5 text-[#7749BC] dark:text-purple-400 shrink-0" />
+                          <span className="font-mono font-bold text-neutral-900 dark:text-neutral-100 truncate">
+                            {leave.courseCode} {leave.section ? `(กลุ่ม ${leave.section})` : ''}
+                          </span>
+                        </div>
+                        <span className={`inline-block text-[10px] font-bold px-2 py-0.5 rounded-full border shrink-0 ${typeConf}`}>
+                          {leave.type}
+                        </span>
+                      </div>
+                      {leave.courseName && (
+                        <p className="text-[11px] text-neutral-500 dark:text-neutral-400 truncate pl-5">
+                          {leave.courseName}
+                        </p>
+                      )}
+
+                      <div className="flex items-center justify-between text-[11px] text-neutral-600 dark:text-neutral-300 pt-1.5 border-t border-neutral-200/50 dark:border-slate-700/50">
+                        <div className="flex items-center gap-1.5">
+                          <Calendar className="w-3.5 h-3.5 text-neutral-400 shrink-0" />
+                          <span className="font-mono">
+                            {formatThaiDate(leave.startDate)}
+                            {leave.endDate && leave.endDate !== leave.startDate ? ` - ${formatThaiDate(leave.endDate)}` : ''}
+                          </span>
+                        </div>
+                        <div className="flex items-center gap-1 text-neutral-500 font-mono text-[10px]">
+                          <Clock className="w-3 h-3 text-neutral-400 shrink-0" />
+                          <span>{leave.period || 'เต็มวัน'}</span>
+                        </div>
+                      </div>
+                    </div>
+
+                    {/* Reason preview */}
+                    {leave.reason && (
+                      <div className="text-[11px] text-neutral-600 dark:text-neutral-300 line-clamp-2 bg-neutral-50/50 dark:bg-slate-800/30 px-2.5 py-1.5 rounded-lg border border-neutral-100 dark:border-slate-800">
+                        <span className="text-neutral-400 font-medium">เหตุผล: </span>
+                        {leave.reason}
+                      </div>
+                    )}
+
+                    {/* Card Footer: Evidence indicator + Detail button */}
+                    <div className="flex items-center justify-between pt-2 border-t border-neutral-100 dark:border-slate-800">
+                      <div>
+                        {leave.attachmentUrl ? (
+                          <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-md bg-purple-50 dark:bg-purple-950/60 text-[#7749BC] dark:text-purple-300 text-[10px] font-bold border border-purple-200/80 dark:border-purple-800">
+                            <FileText className="w-3 h-3" />
+                            <span>มีหลักฐานแนบ</span>
+                          </span>
+                        ) : (
+                          <span className="text-[10px] text-neutral-400">ไม่มีเอกสารแนบ</span>
+                        )}
+                      </div>
+
+                      <button
+                        type="button"
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          setPreviewLeave(leave);
+                        }}
+                        className="px-3 py-1.5 rounded-xl bg-purple-50 dark:bg-purple-950/60 hover:bg-purple-100 dark:hover:bg-purple-900 text-[#7749BC] dark:text-purple-300 text-xs font-bold flex items-center gap-1 cursor-pointer transition-colors shadow-2xs"
+                      >
+                        <Eye className="w-3.5 h-3.5" />
+                        <span>ดูรายละเอียด</span>
+                        <ChevronRight className="w-3 h-3 text-[#7749BC]/70 dark:text-purple-400/70" />
+                      </button>
+                    </div>
+                  </div>
+                );
+              })}
+
+              {/* Load more button */}
+              {filteredLeaves.length > mobilePageSize && (
+                <div className="pt-1 text-center">
+                  <button
+                    type="button"
+                    onClick={() => setMobilePageSize((prev) => prev + 10)}
+                    className="w-full py-2.5 rounded-2xl bg-neutral-100 hover:bg-neutral-200 dark:bg-slate-800 dark:hover:bg-slate-700 text-neutral-700 dark:text-neutral-200 text-xs font-bold transition-all cursor-pointer flex items-center justify-center gap-1.5 shadow-2xs"
+                  >
+                    <span>โหลดข้อมูลเพิ่มเติม (เหลืออีก {filteredLeaves.length - mobilePageSize} รายการ)</span>
+                    <ChevronDown className="w-3.5 h-3.5" />
+                  </button>
+                </div>
+              )}
+            </>
+          )}
+        </div>
       </div>
 
       {/* Detail / Attachment Modal */}
       {previewLeave && (
-        <div className="fixed inset-0 z-50 overflow-y-auto bg-slate-900/60 backdrop-blur-md flex items-center justify-center p-4">
-          <div className="bg-white dark:bg-slate-900 rounded-3xl shadow-2xl border border-neutral-200 dark:border-slate-800 w-full max-w-lg max-h-[90vh] overflow-y-auto">
-            <div className="p-6 space-y-4">
+        <div className="fixed inset-0 z-50 overflow-y-auto bg-slate-900/60 backdrop-blur-md flex items-center justify-center p-3 sm:p-4">
+          <div className="bg-white dark:bg-slate-900 rounded-2xl sm:rounded-3xl shadow-2xl border border-neutral-200 dark:border-slate-800 w-full max-w-lg max-h-[90vh] overflow-y-auto">
+            <div className="p-4 sm:p-6 space-y-4">
               <div className="flex items-start justify-between gap-3 border-b border-neutral-100 dark:border-slate-800 pb-3">
                 <div>
                   <span className="inline-flex items-center px-2 py-0.5 rounded text-[11px] font-semibold bg-purple-100 dark:bg-purple-950 text-[#7749BC] dark:text-purple-300">
