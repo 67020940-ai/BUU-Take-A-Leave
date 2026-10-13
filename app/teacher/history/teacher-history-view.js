@@ -55,7 +55,7 @@ export default function TeacherHistoryView({
   const [reconsiderModal, setReconsiderModal] = useState({ isOpen: false, leave: null, type: 'reconsider', comment: '' });
   const [toast, setToast] = useState(null);
   const [currentPage, setCurrentPage] = useState(1);
-  const pageSize = 20;
+  const pageSize = 10;
 
   // Sync status filter from query param
   useEffect(() => {
@@ -403,6 +403,44 @@ export default function TeacherHistoryView({
                     </div>
                   );
                 })}
+
+                {/* Mobile Pagination Controls */}
+                {totalPages > 1 && (
+                  <div className="p-3.5 rounded-2xl bg-white/90 dark:bg-slate-900/90 border border-neutral-200/80 dark:border-slate-800 flex items-center justify-between text-xs text-neutral-500 dark:text-neutral-400 shadow-xs">
+                    <div className="flex items-center gap-1">
+                      <button
+                        type="button"
+                        disabled={currentPage <= 1}
+                        onClick={() => {
+                          setCurrentPage((p) => Math.max(1, p - 1));
+                          window.scrollTo({ top: 0, behavior: 'smooth' });
+                        }}
+                        className="px-3 py-1.5 rounded-xl border border-neutral-200 dark:border-slate-700 bg-neutral-50 dark:bg-slate-800 hover:bg-neutral-100 dark:hover:bg-slate-700 disabled:opacity-30 cursor-pointer disabled:cursor-not-allowed font-mono font-bold"
+                      >
+                        &lt;
+                      </button>
+                      <span className="px-3 py-1 font-mono font-bold text-neutral-900 dark:text-neutral-100">
+                        {currentPage}
+                      </span>
+                      <button
+                        type="button"
+                        disabled={currentPage >= totalPages}
+                        onClick={() => {
+                          setCurrentPage((p) => Math.min(totalPages, p + 1));
+                          window.scrollTo({ top: 0, behavior: 'smooth' });
+                        }}
+                        className="px-3 py-1.5 rounded-xl border border-neutral-200 dark:border-slate-700 bg-neutral-50 dark:bg-slate-800 hover:bg-neutral-100 dark:hover:bg-slate-700 disabled:opacity-30 cursor-pointer disabled:cursor-not-allowed font-mono font-bold"
+                      >
+                        &gt;
+                      </button>
+                    </div>
+
+                    <div className="text-[11px] font-medium text-neutral-600 dark:text-neutral-400">
+                      แสดง {filteredLeaves.length > 0 ? (currentPage - 1) * pageSize + 1 : 0} -{' '}
+                      {Math.min(currentPage * pageSize, filteredLeaves.length)} จาก {filteredLeaves.length} รายการ
+                    </div>
+                  </div>
+                )}
               </div>
 
               {/* 2. Tablet & Desktop Full Data Table (>= md) */}

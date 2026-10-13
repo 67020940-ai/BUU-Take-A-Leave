@@ -89,7 +89,7 @@ export default function TeacherRequestsView({
   const [detailModal, setDetailModal] = useState({ isOpen: false, leave: null, comment: '' });
   const [selectedLeaveIds, setSelectedLeaveIds] = useState(new Set());
   const [currentPage, setCurrentPage] = useState(1);
-  const pageSize = 20;
+  const pageSize = 10;
   const [batchModal, setBatchModal] = useState({ isOpen: false, type: 'approve', comment: '', isSubmitting: false });
   const [toast, setToast] = useState(null);
 

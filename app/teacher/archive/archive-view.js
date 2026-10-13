@@ -56,8 +56,8 @@ export default function ArchiveView({ courses = [], leaves = [] }) {
   const [previewLeave, setPreviewLeave] = useState(null);
   const [showMobileFilters, setShowMobileFilters] = useState(false);
   const [currentPage, setCurrentPage] = useState(1);
-  const pageSize = 20;
-  const [mobilePageSize, setMobilePageSize] = useState(20);
+  const pageSize = 10;
+  const [mobilePageSize, setMobilePageSize] = useState(10);
 
   // Term-specific leaves
   const termLeaves = useMemo(() => {
@@ -716,17 +716,41 @@ export default function ArchiveView({ courses = [], leaves = [] }) {
                 );
               })}
 
-              {/* Load more button */}
-              {filteredLeaves.length > mobilePageSize && (
-                <div className="pt-1 text-center">
-                  <button
-                    type="button"
-                    onClick={() => setMobilePageSize((prev) => prev + 10)}
-                    className="w-full py-2.5 rounded-2xl bg-neutral-100 hover:bg-neutral-200 dark:bg-slate-800 dark:hover:bg-slate-700 text-neutral-700 dark:text-neutral-200 text-xs font-bold transition-all cursor-pointer flex items-center justify-center gap-1.5 shadow-2xs"
-                  >
-                    <span>โหลดข้อมูลเพิ่มเติม (เหลืออีก {filteredLeaves.length - mobilePageSize} รายการ)</span>
-                    <ChevronDown className="w-3.5 h-3.5" />
-                  </button>
+              {/* Mobile Pagination Controls strictly matching wireframe */}
+              {totalPages > 1 && (
+                <div className="p-3.5 rounded-2xl bg-white/90 dark:bg-slate-900/90 border border-neutral-200/80 dark:border-slate-800 flex items-center justify-between text-xs text-neutral-500 dark:text-neutral-400 shadow-xs">
+                  <div className="flex items-center gap-1">
+                    <button
+                      type="button"
+                      disabled={currentPage <= 1}
+                      onClick={() => {
+                        setCurrentPage((p) => Math.max(1, p - 1));
+                        window.scrollTo({ top: 0, behavior: 'smooth' });
+                      }}
+                      className="px-3 py-1.5 rounded-xl border border-neutral-200 dark:border-slate-700 bg-neutral-50 dark:bg-slate-800 hover:bg-neutral-100 dark:hover:bg-slate-700 disabled:opacity-30 cursor-pointer disabled:cursor-not-allowed font-mono font-bold"
+                    >
+                      &lt;
+                    </button>
+                    <span className="px-3 py-1 font-mono font-bold text-neutral-900 dark:text-neutral-100">
+                      {currentPage}
+                    </span>
+                    <button
+                      type="button"
+                      disabled={currentPage >= totalPages}
+                      onClick={() => {
+                        setCurrentPage((p) => Math.min(totalPages, p + 1));
+                        window.scrollTo({ top: 0, behavior: 'smooth' });
+                      }}
+                      className="px-3 py-1.5 rounded-xl border border-neutral-200 dark:border-slate-700 bg-neutral-50 dark:bg-slate-800 hover:bg-neutral-100 dark:hover:bg-slate-700 disabled:opacity-30 cursor-pointer disabled:cursor-not-allowed font-mono font-bold"
+                    >
+                      &gt;
+                    </button>
+                  </div>
+
+                  <div className="text-[11px] font-medium text-neutral-600 dark:text-neutral-400">
+                    แสดง {filteredLeaves.length > 0 ? (currentPage - 1) * pageSize + 1 : 0} -{' '}
+                    {Math.min(currentPage * pageSize, filteredLeaves.length)} จาก {filteredLeaves.length} รายการ
+                  </div>
                 </div>
               )}
             </>
