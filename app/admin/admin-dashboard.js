@@ -64,20 +64,49 @@ export default function AdminDashboard({ user, courses = [], leaves = [], ticket
 
   // Sync tab from URL query param
   useEffect(() => {
-    if (typeof window !== 'undefined') {
-      const sp = new URLSearchParams(window.location.search);
-      const tabParam = sp.get('tab');
+    function processParams(searchStr) {
+      if (!searchStr) return;
+      const sp = new URLSearchParams(searchStr);
+      let tabParam = sp.get('tab');
+      if (tabParam === 'support') tabParam = 'tickets';
       if (tabParam && ['overview', 'tickets', 'courses', 'leaves', 'backup'].includes(tabParam)) {
         setActiveTab(tabParam);
       }
+      const ticketId = sp.get('id') || sp.get('ticketId');
+      if (ticketId && tickets.length > 0) {
+        const found = tickets.find((t) => String(t.id) === String(ticketId));
+        if (found) setSelectedTicket(found);
+      }
+    }
+
+    if (typeof window !== 'undefined') {
+      processParams(window.location.search);
+
       const handlePopState = () => {
         const currentSp = new URLSearchParams(window.location.search);
-        setActiveTab(currentSp.get('tab') || 'overview');
+        let t = currentSp.get('tab') || 'overview';
+        if (t === 'support') t = 'tickets';
+        setActiveTab(t);
       };
       window.addEventListener('popstate', handlePopState);
-      return () => window.removeEventListener('popstate', handlePopState);
+
+      const handleNotificationEvent = (e) => {
+        setActiveTab('tickets');
+        const n = e.detail?.notification;
+        if (n && tickets.length > 0) {
+          const msg = n.message || '';
+          const found = tickets.find((t) => msg.includes(t.subject) || msg.includes(t.userName));
+          if (found) setSelectedTicket(found);
+        }
+      };
+      window.addEventListener('buu:open-notification', handleNotificationEvent);
+
+      return () => {
+        window.removeEventListener('popstate', handlePopState);
+        window.removeEventListener('buu:open-notification', handleNotificationEvent);
+      };
     }
-  }, []);
+  }, [tickets]);
 
   function handleSwitchTab(tabKey) {
     setActiveTab(tabKey);

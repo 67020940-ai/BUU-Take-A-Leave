@@ -1,16 +1,22 @@
 'use client';
 
 import { useState, useRef, useEffect } from 'react';
+import { createPortal } from 'react-dom';
 import { X, User, Mail, Phone, GraduationCap, Building2, ShieldCheck, Check, Save, Camera, Upload } from 'lucide-react';
 import { getUserAvatarKey } from '@/lib/ui';
 
 export default function AccountModal({ isOpen, onClose, user }) {
+  const [mounted, setMounted] = useState(false);
   const [profileData, setProfileData] = useState(user || null);
   const [email, setEmail] = useState(user?.email || '67020381@go.buu.ac.th');
   const [phone, setPhone] = useState(user?.phone || '081-234-5678');
-  const [avatar, setAvatar] = useState(user?.avatar || null);
+  const [avatar, setAvatar] = useState(user?.avatar || '/avatars/juthamat.png');
   const [saved, setSaved] = useState(false);
   const fileInputRef = useRef(null);
+
+  useEffect(() => {
+    setMounted(true);
+  }, []);
 
   const storageKey = getUserAvatarKey(user);
 
@@ -32,9 +38,11 @@ export default function AccountModal({ isOpen, onClose, user }) {
         } else if (user?.avatar) {
           setAvatar(user.avatar);
         } else {
-          setAvatar(null);
+          setAvatar('/avatars/juthamat.png');
         }
-      } catch {}
+      } catch {
+        setAvatar('/avatars/juthamat.png');
+      }
 
       // 2. Fetch fresh avatar & contact info from server so it works across any device/browser
       fetch('/api/profile')
@@ -56,7 +64,7 @@ export default function AccountModal({ isOpen, onClose, user }) {
     }
   }, [isOpen, storageKey, user]);
 
-  if (!isOpen) return null;
+  if (!isOpen || !mounted) return null;
 
   async function handleSave(e) {
     e.preventDefault();
@@ -129,10 +137,11 @@ export default function AccountModal({ isOpen, onClose, user }) {
   const major = profileData?.major || profileData?.department || user?.major || user?.department || (isAdmin ? 'ฝ่ายพัฒนาระบบสารสนเทศ' : 'สาขาวิชาวิทยาการคอมพิวเตอร์');
   const statusLabel = isAdmin ? 'ผู้ดูแลระบบ (Admin)' : isTeacher ? 'อาจารย์ผู้สอน' : 'นิสิตปัจจุบัน';
 
-  return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-xs animate-in fade-in duration-150">
-      <div className="w-full max-w-md bg-white dark:bg-slate-900 rounded-3xl border border-neutral-200 dark:border-slate-800 shadow-2xl overflow-hidden animate-in zoom-in-95 duration-150 max-h-[90vh] overflow-y-auto my-auto">
-        <div className="p-5 border-b border-neutral-100 dark:border-slate-800 flex items-center justify-between">
+  const modalContent = (
+    <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 sm:p-6 bg-slate-900/60 backdrop-blur-xs overflow-y-auto animate-in fade-in duration-150">
+      <div className="w-full max-w-md bg-white dark:bg-slate-900 rounded-3xl border border-neutral-200 dark:border-slate-800 shadow-2xl overflow-hidden animate-in zoom-in-95 duration-150 my-auto max-h-[92vh] flex flex-col">
+        {/* Header - fixed at top of modal */}
+        <div className="shrink-0 p-5 border-b border-neutral-100 dark:border-slate-800 flex items-center justify-between">
           <div className="flex items-center gap-3">
             <div className="w-10 h-10 rounded-2xl bg-purple-100 dark:bg-purple-950 text-[#7749BC] dark:text-purple-300 flex items-center justify-center">
               <User className="w-5 h-5" />
@@ -143,6 +152,7 @@ export default function AccountModal({ isOpen, onClose, user }) {
             </div>
           </div>
           <button
+            type="button"
             onClick={onClose}
             className="p-1.5 text-neutral-400 hover:text-neutral-700 dark:hover:text-neutral-200 rounded-xl hover:bg-neutral-100 dark:hover:bg-slate-800 transition-colors cursor-pointer"
           >
@@ -150,7 +160,8 @@ export default function AccountModal({ isOpen, onClose, user }) {
           </button>
         </div>
 
-        <form onSubmit={handleSave} className="p-6 space-y-4 text-xs text-neutral-700 dark:text-neutral-300">
+        {/* Scrollable Form Body */}
+        <form onSubmit={handleSave} className="flex-1 overflow-y-auto p-6 space-y-4 text-xs text-neutral-700 dark:text-neutral-300">
           {/* Profile Picture Upload Section */}
           <div className="flex flex-col items-center justify-center space-y-2 pb-2">
             <div className="relative group">
@@ -248,7 +259,7 @@ export default function AccountModal({ isOpen, onClose, user }) {
           </div>
 
           {/* Action buttons */}
-          <div className="flex items-center justify-end gap-2 pt-3 border-t border-neutral-100 dark:border-slate-800">
+          <div className="shrink-0 flex items-center justify-end gap-2 pt-3 border-t border-neutral-100 dark:border-slate-800">
             <button
               type="button"
               onClick={onClose}
@@ -277,4 +288,6 @@ export default function AccountModal({ isOpen, onClose, user }) {
       </div>
     </div>
   );
+
+  return typeof document !== 'undefined' ? createPortal(modalContent, document.body) : null;
 }

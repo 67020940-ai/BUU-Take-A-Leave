@@ -132,6 +132,9 @@ export async function PATCH(request) {
   if (!['อนุมัติ', 'ไม่อนุมัติ', 'รออนุมัติ', 'เพิกถอนการอนุมัติ'].includes(status)) {
     return NextResponse.json({ error: 'สถานะไม่ถูกต้อง' }, { status: 400 });
   }
+  if (status === 'ไม่อนุมัติ' && (!comment || typeof comment !== 'string' || comment.trim().length === 0)) {
+    return NextResponse.json({ error: 'กรุณาระบุเหตุผลหรือข้อเสนอแนะเมื่อไม่อนุมัติคำขอลา' }, { status: 400 });
+  }
   if (comment != null && (typeof comment !== 'string' || comment.length > 300)) {
     return NextResponse.json({ error: 'หมายเหตุไม่ถูกต้อง' }, { status: 400 });
   }

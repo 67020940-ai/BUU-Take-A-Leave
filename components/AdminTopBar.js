@@ -14,7 +14,7 @@ import { useRouter } from 'next/navigation';
 import ThemeToggle from '@/components/ThemeToggle';
 import AccountModal from '@/components/AccountModal';
 import NotificationDetailModal from '@/components/NotificationDetailModal';
-import { resolveNotificationLink, getUserAvatarKey } from '@/lib/ui';
+import { resolveNotificationLink, getNotificationTarget, getUserAvatarKey } from '@/lib/ui';
 
 export default function AdminTopBar({
   user,
@@ -31,13 +31,15 @@ export default function AdminTopBar({
   const [showNotifications, setShowNotifications] = useState(false);
   const [selectedNotification, setSelectedNotification] = useState(null);
   const [showAccount, setShowAccount] = useState(false);
-  const [avatar, setAvatar] = useState(null);
+  const [avatar, setAvatar] = useState(user?.avatar || '/avatars/juthamat.png');
 
   useEffect(() => {
     let active = true;
     const key = getUserAvatarKey(user || { role: 'admin', id: 'admin-01' });
     const saved = localStorage.getItem(key);
     if (saved) setAvatar(saved);
+    else if (user?.avatar) setAvatar(user.avatar);
+    else setAvatar('/avatars/juthamat.png');
 
     // Fetch cross-device server avatar
     fetch('/api/profile')
@@ -100,7 +102,17 @@ export default function AdminTopBar({
   function handleNotificationClick(n) {
     markRead(n.id);
     setShowNotifications(false);
-    setSelectedNotification(n);
+    const target = getNotificationTarget(n, 'admin');
+    if (typeof window !== 'undefined') {
+      window.dispatchEvent(
+        new CustomEvent('buu:open-notification', {
+          detail: { notification: n, targetLink: target, role: 'admin' },
+        })
+      );
+    }
+    if (target) {
+      router.push(target);
+    }
   }
 
   function handlePrevSemester() {

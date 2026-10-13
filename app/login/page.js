@@ -23,10 +23,21 @@ export default function LoginPage() {
   const [showPassword, setShowPassword] = useState(false);
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
+  const [emailInvalid, setEmailInvalid] = useState(false);
+  const [passwordInvalid, setPasswordInvalid] = useState(false);
 
   async function handleSubmit(e) {
     e.preventDefault();
     setError('');
+
+    const form = e.currentTarget;
+    if (!form.checkValidity()) {
+      setEmailInvalid(!form.email.validity.valid);
+      setPasswordInvalid(!form.password.validity.valid);
+      form.reportValidity();
+      return;
+    }
+
     setLoading(true);
     try {
       const res = await fetch('/api/login', {
@@ -37,6 +48,8 @@ export default function LoginPage() {
       const data = await res.json();
       if (!res.ok) {
         setError(data.error || 'เข้าสู่ระบบไม่สำเร็จ');
+        setEmailInvalid(true);
+        setPasswordInvalid(true);
         return;
       }
       router.replace(ROLE_HOME[data.role] || '/');
@@ -110,15 +123,26 @@ export default function LoginPage() {
                   onChange={(e) => {
                     setEmail(e.target.value);
                     if (error) setError('');
+                    if (emailInvalid && e.target.validity.valid) {
+                      setEmailInvalid(false);
+                    }
                   }}
+                  onBlur={(e) => {
+                    if (email && !e.target.validity.valid) {
+                      setEmailInvalid(true);
+                    } else if (e.target.validity.valid) {
+                      setEmailInvalid(false);
+                    }
+                  }}
+                  onInvalid={() => setEmailInvalid(true)}
                   placeholder="@go.buu.ac.th หรือ @buu.ac.th"
                   autoComplete="username"
                   disabled={loading}
                   required
                   className={`w-full px-3.5 py-2.5 rounded-xl border bg-white dark:bg-slate-900 text-xs sm:text-sm font-medium text-slate-900 dark:text-slate-100 placeholder:text-slate-400 focus:outline-none transition-all shadow-2xs ${
-                    error
+                    error || emailInvalid
                       ? 'border-rose-500 focus:border-rose-500 focus:ring-2 focus:ring-rose-500/20'
-                      : 'border-slate-200 dark:border-slate-700 focus:border-[#7749BC] focus:ring-1 focus:ring-[#7749BC]'
+                      : 'border-slate-200 dark:border-slate-700 focus:border-[#7749BC] focus:ring-1 focus:ring-[#7749BC] [&:not(:placeholder-shown):invalid]:border-rose-500 [&:not(:placeholder-shown):invalid]:focus:border-rose-500 [&:not(:placeholder-shown):invalid]:focus:ring-2 [&:not(:placeholder-shown):invalid]:focus:ring-rose-500/20'
                   }`}
                 />
               </div>
@@ -145,13 +169,24 @@ export default function LoginPage() {
                     onChange={(e) => {
                       setPassword(e.target.value);
                       if (error) setError('');
+                      if (passwordInvalid && e.target.value) {
+                        setPasswordInvalid(false);
+                      }
                     }}
+                    onBlur={(e) => {
+                      if (password && !e.target.validity.valid) {
+                        setPasswordInvalid(true);
+                      } else if (e.target.validity.valid) {
+                        setPasswordInvalid(false);
+                      }
+                    }}
+                    onInvalid={() => setPasswordInvalid(true)}
                     placeholder="••••••••"
                     autoComplete="current-password"
                     disabled={loading}
                     required
                     className={`w-full pl-3.5 pr-10 py-2.5 rounded-xl border bg-white dark:bg-slate-900 text-xs sm:text-sm font-medium text-slate-900 dark:text-slate-100 placeholder:text-slate-400 focus:outline-none transition-all shadow-2xs ${
-                      error
+                      error || passwordInvalid
                         ? 'border-rose-500 focus:border-rose-500 focus:ring-2 focus:ring-rose-500/20'
                         : 'border-slate-200 dark:border-slate-700 focus:border-[#7749BC] focus:ring-1 focus:ring-[#7749BC]'
                     }`}

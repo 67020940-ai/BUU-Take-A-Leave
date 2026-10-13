@@ -1,13 +1,20 @@
 'use client';
 
+import { useState, useEffect } from 'react';
+import { createPortal } from 'react-dom';
 import { X, Calendar, Bell, ArrowRight, ExternalLink } from 'lucide-react';
 import { useRouter } from 'next/navigation';
 import { resolveNotificationLink } from '@/lib/ui';
 
 export default function NotificationDetailModal({ isOpen, onClose, notification, userRole = 'teacher' }) {
   const router = useRouter();
+  const [mounted, setMounted] = useState(false);
 
-  if (!isOpen || !notification) return null;
+  useEffect(() => {
+    setMounted(true);
+  }, []);
+
+  if (!isOpen || !notification || !mounted) return null;
 
   const targetLink = resolveNotificationLink(notification.link, userRole);
 
@@ -28,8 +35,8 @@ export default function NotificationDetailModal({ isOpen, onClose, notification,
     }
   }
 
-  return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-xs animate-in fade-in duration-150">
+  const modalContent = (
+    <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 sm:p-6 bg-slate-900/60 backdrop-blur-xs overflow-y-auto animate-in fade-in duration-150">
       <div className="w-full max-w-md bg-white dark:bg-slate-900 rounded-3xl border border-neutral-200 dark:border-slate-800 shadow-2xl overflow-hidden animate-in zoom-in-95 duration-150 my-auto">
         {/* Header */}
         <div className="p-5 border-b border-neutral-100 dark:border-slate-800 flex items-center justify-between">
@@ -88,4 +95,6 @@ export default function NotificationDetailModal({ isOpen, onClose, notification,
       </div>
     </div>
   );
+
+  return typeof document !== 'undefined' ? createPortal(modalContent, document.body) : null;
 }

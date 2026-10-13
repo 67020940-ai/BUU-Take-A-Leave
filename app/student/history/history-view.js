@@ -40,6 +40,64 @@ export default function StudentHistoryView({ leaves: initialLeaves = [], summari
   useEffect(() => {
     setLeaves(initialLeaves);
   }, [initialLeaves]);
+
+  // Handle URL params and notification auto-open
+  useEffect(() => {
+    function handleParams(searchStr) {
+      if (!searchStr) return;
+      const sp = new URLSearchParams(searchStr);
+      const q = sp.get('search') || '';
+      const leaveId = sp.get('id') || sp.get('leaveId') || '';
+      const autoOpen = sp.get('autoOpen') === '1' || !!q || !!leaveId;
+
+      if (q) setSearchQuery(q);
+
+      if (autoOpen && leaves.length > 0) {
+        const found = leaves.find((l) => {
+          if (leaveId && String(l.id) === String(leaveId)) return true;
+          if (q) {
+            const query = q.toLowerCase();
+            return (l.courseName || '').toLowerCase().includes(query) || (l.courseCode || '').toLowerCase().includes(query);
+          }
+          return false;
+        });
+        if (found) {
+          setSelectedStatus('all');
+          setDetailModal({ isOpen: true, leave: found });
+        }
+      }
+    }
+
+    if (typeof window !== 'undefined') {
+      handleParams(window.location.search);
+
+      function handleNotificationEvent(e) {
+        const n = e.detail?.notification;
+        if (!n) return;
+        const msg = n.message || n.title || '';
+        const match = msg.match(/คำร้องลา\s+"([^"]+)"(?:\s*\(([^)]+)\))?/);
+        const courseName = match ? match[1].trim() : '';
+
+        const found = leaves.find((l) => {
+          if (courseName && (l.courseName || '').includes(courseName)) return true;
+          return false;
+        });
+
+        if (found) {
+          setSelectedStatus('all');
+          if (courseName) setSearchQuery(courseName);
+          setDetailModal({ isOpen: true, leave: found });
+        } else if (courseName) {
+          setSearchQuery(courseName);
+        }
+      }
+
+      window.addEventListener('buu:open-notification', handleNotificationEvent);
+      return () => {
+        window.removeEventListener('buu:open-notification', handleNotificationEvent);
+      };
+    }
+  }, [leaves]);
   const [selectedTerm, setSelectedTerm] = useState('all');
   const [selectedStatus, setSelectedStatus] = useState(initialStatus || 'all');
   const [selectedType, setSelectedType] = useState('all');

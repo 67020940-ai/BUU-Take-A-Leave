@@ -77,7 +77,7 @@ export default function TeacherSidebar({
     }
   }
 
-  const [avatar, setAvatar] = useState(user?.avatar || null);
+  const [avatar, setAvatar] = useState(user?.avatar || '/avatars/juthamat.png');
   const storageKey = getUserAvatarKey(user);
 
   useEffect(() => {
@@ -86,7 +86,7 @@ export default function TeacherSidebar({
         const stored = localStorage.getItem(storageKey);
         if (stored) setAvatar(stored);
         else if (user?.avatar) setAvatar(user.avatar);
-        else setAvatar(null);
+        else setAvatar('/avatars/juthamat.png');
       } catch {}
     }
     loadAvatar();

@@ -75,14 +75,73 @@ export default function TeacherRequestsView({
   const [isTodayOnly, setIsTodayOnly] = useState(false);
   const [searchQuery, setSearchQuery] = useState('');
 
-  // Sync tab from query param
+  // Sync tab & notification auto-open from query param and events
   useEffect(() => {
-    if (typeof window !== 'undefined') {
-      const sp = new URLSearchParams(window.location.search);
+    function handleParams(searchStr) {
+      if (!searchStr) return;
+      const sp = new URLSearchParams(searchStr);
       if (sp.get('tab') === 'all') setActiveTab('all');
       else if (sp.get('tab') === 'pending') setActiveTab('รออนุมัติ');
+
+      const searchQueryParam = sp.get('search') || sp.get('student') || '';
+      const leaveIdParam = sp.get('id') || sp.get('leaveId') || '';
+      const shouldAutoOpen = sp.get('autoOpen') === '1' || !!leaveIdParam || !!searchQueryParam;
+
+      if (searchQueryParam) {
+        setSearchQuery(searchQueryParam);
+      }
+
+      if (shouldAutoOpen && leaves.length > 0) {
+        const found = leaves.find((l) => {
+          if (leaveIdParam && String(l.id) === String(leaveIdParam)) return true;
+          if (searchQueryParam) {
+            const q = searchQueryParam.toLowerCase().trim();
+            const matchName = (l.studentName || '').toLowerCase().includes(q);
+            const matchCode = (l.studentCode || '').includes(q);
+            return matchName || matchCode;
+          }
+          return false;
+        });
+
+        if (found) {
+          setActiveTab('all');
+          setDetailModal({ isOpen: true, leave: found, comment: '' });
+        }
+      }
     }
-  }, []);
+
+    if (typeof window !== 'undefined') {
+      handleParams(window.location.search);
+
+      function handleNotificationEvent(e) {
+        const n = e.detail?.notification;
+        if (!n) return;
+        const msg = n.message || n.title || '';
+        const match = msg.match(/^(.+?)\s+ยื่นคำร้องลา\s+"([^"]+)"(?:\s*\(([^)]+)\))?/);
+        const studentName = match ? match[1].trim() : '';
+        const courseName = match ? match[2].trim() : '';
+
+        const found = leaves.find((l) => {
+          if (studentName && (l.studentName || '').includes(studentName)) return true;
+          if (courseName && (l.courseName || '').includes(courseName)) return true;
+          return false;
+        });
+
+        if (found) {
+          setActiveTab('all');
+          if (studentName) setSearchQuery(studentName);
+          setDetailModal({ isOpen: true, leave: found, comment: '' });
+        } else if (studentName) {
+          setSearchQuery(studentName);
+        }
+      }
+
+      window.addEventListener('buu:open-notification', handleNotificationEvent);
+      return () => {
+        window.removeEventListener('buu:open-notification', handleNotificationEvent);
+      };
+    }
+  }, [leaves]);
 
   // Modals
   const [actionModal, setActionModal] = useState({ isOpen: false, type: 'approve', leave: null, comment: '' });
@@ -747,32 +806,37 @@ export default function TeacherRequestsView({
 
             <div>
               <label className="block text-xs font-bold text-neutral-700 dark:text-neutral-300 mb-1">
-                เหตุผลหรือข้อเสนอแนะถึงนิสิต (ไม่บังคับ)
+                เหตุผลหรือข้อเสนอแนะถึงนิสิต <span className="text-rose-500">* (จำเป็นต้องระบุ)</span>
               </label>
               <textarea
                 value={actionModal.comment}
                 onChange={(e) => setActionModal((p) => ({ ...p, comment: e.target.value }))}
-                placeholder="ระบุเหตุผล เช่น เอกสารไม่ชัดเจน, ลาเกินกำหนด..."
+                placeholder="ระบุเหตุผล เช่น เอกสารหลักฐานไม่ชัดเจน, ไม่ตรงตามข้อกำหนดการลา..."
                 rows={3}
                 className="w-full p-3 rounded-xl border border-neutral-300 dark:border-slate-700 bg-white dark:bg-slate-800 text-xs text-neutral-900 dark:text-neutral-100 focus:outline-none focus:border-[#7749BC]"
               />
+              {!actionModal.comment.trim() && (
+                <p className="text-[11px] text-rose-500 mt-1">* กรุณากรอกเหตุผลก่อนยืนยันไม่อนุมัติ</p>
+              )}
             </div>
 
             <div className="flex justify-end gap-2 pt-2">
               <button
                 type="button"
                 onClick={() => setActionModal({ isOpen: false, type: 'approve', leave: null, comment: '' })}
-                className="px-4 py-2 rounded-xl bg-neutral-100 hover:bg-neutral-200 text-xs font-semibold text-neutral-700"
+                className="px-4 py-2 rounded-xl bg-neutral-100 hover:bg-neutral-200 text-xs font-semibold text-neutral-700 cursor-pointer"
               >
                 ยกเลิก
               </button>
               <button
                 type="button"
+                disabled={!actionModal.comment.trim()}
                 onClick={() => {
-                  handleDecide(actionModal.leave, 'ไม่อนุมัติ', actionModal.comment);
+                  if (!actionModal.comment.trim()) return;
+                  handleDecide(actionModal.leave, 'ไม่อนุมัติ', actionModal.comment.trim());
                   setActionModal({ isOpen: false, type: 'approve', leave: null, comment: '' });
                 }}
-                className="px-4 py-2 rounded-xl bg-rose-600 hover:bg-rose-700 text-white text-xs font-bold"
+                className="px-4 py-2 rounded-xl bg-rose-600 hover:bg-rose-700 disabled:opacity-50 text-white text-xs font-bold cursor-pointer transition-all"
               >
                 ยืนยันไม่อนุมัติ
               </button>
@@ -794,30 +858,37 @@ export default function TeacherRequestsView({
 
             <div>
               <label className="block text-xs font-bold text-neutral-700 dark:text-neutral-300 mb-1">
-                ความคิดเห็นเพิ่มเติม
+                {batchModal.type === 'reject' ? (
+                  <span>เหตุผลการไม่อนุมัติ <span className="text-rose-500">* (จำเป็นต้องระบุ)</span></span>
+                ) : (
+                  <span>ความคิดเห็นเพิ่มเติม (ไม่บังคับ)</span>
+                )}
               </label>
               <textarea
                 value={batchModal.comment}
                 onChange={(e) => setBatchModal((p) => ({ ...p, comment: e.target.value }))}
-                placeholder="ระบุข้อความประกอบการทำรายการ..."
+                placeholder={batchModal.type === 'reject' ? "ระบุเหตุผล เช่น ไม่ตรงตามข้อกำหนดการลา..." : "ระบุข้อความประกอบการทำรายการ..."}
                 rows={2}
                 className="w-full p-3 rounded-xl border border-neutral-300 dark:border-slate-700 bg-white dark:bg-slate-800 text-xs text-neutral-900 dark:text-neutral-100"
               />
+              {batchModal.type === 'reject' && !batchModal.comment.trim() && (
+                <p className="text-[11px] text-rose-500 mt-1">* กรุณากรอกเหตุผลก่อนยืนยันไม่อนุมัติ</p>
+              )}
             </div>
 
             <div className="flex justify-end gap-2 pt-2">
               <button
                 type="button"
                 onClick={() => setBatchModal({ isOpen: false, type: 'approve', comment: '', isSubmitting: false })}
-                className="px-4 py-2 rounded-xl bg-neutral-100 text-xs font-semibold"
+                className="px-4 py-2 rounded-xl bg-neutral-100 hover:bg-neutral-200 text-xs font-semibold cursor-pointer text-neutral-700"
               >
                 ยกเลิก
               </button>
               <button
                 type="button"
-                disabled={batchModal.isSubmitting}
-                onClick={() => handleBatchAction(batchModal.type, batchModal.comment)}
-                className={`px-4 py-2 rounded-xl text-white text-xs font-bold ${
+                disabled={batchModal.isSubmitting || (batchModal.type === 'reject' && !batchModal.comment.trim())}
+                onClick={() => handleBatchAction(batchModal.type, batchModal.comment.trim())}
+                className={`px-4 py-2 rounded-xl text-white text-xs font-bold disabled:opacity-50 cursor-pointer transition-all ${
                   batchModal.type === 'approve' ? 'bg-emerald-600 hover:bg-emerald-700' : 'bg-rose-600 hover:bg-rose-700'
                 }`}
               >

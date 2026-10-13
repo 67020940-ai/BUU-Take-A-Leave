@@ -68,7 +68,16 @@ export default function StudentHomepageView({
         setActiveTab(t);
       };
       window.addEventListener('popstate', handlePopState);
-      return () => window.removeEventListener('popstate', handlePopState);
+
+      const handleNotificationEvent = () => {
+        setActiveTab('history');
+      };
+      window.addEventListener('buu:open-notification', handleNotificationEvent);
+
+      return () => {
+        window.removeEventListener('popstate', handlePopState);
+        window.removeEventListener('buu:open-notification', handleNotificationEvent);
+      };
     }
   }, []);
 

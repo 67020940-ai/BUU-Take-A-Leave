@@ -17,7 +17,7 @@ import { useRouter } from 'next/navigation';
 import ThemeToggle from '@/components/ThemeToggle';
 import AccountModal from '@/components/AccountModal';
 import NotificationDetailModal from '@/components/NotificationDetailModal';
-import { resolveNotificationLink, getUserAvatarKey } from '@/lib/ui';
+import { resolveNotificationLink, getNotificationTarget, getUserAvatarKey } from '@/lib/ui';
 
 export default function TeacherTopBar({
   user,
@@ -34,7 +34,7 @@ export default function TeacherTopBar({
   const [showNotifications, setShowNotifications] = useState(false);
   const [selectedNotification, setSelectedNotification] = useState(null);
   const [showAccount, setShowAccount] = useState(false);
-  const [avatar, setAvatar] = useState(user?.avatar || null);
+  const [avatar, setAvatar] = useState(user?.avatar || '/avatars/juthamat.png');
   const storageKey = getUserAvatarKey(user);
 
   useEffect(() => {
@@ -44,7 +44,7 @@ export default function TeacherTopBar({
         const stored = localStorage.getItem(storageKey);
         if (stored) setAvatar(stored);
         else if (user?.avatar) setAvatar(user.avatar);
-        else setAvatar(null);
+        else setAvatar('/avatars/juthamat.png');
       } catch {}
     }
     loadAvatar();
@@ -114,7 +114,17 @@ export default function TeacherTopBar({
   function handleNotificationClick(n) {
     markRead(n.id);
     setShowNotifications(false);
-    setSelectedNotification(n);
+    const target = getNotificationTarget(n, 'teacher');
+    if (typeof window !== 'undefined') {
+      window.dispatchEvent(
+        new CustomEvent('buu:open-notification', {
+          detail: { notification: n, targetLink: target, role: 'teacher' },
+        })
+      );
+    }
+    if (target) {
+      router.push(target);
+    }
   }
 
   // Semester navigation

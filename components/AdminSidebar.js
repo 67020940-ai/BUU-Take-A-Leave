@@ -33,6 +33,28 @@ export default function AdminSidebar({
   const [showSettings, setShowSettings] = useState(false);
   const [showAccount, setShowAccount] = useState(false);
   const [collapsed, setCollapsed] = useState(false);
+  const [avatar, setAvatar] = useState(user?.avatar || '/avatars/juthamat.png');
+  const storageKey = getUserAvatarKey(user);
+
+  useEffect(() => {
+    function loadAvatar() {
+      try {
+        const stored = localStorage.getItem(storageKey);
+        if (stored) setAvatar(stored);
+        else if (user?.avatar) setAvatar(user.avatar);
+        else setAvatar('/avatars/juthamat.png');
+      } catch {}
+    }
+    loadAvatar();
+    const handleAvatarUpdate = (e) => {
+      if (!e.detail?.key || e.detail.key === storageKey) {
+        if (e.detail?.avatar) setAvatar(e.detail.avatar);
+        else loadAvatar();
+      }
+    };
+    window.addEventListener('buu_avatar_updated', handleAvatarUpdate);
+    return () => window.removeEventListener('buu_avatar_updated', handleAvatarUpdate);
+  }, [storageKey, user]);
 
   async function handleLogout() {
     try {
@@ -152,6 +174,32 @@ export default function AdminSidebar({
               </button>
             </div>
           </div>
+
+          {/* Admin Profile Card when not collapsed */}
+          {!collapsed && user && (
+            <div className="mx-3 mt-3 p-3 rounded-2xl bg-purple-50/70 dark:bg-purple-950/30 border border-purple-100 dark:border-purple-900/40 flex items-center gap-3">
+              <div className="w-9 h-9 rounded-xl bg-gradient-to-tr from-[#7749BC] to-[#582B9E] text-white flex items-center justify-center font-bold text-xs shadow-xs shrink-0 overflow-hidden">
+                {avatar ? (
+                  <img src={avatar} alt="Profile" className="w-full h-full object-cover" />
+                ) : (
+                  (user.name || 'ผู้ดูแลระบบ')
+                    .split(' ')
+                    .map((w) => w[0])
+                    .slice(0, 2)
+                    .join('') || <User className="w-4 h-4" />
+                )}
+              </div>
+              <div className="flex flex-col min-w-0">
+                <span className="text-xs font-bold text-neutral-900 dark:text-neutral-100 truncate">
+                  {user.name || 'ผู้ดูแลระบบ'}
+                </span>
+                <span className="text-[10px] text-neutral-500 dark:text-neutral-400 truncate flex items-center gap-1">
+                  <ShieldCheck className="w-3 h-3 text-[#7749BC] dark:text-purple-400" />
+                  <span>ผู้ดูแลระบบ (Admin)</span>
+                </span>
+              </div>
+            </div>
+          )}
         </div>
 
           {/* Navigation Links Body */}
