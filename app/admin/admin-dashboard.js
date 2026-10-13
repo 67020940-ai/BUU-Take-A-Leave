@@ -206,6 +206,7 @@ export default function AdminDashboard({ user, courses = [], leaves = [], ticket
     <div className="min-h-screen bg-slate-50/70 dark:bg-slate-950 flex flex-col lg:flex-row font-sans text-neutral-800 dark:text-neutral-100">
       {/* 1. Left Sidebar */}
       <AdminSidebar
+        user={user}
         activeTab={activeTab}
         onSelectTab={handleSwitchTab}
         openTicketsCount={openTicketsCount}

@@ -23,7 +23,7 @@ import {
 } from 'lucide-react';
 import ThemeToggle from '@/components/ThemeToggle';
 import BuuLogo from '@/components/BuuLogo';
-import { resolveNotificationLink } from '@/lib/ui';
+import { resolveNotificationLink, getUserAvatarKey } from '@/lib/ui';
 
 const NAV = {
   student: [
@@ -50,6 +50,27 @@ export default function Header({ user, semester = '1/2569' }) {
   const [showNotifications, setShowNotifications] = useState(false);
   const [showUserMenu, setShowUserMenu] = useState(false);
   const [logoVariant, setLogoVariant] = useState('calendar');
+  const [avatar, setAvatar] = useState(user?.avatar || null);
+  const storageKey = getUserAvatarKey(user);
+
+  useEffect(() => {
+    function loadAvatar() {
+      try {
+        const stored = localStorage.getItem(storageKey);
+        if (stored) setAvatar(stored);
+        else if (user?.avatar) setAvatar(user.avatar);
+        else setAvatar(null);
+      } catch {}
+    }
+    loadAvatar();
+    const handleAvatarUpdate = (e) => {
+      if (!e.detail?.key || e.detail.key === storageKey) {
+        loadAvatar();
+      }
+    };
+    window.addEventListener('buu_avatar_updated', handleAvatarUpdate);
+    return () => window.removeEventListener('buu_avatar_updated', handleAvatarUpdate);
+  }, [storageKey, user]);
 
   useEffect(() => {
     try {
@@ -228,8 +249,12 @@ export default function Header({ user, semester = '1/2569' }) {
                 }}
                 className="flex items-center space-x-2 p-1.5 rounded-2xl hover:bg-neutral-100 dark:hover:bg-slate-800 transition-colors border border-neutral-200/80 dark:border-slate-700 bg-white/70 dark:bg-slate-800/70 backdrop-blur-md shadow-xs cursor-pointer"
               >
-                <div className="w-7 h-7 rounded-xl bg-[#7749BC] text-white flex items-center justify-center text-[11px] font-bold">
-                  {initials}
+                <div className="w-7 h-7 rounded-xl bg-[#7749BC] text-white flex items-center justify-center text-[11px] font-bold overflow-hidden">
+                  {avatar ? (
+                    <img src={avatar} alt="Profile" className="w-full h-full object-cover" />
+                  ) : (
+                    initials
+                  )}
                 </div>
                 <div className="hidden sm:block text-left text-xs">
                   <p className="font-semibold text-neutral-900 dark:text-neutral-100 truncate max-w-[130px]">
@@ -243,8 +268,12 @@ export default function Header({ user, semester = '1/2569' }) {
               {showUserMenu && (
                 <div className="absolute right-0 mt-2 w-[calc(100vw-2rem)] max-w-80 bg-white dark:bg-slate-900 rounded-3xl shadow-2xl border border-neutral-200 dark:border-slate-800 p-5 z-50">
                   <div className="flex items-start space-x-3 pb-4 border-b border-neutral-100 dark:border-slate-800">
-                    <div className="w-14 h-14 rounded-2xl bg-[#7749BC] text-white flex items-center justify-center text-base font-bold shrink-0">
-                      {initials}
+                    <div className="w-14 h-14 rounded-2xl bg-[#7749BC] text-white flex items-center justify-center text-base font-bold shrink-0 overflow-hidden">
+                      {avatar ? (
+                        <img src={avatar} alt="Profile" className="w-full h-full object-cover" />
+                      ) : (
+                        initials
+                      )}
                     </div>
                     <div className="flex-1 min-w-0 pt-0.5">
                       <p className="text-sm font-bold text-neutral-900 dark:text-neutral-100 truncate">{user.name}</p>

@@ -12,7 +12,7 @@ import {
 } from 'lucide-react';
 import { useRouter } from 'next/navigation';
 import ThemeToggle from '@/components/ThemeToggle';
-import { resolveNotificationLink } from '@/lib/ui';
+import { resolveNotificationLink, getUserAvatarKey } from '@/lib/ui';
 
 export default function AdminTopBar({
   user,
@@ -27,6 +27,21 @@ export default function AdminTopBar({
   const router = useRouter();
   const [notifications, setNotifications] = useState([]);
   const [showNotifications, setShowNotifications] = useState(false);
+  const [avatar, setAvatar] = useState(null);
+
+  useEffect(() => {
+    const key = getUserAvatarKey(user || { role: 'admin', id: 'admin-01' });
+    const saved = localStorage.getItem(key);
+    if (saved) setAvatar(saved);
+
+    function handleAvatarUpdate(e) {
+      if (e.detail?.key && e.detail.key !== key) return;
+      if (e.detail?.avatar) setAvatar(e.detail.avatar);
+      else setAvatar(localStorage.getItem(key));
+    }
+    window.addEventListener('buu_avatar_updated', handleAvatarUpdate);
+    return () => window.removeEventListener('buu_avatar_updated', handleAvatarUpdate);
+  }, [user]);
 
   useEffect(() => {
     let active = true;
@@ -202,8 +217,12 @@ export default function AdminTopBar({
 
           {/* Admin Profile Avatar with Name & Role */}
           <div className="flex items-center gap-2 pl-1 sm:pl-2">
-            <div className="w-9 h-9 sm:w-10 sm:h-10 rounded-2xl bg-gradient-to-tr from-[#7749BC] to-[#582B9E] text-white flex items-center justify-center font-bold text-xs sm:text-sm shadow-md shadow-purple-900/20 shrink-0">
-              <ShieldCheck className="w-5 h-5" />
+            <div className="w-9 h-9 sm:w-10 sm:h-10 rounded-2xl bg-gradient-to-tr from-[#7749BC] to-[#582B9E] text-white flex items-center justify-center font-bold text-xs sm:text-sm shadow-md shadow-purple-900/20 shrink-0 overflow-hidden">
+              {avatar ? (
+                <img src={avatar} alt="Admin Profile" className="w-full h-full object-cover" />
+              ) : (
+                <ShieldCheck className="w-5 h-5" />
+              )}
             </div>
             <div className="hidden sm:flex flex-col min-w-0">
               <span className="text-xs font-bold text-neutral-900 dark:text-neutral-100 truncate max-w-[120px]">

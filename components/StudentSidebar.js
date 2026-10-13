@@ -21,6 +21,7 @@ import BuuLogo from '@/components/BuuLogo';
 import SettingsModal from '@/components/SettingsModal';
 import SupportModal from '@/components/SupportModal';
 import AccountModal from '@/components/AccountModal';
+import { getUserAvatarKey } from '@/lib/ui';
 
 export default function StudentSidebar({
   user,
@@ -90,18 +91,26 @@ export default function StudentSidebar({
   }
 
   const [avatar, setAvatar] = useState(user?.avatar || null);
+  const storageKey = getUserAvatarKey(user);
 
   useEffect(() => {
     function loadAvatar() {
       try {
-        const stored = localStorage.getItem('buu_user_avatar');
+        const stored = localStorage.getItem(storageKey);
         if (stored) setAvatar(stored);
+        else if (user?.avatar) setAvatar(user.avatar);
+        else setAvatar(null);
       } catch {}
     }
     loadAvatar();
-    window.addEventListener('buu_avatar_updated', loadAvatar);
-    return () => window.removeEventListener('buu_avatar_updated', loadAvatar);
-  }, []);
+    const handleAvatarUpdate = (e) => {
+      if (!e.detail?.key || e.detail.key === storageKey) {
+        loadAvatar();
+      }
+    };
+    window.addEventListener('buu_avatar_updated', handleAvatarUpdate);
+    return () => window.removeEventListener('buu_avatar_updated', handleAvatarUpdate);
+  }, [storageKey, user]);
 
   return (
     <>

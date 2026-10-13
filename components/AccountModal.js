@@ -2,6 +2,7 @@
 
 import { useState, useRef, useEffect } from 'react';
 import { X, User, Mail, Phone, GraduationCap, Building2, ShieldCheck, Check, Save, Camera, Upload } from 'lucide-react';
+import { getUserAvatarKey } from '@/lib/ui';
 
 export default function AccountModal({ isOpen, onClose, user }) {
   const [email, setEmail] = useState(user?.email || '67020381@go.buu.ac.th');
@@ -10,14 +11,22 @@ export default function AccountModal({ isOpen, onClose, user }) {
   const [saved, setSaved] = useState(false);
   const fileInputRef = useRef(null);
 
+  const storageKey = getUserAvatarKey(user);
+
   useEffect(() => {
     if (isOpen) {
       try {
-        const stored = localStorage.getItem('buu_user_avatar');
-        if (stored) setAvatar(stored);
+        const stored = localStorage.getItem(storageKey);
+        if (stored) {
+          setAvatar(stored);
+        } else if (user?.avatar) {
+          setAvatar(user.avatar);
+        } else {
+          setAvatar(null);
+        }
       } catch {}
     }
-  }, [isOpen]);
+  }, [isOpen, storageKey, user]);
 
   if (!isOpen) return null;
 
@@ -25,8 +34,8 @@ export default function AccountModal({ isOpen, onClose, user }) {
     e.preventDefault();
     if (avatar) {
       try {
-        localStorage.setItem('buu_user_avatar', avatar);
-        window.dispatchEvent(new Event('buu_avatar_updated'));
+        localStorage.setItem(storageKey, avatar);
+        window.dispatchEvent(new CustomEvent('buu_avatar_updated', { detail: { key: storageKey } }));
       } catch (err) {
         console.error('Error saving avatar:', err);
       }

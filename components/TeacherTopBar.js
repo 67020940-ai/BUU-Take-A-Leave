@@ -14,7 +14,7 @@ import {
   User,
 } from 'lucide-react';
 import { useRouter } from 'next/navigation';
-import { resolveNotificationLink } from '@/lib/ui';
+import { resolveNotificationLink, getUserAvatarKey } from '@/lib/ui';
 
 export default function TeacherTopBar({
   user,
@@ -30,18 +30,26 @@ export default function TeacherTopBar({
   const [notifications, setNotifications] = useState([]);
   const [showNotifications, setShowNotifications] = useState(false);
   const [avatar, setAvatar] = useState(user?.avatar || null);
+  const storageKey = getUserAvatarKey(user);
 
   useEffect(() => {
     function loadAvatar() {
       try {
-        const stored = localStorage.getItem('buu_user_avatar');
+        const stored = localStorage.getItem(storageKey);
         if (stored) setAvatar(stored);
+        else if (user?.avatar) setAvatar(user.avatar);
+        else setAvatar(null);
       } catch {}
     }
     loadAvatar();
-    window.addEventListener('buu_avatar_updated', loadAvatar);
-    return () => window.removeEventListener('buu_avatar_updated', loadAvatar);
-  }, []);
+    const handleAvatarUpdate = (e) => {
+      if (!e.detail?.key || e.detail.key === storageKey) {
+        loadAvatar();
+      }
+    };
+    window.addEventListener('buu_avatar_updated', handleAvatarUpdate);
+    return () => window.removeEventListener('buu_avatar_updated', handleAvatarUpdate);
+  }, [storageKey, user]);
 
   useEffect(() => {
     let active = true;
