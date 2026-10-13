@@ -1,6 +1,6 @@
 import Link from 'next/link';
 import { STATUS_DETAILS, LEAVE_TYPE_DETAILS, LEAVE_TYPE_DEFAULT, formatThaiDate } from '@/lib/ui';
-import { Calendar, Clock, FileText, RotateCcw } from 'lucide-react';
+import { Calendar, Clock, FileText, RotateCcw, MessageSquare } from 'lucide-react';
 import AttachmentPreview from '@/components/AttachmentPreview';
 import CancelLeaveButton from '@/components/CancelLeaveButton';
 
@@ -42,6 +42,15 @@ export default function LeaveHistoryList({ leaves }) {
             </div>
             <h4 className="text-sm font-semibold text-neutral-900 dark:text-neutral-100">{leave.courseName}</h4>
             <p className="text-xs text-neutral-600 dark:text-neutral-400 mt-0.5">เหตุผล: {leave.reason}</p>
+            {leave.teacherComment && (
+              <div className="p-2.5 rounded-xl bg-purple-50/70 dark:bg-purple-950/40 border border-purple-200/80 dark:border-purple-800/80 text-xs text-purple-900 dark:text-purple-200 flex items-start gap-2 mt-2">
+                <MessageSquare className="w-3.5 h-3.5 text-[#7749BC] dark:text-purple-400 shrink-0 mt-0.5" />
+                <div>
+                  <span className="font-bold">ข้อความตอบกลับจากอาจารย์:</span>
+                  <p className="mt-0.5">{leave.teacherComment}</p>
+                </div>
+              </div>
+            )}
             <div className="flex flex-wrap items-center gap-4 text-xs text-neutral-500 dark:text-neutral-400 pt-2 mt-2 border-t border-neutral-100 dark:border-slate-800">
               <span className="flex items-center space-x-1">
                 <Calendar className="w-3.5 h-3.5 text-[#7749BC] dark:text-purple-400" />

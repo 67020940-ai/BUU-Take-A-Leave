@@ -15,6 +15,7 @@ import {
   Send,
   ClipboardCheck,
   ChevronRight,
+  ChevronLeft,
   ShieldCheck,
   AlertCircle,
   Eye,
@@ -52,6 +53,8 @@ export default function AdminDashboard({ user, courses = [], leaves = [], ticket
   // Leave detail modal state
   const [selectedLeave, setSelectedLeave] = useState(null);
   const [leaveStatusFilter, setLeaveStatusFilter] = useState('all');
+  const [leavePage, setLeavePage] = useState(1);
+  const LEAVE_PAGE_SIZE = 15;
 
   // Sync tab from URL query param
   useEffect(() => {
@@ -114,6 +117,12 @@ export default function AdminDashboard({ user, courses = [], leaves = [], ticket
       return matchesStatus && matchesSearch;
     });
   }, [leaves, leaveStatusFilter, searchQuery]);
+
+  const totalLeavePages = Math.max(1, Math.ceil(filteredLeaves.length / LEAVE_PAGE_SIZE));
+  const paginatedLeaves = useMemo(() => {
+    const start = (leavePage - 1) * LEAVE_PAGE_SIZE;
+    return filteredLeaves.slice(start, start + LEAVE_PAGE_SIZE);
+  }, [filteredLeaves, leavePage]);
 
   // Filtered Courses
   const filteredCourses = useMemo(() => {
@@ -784,7 +793,7 @@ export default function AdminDashboard({ user, courses = [], leaves = [], ticket
                     </tr>
                   </thead>
                   <tbody className="divide-y divide-neutral-100 dark:divide-slate-800">
-                    {filteredLeaves.map((l) => (
+                    {paginatedLeaves.map((l) => (
                       <tr key={l.id} className="hover:bg-slate-50/60 dark:hover:bg-slate-800/50 transition-colors">
                         <td className="py-3 font-semibold text-neutral-900 dark:text-white">
                           {l.studentName || 'นิสิต'}
@@ -830,6 +839,35 @@ export default function AdminDashboard({ user, courses = [], leaves = [], ticket
                     ))}
                   </tbody>
                 </table>
+
+                {/* Pagination Controls */}
+                {totalLeavePages > 1 && (
+                  <div className="flex items-center justify-between pt-4 mt-2 border-t border-neutral-100 dark:border-slate-800 text-xs">
+                    <span className="text-neutral-500 dark:text-neutral-400 font-medium">
+                      หน้า {leavePage} จาก {totalLeavePages} (ทั้งหมด {filteredLeaves.length} รายการ)
+                    </span>
+                    <div className="flex items-center gap-1.5">
+                      <button
+                        type="button"
+                        disabled={leavePage <= 1}
+                        onClick={() => setLeavePage((p) => Math.max(1, p - 1))}
+                        className="p-1.5 rounded-xl border border-neutral-200 dark:border-slate-700 disabled:opacity-40 hover:bg-neutral-100 dark:hover:bg-slate-800 cursor-pointer disabled:cursor-not-allowed"
+                        title="หน้าก่อนหน้า"
+                      >
+                        <ChevronLeft className="w-4 h-4" />
+                      </button>
+                      <button
+                        type="button"
+                        disabled={leavePage >= totalLeavePages}
+                        onClick={() => setLeavePage((p) => Math.min(totalLeavePages, p + 1))}
+                        className="p-1.5 rounded-xl border border-neutral-200 dark:border-slate-700 disabled:opacity-40 hover:bg-neutral-100 dark:hover:bg-slate-800 cursor-pointer disabled:cursor-not-allowed"
+                        title="หน้าถัดไป"
+                      >
+                        <ChevronRight className="w-4 h-4" />
+                      </button>
+                    </div>
+                  </div>
+                )}
               </div>
             </div>
           )}
@@ -921,11 +959,11 @@ export default function AdminDashboard({ user, courses = [], leaves = [], ticket
       {/* Ticket Reply Modal */}
       {selectedTicket && (
         <div
-          className="fixed inset-0 z-50 bg-slate-900/60 backdrop-blur-xs flex items-center justify-center p-4 animate-in fade-in duration-150"
+          className="fixed inset-0 z-50 bg-slate-900/60 backdrop-blur-xs flex items-center justify-center p-3 sm:p-4 animate-in fade-in duration-150"
           onClick={() => setSelectedTicket(null)}
         >
           <div
-            className="w-full max-w-lg bg-white dark:bg-slate-900 rounded-3xl border border-neutral-200 dark:border-slate-800 shadow-2xl p-5 sm:p-6 space-y-4 animate-in zoom-in-95 duration-150"
+            className="w-full max-w-lg max-h-[90vh] overflow-y-auto bg-white dark:bg-slate-900 rounded-3xl border border-neutral-200 dark:border-slate-800 shadow-2xl p-5 sm:p-6 space-y-4 animate-in zoom-in-95 duration-150"
             onClick={(e) => e.stopPropagation()}
           >
             <div className="flex items-start justify-between gap-3 pb-3 border-b border-neutral-100 dark:border-slate-800">
