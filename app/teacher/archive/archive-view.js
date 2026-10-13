@@ -55,7 +55,9 @@ export default function ArchiveView({ courses = [], leaves = [] }) {
   const [searchQuery, setSearchQuery] = useState('');
   const [previewLeave, setPreviewLeave] = useState(null);
   const [showMobileFilters, setShowMobileFilters] = useState(false);
-  const [mobilePageSize, setMobilePageSize] = useState(10);
+  const [currentPage, setCurrentPage] = useState(1);
+  const pageSize = 20;
+  const [mobilePageSize, setMobilePageSize] = useState(20);
 
   // Term-specific leaves
   const termLeaves = useMemo(() => {
@@ -124,6 +126,13 @@ export default function ArchiveView({ courses = [], leaves = [] }) {
       return String(b.id).localeCompare(String(a.id), undefined, { numeric: true });
     });
   }, [termLeaves, selectedCourse, selectedType, selectedStatus, searchQuery]);
+
+  // Pagination
+  const totalPages = Math.ceil(filteredLeaves.length / pageSize) || 1;
+  const paginatedLeaves = useMemo(() => {
+    const start = (currentPage - 1) * pageSize;
+    return filteredLeaves.slice(start, start + pageSize);
+  }, [filteredLeaves, currentPage, pageSize]);
 
   // Paginated list for mobile
   const displayedMobileLeaves = useMemo(() => {
@@ -446,7 +455,7 @@ export default function ArchiveView({ courses = [], leaves = [] }) {
                   </td>
                 </tr>
               ) : (
-                filteredLeaves.map((leave) => {
+                paginatedLeaves.map((leave) => {
                   return (
                     <tr
                       key={leave.id}
@@ -549,6 +558,38 @@ export default function ArchiveView({ courses = [], leaves = [] }) {
               )}
             </tbody>
           </table>
+
+          {/* Desktop Pagination Controls */}
+          {totalPages > 1 && (
+            <div className="p-4 border-t border-neutral-200/80 dark:border-slate-800 flex items-center justify-between text-xs text-neutral-500 dark:text-neutral-400 bg-neutral-50/50 dark:bg-slate-900/40">
+              <div className="flex items-center gap-1">
+                <button
+                  type="button"
+                  disabled={currentPage <= 1}
+                  onClick={() => setCurrentPage((p) => Math.max(1, p - 1))}
+                  className="px-2.5 py-1 rounded-lg border border-neutral-200 dark:border-slate-700 hover:bg-white dark:hover:bg-slate-800 disabled:opacity-40 cursor-pointer disabled:cursor-not-allowed"
+                >
+                  &lt;
+                </button>
+                <span className="px-3 py-1 font-mono font-bold text-neutral-900 dark:text-neutral-100">
+                  {currentPage}
+                </span>
+                <button
+                  type="button"
+                  disabled={currentPage >= totalPages}
+                  onClick={() => setCurrentPage((p) => Math.min(totalPages, p + 1))}
+                  className="px-2.5 py-1 rounded-lg border border-neutral-200 dark:border-slate-700 hover:bg-white dark:hover:bg-slate-800 disabled:opacity-40 cursor-pointer disabled:cursor-not-allowed"
+                >
+                  &gt;
+                </button>
+              </div>
+
+              <div>
+                แสดง {filteredLeaves.length > 0 ? (currentPage - 1) * pageSize + 1 : 0} -{' '}
+                {Math.min(currentPage * pageSize, filteredLeaves.length)} จาก {filteredLeaves.length} รายการ
+              </div>
+            </div>
+          )}
         </div>
 
         {/* ─── 2. MOBILE CARD LIST (< md) — NO HORIZONTAL SCROLL ─── */}

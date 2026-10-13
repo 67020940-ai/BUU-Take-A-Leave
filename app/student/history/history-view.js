@@ -45,6 +45,8 @@ export default function StudentHistoryView({ leaves: initialLeaves = [], summari
   const [selectedType, setSelectedType] = useState('all');
   const [searchQuery, setSearchQuery] = useState('');
   const [detailModal, setDetailModal] = useState({ isOpen: false, leave: null });
+  const [currentPage, setCurrentPage] = useState(1);
+  const pageSize = 20;
 
   // Extract unique academic terms sorted chronologically
   const academicTerms = useMemo(() => {
@@ -100,6 +102,13 @@ export default function StudentHistoryView({ leaves: initialLeaves = [], summari
       return String(b.id).localeCompare(String(a.id), undefined, { numeric: true });
     });
   }, [leaves, selectedTerm, selectedStatus, selectedType, searchQuery, summaries]);
+
+  // Pagination
+  const totalPages = Math.ceil(filteredLeaves.length / pageSize) || 1;
+  const paginatedLeaves = useMemo(() => {
+    const start = (currentPage - 1) * pageSize;
+    return filteredLeaves.slice(start, start + pageSize);
+  }, [filteredLeaves, currentPage, pageSize]);
 
   const pendingCount = useMemo(() => leaves.filter((l) => l.status === 'รออนุมัติ').length, [leaves]);
   const approvedCount = useMemo(() => leaves.filter((l) => l.status === 'อนุมัติ').length, [leaves]);
@@ -264,7 +273,7 @@ export default function StudentHistoryView({ leaves: initialLeaves = [], summari
         </div>
       ) : (
         <div className="space-y-3.5">
-          {filteredLeaves.map((leave) => {
+          {paginatedLeaves.map((leave) => {
             const status = STATUS_DETAILS[leave.status] || STATUS_DETAILS['รออนุมัติ'];
             const typeCls = LEAVE_TYPE_DETAILS[leave.type] || LEAVE_TYPE_DEFAULT;
             return (
@@ -352,6 +361,38 @@ export default function StudentHistoryView({ leaves: initialLeaves = [], summari
               </div>
             );
           })}
+
+          {/* Pagination Controls */}
+          {totalPages > 1 && (
+            <div className="p-4 rounded-3xl bg-white/80 dark:bg-slate-900/80 border border-neutral-200/80 dark:border-slate-800 flex items-center justify-between text-xs text-neutral-500 dark:text-neutral-400">
+              <div className="flex items-center gap-1">
+                <button
+                  type="button"
+                  disabled={currentPage <= 1}
+                  onClick={() => setCurrentPage((p) => Math.max(1, p - 1))}
+                  className="px-2.5 py-1 rounded-lg border border-neutral-200 dark:border-slate-700 hover:bg-white dark:hover:bg-slate-800 disabled:opacity-40 cursor-pointer disabled:cursor-not-allowed"
+                >
+                  &lt;
+                </button>
+                <span className="px-3 py-1 font-mono font-bold text-neutral-900 dark:text-neutral-100">
+                  {currentPage}
+                </span>
+                <button
+                  type="button"
+                  disabled={currentPage >= totalPages}
+                  onClick={() => setCurrentPage((p) => Math.min(totalPages, p + 1))}
+                  className="px-2.5 py-1 rounded-lg border border-neutral-200 dark:border-slate-700 hover:bg-white dark:hover:bg-slate-800 disabled:opacity-40 cursor-pointer disabled:cursor-not-allowed"
+                >
+                  &gt;
+                </button>
+              </div>
+
+              <div>
+                แสดง {filteredLeaves.length > 0 ? (currentPage - 1) * pageSize + 1 : 0} -{' '}
+                {Math.min(currentPage * pageSize, filteredLeaves.length)} จาก {filteredLeaves.length} รายการ
+              </div>
+            </div>
+          )}
         </div>
       )}
 

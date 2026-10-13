@@ -88,6 +88,8 @@ export default function TeacherRequestsView({
   const [actionModal, setActionModal] = useState({ isOpen: false, type: 'approve', leave: null, comment: '' });
   const [detailModal, setDetailModal] = useState({ isOpen: false, leave: null, comment: '' });
   const [selectedLeaveIds, setSelectedLeaveIds] = useState(new Set());
+  const [currentPage, setCurrentPage] = useState(1);
+  const pageSize = 20;
   const [batchModal, setBatchModal] = useState({ isOpen: false, type: 'approve', comment: '', isSubmitting: false });
   const [toast, setToast] = useState(null);
 
@@ -152,6 +154,13 @@ export default function TeacherRequestsView({
       return String(b.id).localeCompare(String(a.id), undefined, { numeric: true });
     });
   }, [leaves, activeTab, selectedTerm, selectedCourseId, typeFilter, isTodayOnly, searchQuery, todayStr, courses]);
+
+  // Pagination
+  const totalPages = Math.ceil(filteredLeaves.length / pageSize) || 1;
+  const paginatedLeaves = useMemo(() => {
+    const start = (currentPage - 1) * pageSize;
+    return filteredLeaves.slice(start, start + pageSize);
+  }, [filteredLeaves, currentPage, pageSize]);
 
   // Check quota risk
   function isStudentAtRisk(studentCode, courseId) {
@@ -504,7 +513,7 @@ export default function TeacherRequestsView({
                 </label>
               </div>
 
-              {filteredLeaves.map((leave) => {
+              {paginatedLeaves.map((leave) => {
                 const atRisk = isStudentAtRisk(leave.studentCode, leave.courseId);
                 const isSelected = selectedLeaveIds.has(leave.id);
                 const statusInfo = STATUS_DETAILS[leave.status] || STATUS_DETAILS['รออนุมัติ'];
@@ -608,6 +617,38 @@ export default function TeacherRequestsView({
                   </div>
                 );
               })}
+
+              {/* Pagination Controls */}
+              {totalPages > 1 && (
+                <div className="p-4 rounded-3xl bg-white/90 dark:bg-slate-900/90 border border-neutral-200/80 dark:border-slate-800 flex items-center justify-between text-xs text-neutral-500 dark:text-neutral-400">
+                  <div className="flex items-center gap-1">
+                    <button
+                      type="button"
+                      disabled={currentPage <= 1}
+                      onClick={() => setCurrentPage((p) => Math.max(1, p - 1))}
+                      className="px-2.5 py-1 rounded-lg border border-neutral-200 dark:border-slate-700 hover:bg-white dark:hover:bg-slate-800 disabled:opacity-40 cursor-pointer disabled:cursor-not-allowed"
+                    >
+                      &lt;
+                    </button>
+                    <span className="px-3 py-1 font-mono font-bold text-neutral-900 dark:text-neutral-100">
+                      {currentPage}
+                    </span>
+                    <button
+                      type="button"
+                      disabled={currentPage >= totalPages}
+                      onClick={() => setCurrentPage((p) => Math.min(totalPages, p + 1))}
+                      className="px-2.5 py-1 rounded-lg border border-neutral-200 dark:border-slate-700 hover:bg-white dark:hover:bg-slate-800 disabled:opacity-40 cursor-pointer disabled:cursor-not-allowed"
+                    >
+                      &gt;
+                    </button>
+                  </div>
+
+                  <div>
+                    แสดง {filteredLeaves.length > 0 ? (currentPage - 1) * pageSize + 1 : 0} -{' '}
+                    {Math.min(currentPage * pageSize, filteredLeaves.length)} จาก {filteredLeaves.length} รายการ
+                  </div>
+                </div>
+              )}
             </div>
           )}
         </main>

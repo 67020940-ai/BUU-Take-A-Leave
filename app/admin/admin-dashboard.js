@@ -54,7 +54,13 @@ export default function AdminDashboard({ user, courses = [], leaves = [], ticket
   const [selectedLeave, setSelectedLeave] = useState(null);
   const [leaveStatusFilter, setLeaveStatusFilter] = useState('all');
   const [leavePage, setLeavePage] = useState(1);
-  const LEAVE_PAGE_SIZE = 15;
+  const LEAVE_PAGE_SIZE = 20;
+
+  const [coursePage, setCoursePage] = useState(1);
+  const COURSE_PAGE_SIZE = 20;
+
+  const [ticketPage, setTicketPage] = useState(1);
+  const TICKET_PAGE_SIZE = 20;
 
   // Sync tab from URL query param
   useEffect(() => {
@@ -103,6 +109,12 @@ export default function AdminDashboard({ user, courses = [], leaves = [], ticket
     });
   }, [tickets, ticketFilter, searchQuery]);
 
+  const totalTicketPages = Math.max(1, Math.ceil(filteredTickets.length / TICKET_PAGE_SIZE));
+  const paginatedTickets = useMemo(() => {
+    const start = (ticketPage - 1) * TICKET_PAGE_SIZE;
+    return filteredTickets.slice(start, start + TICKET_PAGE_SIZE);
+  }, [filteredTickets, ticketPage, TICKET_PAGE_SIZE]);
+
   // Filtered Leaves
   const filteredLeaves = useMemo(() => {
     return leaves.filter((l) => {
@@ -122,7 +134,7 @@ export default function AdminDashboard({ user, courses = [], leaves = [], ticket
   const paginatedLeaves = useMemo(() => {
     const start = (leavePage - 1) * LEAVE_PAGE_SIZE;
     return filteredLeaves.slice(start, start + LEAVE_PAGE_SIZE);
-  }, [filteredLeaves, leavePage]);
+  }, [filteredLeaves, leavePage, LEAVE_PAGE_SIZE]);
 
   // Filtered Courses
   const filteredCourses = useMemo(() => {
@@ -137,6 +149,12 @@ export default function AdminDashboard({ user, courses = [], leaves = [], ticket
       );
     });
   }, [courses, searchQuery]);
+
+  const totalCoursePages = Math.max(1, Math.ceil(filteredCourses.length / COURSE_PAGE_SIZE));
+  const paginatedCourses = useMemo(() => {
+    const start = (coursePage - 1) * COURSE_PAGE_SIZE;
+    return filteredCourses.slice(start, start + COURSE_PAGE_SIZE);
+  }, [filteredCourses, coursePage, COURSE_PAGE_SIZE]);
 
   // Recent Activity Feed
   const recentActivities = useMemo(() => {
@@ -530,7 +548,7 @@ export default function AdminDashboard({ user, courses = [], leaves = [], ticket
                     <p className="text-sm font-semibold text-neutral-500">ไม่พบรายการแจ้งปัญหาตามเงื่อนไข</p>
                   </div>
                 ) : (
-                  filteredTickets.map((t) => (
+                  paginatedTickets.map((t) => (
                     <div
                       key={t.id}
                       onClick={() => {
@@ -571,6 +589,35 @@ export default function AdminDashboard({ user, courses = [], leaves = [], ticket
                     </div>
                   ))
                 )}
+
+                {/* Tickets Pagination Controls */}
+                {totalTicketPages > 1 && (
+                  <div className="flex items-center justify-between pt-4 mt-2 border-t border-neutral-100 dark:border-slate-800 text-xs">
+                    <span className="text-neutral-500 dark:text-neutral-400 font-medium">
+                      หน้า {ticketPage} จาก {totalTicketPages} (ทั้งหมด {filteredTickets.length} รายการ)
+                    </span>
+                    <div className="flex items-center gap-1.5">
+                      <button
+                        type="button"
+                        disabled={ticketPage <= 1}
+                        onClick={() => setTicketPage((p) => Math.max(1, p - 1))}
+                        className="p-1.5 rounded-xl border border-neutral-200 dark:border-slate-700 disabled:opacity-40 hover:bg-neutral-100 dark:hover:bg-slate-800 cursor-pointer disabled:cursor-not-allowed"
+                        title="หน้าก่อนหน้า"
+                      >
+                        <ChevronLeft className="w-4 h-4" />
+                      </button>
+                      <button
+                        type="button"
+                        disabled={ticketPage >= totalTicketPages}
+                        onClick={() => setTicketPage((p) => Math.min(totalTicketPages, p + 1))}
+                        className="p-1.5 rounded-xl border border-neutral-200 dark:border-slate-700 disabled:opacity-40 hover:bg-neutral-100 dark:hover:bg-slate-800 cursor-pointer disabled:cursor-not-allowed"
+                        title="หน้าถัดไป"
+                      >
+                        <ChevronRight className="w-4 h-4" />
+                      </button>
+                    </div>
+                  </div>
+                )}
               </div>
             </div>
           )}
@@ -596,7 +643,7 @@ export default function AdminDashboard({ user, courses = [], leaves = [], ticket
 
               {/* 1. Mobile Courses Cards List (< md) */}
               <div className="block md:hidden space-y-3">
-                {filteredCourses.map((c) => (
+                {paginatedCourses.map((c) => (
                   <div
                     key={c.id}
                     className="p-4 rounded-3xl bg-white dark:bg-slate-900 border border-neutral-200 dark:border-slate-800 shadow-2xs space-y-2.5"
@@ -651,7 +698,7 @@ export default function AdminDashboard({ user, courses = [], leaves = [], ticket
                     </tr>
                   </thead>
                   <tbody className="divide-y divide-neutral-100 dark:divide-slate-800">
-                    {filteredCourses.map((c) => (
+                    {paginatedCourses.map((c) => (
                       <tr key={c.id} className="hover:bg-slate-50/60 dark:hover:bg-slate-800/50 transition-colors">
                         <td className="py-3 font-mono font-bold text-[#7749BC] dark:text-purple-400">
                           {c.code}
@@ -681,6 +728,35 @@ export default function AdminDashboard({ user, courses = [], leaves = [], ticket
                     ))}
                   </tbody>
                 </table>
+
+                {/* Courses Pagination Controls */}
+                {totalCoursePages > 1 && (
+                  <div className="flex items-center justify-between pt-4 mt-2 border-t border-neutral-100 dark:border-slate-800 text-xs">
+                    <span className="text-neutral-500 dark:text-neutral-400 font-medium">
+                      หน้า {coursePage} จาก {totalCoursePages} (ทั้งหมด {filteredCourses.length} รายการ)
+                    </span>
+                    <div className="flex items-center gap-1.5">
+                      <button
+                        type="button"
+                        disabled={coursePage <= 1}
+                        onClick={() => setCoursePage((p) => Math.max(1, p - 1))}
+                        className="p-1.5 rounded-xl border border-neutral-200 dark:border-slate-700 disabled:opacity-40 hover:bg-neutral-100 dark:hover:bg-slate-800 cursor-pointer disabled:cursor-not-allowed"
+                        title="หน้าก่อนหน้า"
+                      >
+                        <ChevronLeft className="w-4 h-4" />
+                      </button>
+                      <button
+                        type="button"
+                        disabled={coursePage >= totalCoursePages}
+                        onClick={() => setCoursePage((p) => Math.min(totalCoursePages, p + 1))}
+                        className="p-1.5 rounded-xl border border-neutral-200 dark:border-slate-700 disabled:opacity-40 hover:bg-neutral-100 dark:hover:bg-slate-800 cursor-pointer disabled:cursor-not-allowed"
+                        title="หน้าถัดไป"
+                      >
+                        <ChevronRight className="w-4 h-4" />
+                      </button>
+                    </div>
+                  </div>
+                )}
               </div>
             </div>
           )}
@@ -724,7 +800,7 @@ export default function AdminDashboard({ user, courses = [], leaves = [], ticket
 
               {/* 1. Mobile Leaves Cards List (< md) */}
               <div className="block md:hidden space-y-3">
-                {filteredLeaves.map((l) => (
+                {paginatedLeaves.map((l) => (
                   <div
                     key={l.id}
                     className="p-4 rounded-3xl bg-white dark:bg-slate-900 border border-neutral-200 dark:border-slate-800 shadow-2xs space-y-3"

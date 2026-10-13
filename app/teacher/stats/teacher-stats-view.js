@@ -101,6 +101,8 @@ export default function TeacherStatsView({ courses = [], leaves = [], rosterByCo
 
   // Selected Student Modal State
   const [selectedStudentDetail, setSelectedStudentDetail] = useState(null);
+  const [studentPage, setStudentPage] = useState(1);
+  const studentPageSize = 20;
 
   // Filtered leaves according to selected term & course
   const filteredLeaves = useMemo(() => {
@@ -536,6 +538,13 @@ export default function TeacherStatsView({ courses = [], leaves = [], rosterByCo
       return true;
     });
   }, [studentLeaveStats, searchQuery, studentStatusFilter, studentTypeFilter]);
+
+  // Pagination for Student Table
+  const totalStudentPages = Math.ceil(displayedStudents.length / studentPageSize) || 1;
+  const paginatedDisplayedStudents = useMemo(() => {
+    const start = (studentPage - 1) * studentPageSize;
+    return displayedStudents.slice(start, start + studentPageSize);
+  }, [displayedStudents, studentPage, studentPageSize]);
 
   return (
     <div className="space-y-6">
@@ -1426,7 +1435,7 @@ export default function TeacherStatsView({ courses = [], leaves = [], rosterByCo
                   </td>
                 </tr>
               ) : (
-                displayedStudents.map((st) => {
+                paginatedDisplayedStudents.map((st) => {
                   const totalSessions = st.rosterInfo?.totalSessions ?? 15;
                   const attended = st.rosterInfo?.attended ?? Math.max(totalSessions - st.approvedCount, 0);
                   const totalMissed = Math.max(totalSessions - attended, 0);
@@ -1528,20 +1537,42 @@ export default function TeacherStatsView({ courses = [], leaves = [], rosterByCo
           </table>
         </div>
 
-        {/* Footer Summary in Table */}
-        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 pt-2 text-xs text-neutral-500 dark:text-neutral-400">
+        {/* Footer Summary & Pagination in Table */}
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pt-3 text-xs text-neutral-500 dark:text-neutral-400">
           <div className="flex items-center gap-3">
             <span>
-              แสดงนิสิต <strong>{displayedStudents.length}</strong> จากทั้งหมด <strong>{studentLeaveStats.length}</strong> คน
+              แสดง {displayedStudents.length > 0 ? (studentPage - 1) * studentPageSize + 1 : 0} -{' '}
+              {Math.min(studentPage * studentPageSize, displayedStudents.length)} จากทั้งหมด <strong>{displayedStudents.length}</strong> คน
             </span>
             <span>•</span>
             <span className="text-amber-600 dark:text-amber-400 font-medium">
               มีคำขอรอพิจารณา {stats.uniquePendingStudentsCount} คน ({stats.pending} คำขอ)
             </span>
           </div>
-          <span className="text-neutral-400 text-[11px]">
-            คลิกที่แถวหรือปุ่ม &quot;ดูแดชบอร์ด&quot; เพื่อเปิดแดชบอร์ดสถิติและการลาแบบละเอียดของนิสิต
-          </span>
+
+          {totalStudentPages > 1 && (
+            <div className="flex items-center gap-1">
+              <button
+                type="button"
+                disabled={studentPage <= 1}
+                onClick={() => setStudentPage((p) => Math.max(1, p - 1))}
+                className="px-2.5 py-1 rounded-lg border border-neutral-200 dark:border-slate-700 hover:bg-white dark:hover:bg-slate-800 disabled:opacity-40 cursor-pointer disabled:cursor-not-allowed"
+              >
+                &lt;
+              </button>
+              <span className="px-3 py-1 font-mono font-bold text-neutral-900 dark:text-neutral-100">
+                {studentPage}
+              </span>
+              <button
+                type="button"
+                disabled={studentPage >= totalStudentPages}
+                onClick={() => setStudentPage((p) => Math.min(totalStudentPages, p + 1))}
+                className="px-2.5 py-1 rounded-lg border border-neutral-200 dark:border-slate-700 hover:bg-white dark:hover:bg-slate-800 disabled:opacity-40 cursor-pointer disabled:cursor-not-allowed"
+              >
+                &gt;
+              </button>
+            </div>
+          )}
         </div>
       </div>
 

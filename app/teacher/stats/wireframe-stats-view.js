@@ -115,7 +115,7 @@ export default function WireframeStatsView({
   const [selectedLeaveTypeFilter, setSelectedLeaveTypeFilter] = useState(null); // 'all' | 'ป่วย' | 'กิจ' | 'กิจกรรม' | 'อื่น ๆ'
   const [mobileSidebarOpen, setMobileSidebarOpen] = useState(false);
   const [currentPage, setCurrentPage] = useState(1);
-  const pageSize = 10;
+  const pageSize = 20;
 
   // Sync archive query param
   useEffect(() => {

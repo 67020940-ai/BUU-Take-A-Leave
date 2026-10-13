@@ -54,6 +54,8 @@ export default function TeacherHistoryView({
   const [detailModal, setDetailModal] = useState({ isOpen: false, leave: null });
   const [reconsiderModal, setReconsiderModal] = useState({ isOpen: false, leave: null, type: 'reconsider', comment: '' });
   const [toast, setToast] = useState(null);
+  const [currentPage, setCurrentPage] = useState(1);
+  const pageSize = 20;
 
   // Sync status filter from query param
   useEffect(() => {
@@ -128,6 +130,13 @@ export default function TeacherHistoryView({
       return String(b.id).localeCompare(String(a.id), undefined, { numeric: true });
     });
   }, [historyLeaves, statusFilter, selectedTerm, selectedCourseId, searchQuery, courses]);
+
+  // Pagination
+  const totalPages = Math.ceil(filteredLeaves.length / pageSize) || 1;
+  const paginatedLeaves = useMemo(() => {
+    const start = (currentPage - 1) * pageSize;
+    return filteredLeaves.slice(start, start + pageSize);
+  }, [filteredLeaves, currentPage, pageSize]);
 
   async function handleAction(leave, targetStatus, comment) {
     const previous = [...leaves];
@@ -316,7 +325,7 @@ export default function TeacherHistoryView({
             <>
               {/* 1. Mobile Card List (< md) */}
               <div className="block md:hidden space-y-3">
-                {filteredLeaves.map((leave) => {
+                {paginatedLeaves.map((leave) => {
                   const statusInfo = STATUS_DETAILS[leave.status] || STATUS_DETAILS['อนุมัติ'];
                   const typeBadge = LEAVE_TYPE_DETAILS[leave.type] || LEAVE_TYPE_DEFAULT;
 
@@ -412,7 +421,7 @@ export default function TeacherHistoryView({
                       </tr>
                     </thead>
                     <tbody className="divide-y divide-neutral-100 dark:divide-slate-800">
-                      {filteredLeaves.map((leave) => {
+                      {paginatedLeaves.map((leave) => {
                         const statusInfo = STATUS_DETAILS[leave.status] || STATUS_DETAILS['อนุมัติ'];
                         const typeBadge = LEAVE_TYPE_DETAILS[leave.type] || LEAVE_TYPE_DEFAULT;
 
@@ -496,6 +505,38 @@ export default function TeacherHistoryView({
                     </tbody>
                   </table>
                 </div>
+
+                {/* Pagination Controls */}
+                {totalPages > 1 && (
+                  <div className="p-4 border-t border-neutral-200/80 dark:border-slate-800 flex items-center justify-between text-xs text-neutral-500 dark:text-neutral-400 bg-neutral-50/50 dark:bg-slate-900/40">
+                    <div className="flex items-center gap-1">
+                      <button
+                        type="button"
+                        disabled={currentPage <= 1}
+                        onClick={() => setCurrentPage((p) => Math.max(1, p - 1))}
+                        className="px-2.5 py-1 rounded-lg border border-neutral-200 dark:border-slate-700 hover:bg-white dark:hover:bg-slate-800 disabled:opacity-40 cursor-pointer disabled:cursor-not-allowed"
+                      >
+                        &lt;
+                      </button>
+                      <span className="px-3 py-1 font-mono font-bold text-neutral-900 dark:text-neutral-100">
+                        {currentPage}
+                      </span>
+                      <button
+                        type="button"
+                        disabled={currentPage >= totalPages}
+                        onClick={() => setCurrentPage((p) => Math.min(totalPages, p + 1))}
+                        className="px-2.5 py-1 rounded-lg border border-neutral-200 dark:border-slate-700 hover:bg-white dark:hover:bg-slate-800 disabled:opacity-40 cursor-pointer disabled:cursor-not-allowed"
+                      >
+                        &gt;
+                      </button>
+                    </div>
+
+                    <div>
+                      แสดง {filteredLeaves.length > 0 ? (currentPage - 1) * pageSize + 1 : 0} -{' '}
+                      {Math.min(currentPage * pageSize, filteredLeaves.length)} จาก {filteredLeaves.length} รายการ
+                    </div>
+                  </div>
+                )}
               </div>
             </>
           )}
