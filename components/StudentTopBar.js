@@ -13,6 +13,7 @@ import {
 } from 'lucide-react';
 import { useRouter } from 'next/navigation';
 import ThemeToggle from '@/components/ThemeToggle';
+import { resolveNotificationLink } from '@/lib/ui';
 
 export default function StudentTopBar({
   user,
@@ -68,7 +69,8 @@ export default function StudentTopBar({
   function handleNotificationClick(n) {
     markRead(n.id);
     setShowNotifications(false);
-    if (n.link) router.push(n.link);
+    const target = resolveNotificationLink(n?.link, user?.role || 'student');
+    if (target) router.push(target);
   }
 
   function handlePrevSemester() {

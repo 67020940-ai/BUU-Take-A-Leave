@@ -14,6 +14,7 @@ import {
   User,
 } from 'lucide-react';
 import { useRouter } from 'next/navigation';
+import { resolveNotificationLink } from '@/lib/ui';
 
 export default function TeacherTopBar({
   user,
@@ -69,7 +70,8 @@ export default function TeacherTopBar({
   function handleNotificationClick(n) {
     markRead(n.id);
     setShowNotifications(false);
-    if (n.link) router.push(n.link);
+    const target = resolveNotificationLink(n?.link, user?.role || 'teacher');
+    if (target) router.push(target);
   }
 
   // Semester navigation

@@ -278,7 +278,7 @@ async function main() {
           data: {
             userId: course.teacherId,
             message: `${student.name} ยื่นคำร้องลา "${course.name}" (${leave.type})`,
-            link: '/teacher',
+            link: '/teacher/requests',
           },
         });
       }
@@ -288,7 +288,7 @@ async function main() {
         data: {
           userId: student.id,
           message: `คำร้องลา "${course.name}" (${leave.type}) ถูก${leave.status}แล้ว${suffix}`,
-          link: '/student',
+          link: '/student?tab=history',
           read: Math.random() > 0.5,
         },
       });

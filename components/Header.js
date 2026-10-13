@@ -23,6 +23,7 @@ import {
 } from 'lucide-react';
 import ThemeToggle from '@/components/ThemeToggle';
 import BuuLogo from '@/components/BuuLogo';
+import { resolveNotificationLink } from '@/lib/ui';
 
 const NAV = {
   student: [
@@ -95,7 +96,8 @@ export default function Header({ user, semester = '1/2569' }) {
   function handleNotificationClick(n) {
     markRead(n.id);
     setShowNotifications(false);
-    if (n.link) router.push(n.link);
+    const target = resolveNotificationLink(n?.link, user?.role || 'student');
+    if (target) router.push(target);
   }
 
   async function handleLogout() {
