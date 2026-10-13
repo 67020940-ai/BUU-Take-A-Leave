@@ -5,6 +5,17 @@ export const metadata = {
   description: 'ระบบยื่นและอนุมัติคำขอลาเรียนออนไลน์ สรุปเวลาเรียน มหาวิทยาลัยบูรพา',
 };
 
+export const viewport = {
+  width: 'device-width',
+  initialScale: 1,
+  maximumScale: 5,
+  viewportFit: 'cover',
+  themeColor: [
+    { media: '(prefers-color-scheme: light)', color: '#ffffff' },
+    { media: '(prefers-color-scheme: dark)', color: '#090d16' },
+  ],
+};
+
 export default function RootLayout({ children }) {
   return (
     <html lang="th" suppressHydrationWarning>

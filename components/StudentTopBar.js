@@ -13,6 +13,7 @@ import {
 } from 'lucide-react';
 import { useRouter } from 'next/navigation';
 import ThemeToggle from '@/components/ThemeToggle';
+import AccountModal from '@/components/AccountModal';
 import { resolveNotificationLink, getUserAvatarKey } from '@/lib/ui';
 
 export default function StudentTopBar({
@@ -28,6 +29,7 @@ export default function StudentTopBar({
   const router = useRouter();
   const [notifications, setNotifications] = useState([]);
   const [showNotifications, setShowNotifications] = useState(false);
+  const [showAccount, setShowAccount] = useState(false);
   const [avatar, setAvatar] = useState(user?.avatar || null);
   const storageKey = getUserAvatarKey(user);
 
@@ -225,8 +227,13 @@ export default function StudentTopBar({
           </div>
 
           {/* Student Profile Avatar with Name & Code */}
-          <div className="flex items-center gap-2 pl-1 sm:pl-2">
-            <div className="w-9 h-9 sm:w-10 sm:h-10 rounded-2xl bg-gradient-to-tr from-[#7749BC] to-[#582B9E] text-white flex items-center justify-center font-bold text-xs sm:text-sm shadow-md shadow-purple-900/20 shrink-0 overflow-hidden">
+          <button
+            type="button"
+            onClick={() => setShowAccount(true)}
+            className="flex items-center gap-2 pl-1 sm:pl-2 rounded-2xl p-1 hover:bg-neutral-100 dark:hover:bg-slate-800 transition-colors cursor-pointer text-left"
+            title="ดูข้อมูลบัญชีผู้ใช้ / เปลี่ยนรูปโปรไฟล์"
+          >
+            <div className="w-9 h-9 sm:w-10 sm:h-10 rounded-2xl bg-gradient-to-tr from-[#7749BC] to-[#582B9E] text-white flex items-center justify-center font-bold text-xs sm:text-sm shadow-md shadow-purple-900/20 shrink-0 overflow-hidden ring-2 ring-transparent hover:ring-[#7749BC]/40">
               {avatar ? (
                 <img src={avatar} alt="Profile" className="w-full h-full object-cover" />
               ) : (
@@ -241,9 +248,12 @@ export default function StudentTopBar({
                 {studentId ? `${studentId}` : user?.faculty || 'คณะวิทยาการสารสนเทศ'}
               </span>
             </div>
-          </div>
+          </button>
         </div>
       </div>
+
+      {/* Account Profile Modal */}
+      <AccountModal isOpen={showAccount} onClose={() => setShowAccount(false)} user={user} />
     </header>
   );
 }

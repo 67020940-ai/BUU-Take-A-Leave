@@ -89,13 +89,13 @@ export default function AdminSidebar({
       {isOpenMobile && (
         <div
           onClick={onCloseMobile}
-          className="fixed inset-0 z-40 bg-slate-900/60 backdrop-blur-xs lg:hidden transition-opacity"
+          className="fixed inset-0 z-50 bg-slate-900/60 backdrop-blur-xs lg:hidden transition-opacity"
         />
       )}
 
       {/* Main Sidebar Container */}
       <aside
-        className={`fixed top-0 bottom-0 left-0 z-40 bg-white/95 dark:bg-slate-900/95 backdrop-blur-xl border-r border-neutral-200/80 dark:border-slate-800 transition-all duration-300 flex flex-col justify-between ${
+        className={`fixed top-0 bottom-0 left-0 z-50 lg:z-40 bg-white/95 dark:bg-slate-900/95 backdrop-blur-xl border-r border-neutral-200/80 dark:border-slate-800 transition-all duration-300 flex flex-col justify-between overflow-hidden ${
           isOpenMobile ? 'translate-x-0' : '-translate-x-full lg:translate-x-0'
         } ${collapsed ? 'w-20' : 'w-64 sm:w-68'}`}
       >

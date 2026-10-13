@@ -12,6 +12,7 @@ import {
 } from 'lucide-react';
 import { useRouter } from 'next/navigation';
 import ThemeToggle from '@/components/ThemeToggle';
+import AccountModal from '@/components/AccountModal';
 import { resolveNotificationLink, getUserAvatarKey } from '@/lib/ui';
 
 export default function AdminTopBar({
@@ -27,6 +28,7 @@ export default function AdminTopBar({
   const router = useRouter();
   const [notifications, setNotifications] = useState([]);
   const [showNotifications, setShowNotifications] = useState(false);
+  const [showAccount, setShowAccount] = useState(false);
   const [avatar, setAvatar] = useState(null);
 
   useEffect(() => {
@@ -216,8 +218,13 @@ export default function AdminTopBar({
           </div>
 
           {/* Admin Profile Avatar with Name & Role */}
-          <div className="flex items-center gap-2 pl-1 sm:pl-2">
-            <div className="w-9 h-9 sm:w-10 sm:h-10 rounded-2xl bg-gradient-to-tr from-[#7749BC] to-[#582B9E] text-white flex items-center justify-center font-bold text-xs sm:text-sm shadow-md shadow-purple-900/20 shrink-0 overflow-hidden">
+          <button
+            type="button"
+            onClick={() => setShowAccount(true)}
+            className="flex items-center gap-2 pl-1 sm:pl-2 rounded-2xl p-1 hover:bg-neutral-100 dark:hover:bg-slate-800 transition-colors cursor-pointer text-left"
+            title="ดูข้อมูลบัญชีผู้ใช้ / เปลี่ยนรูปโปรไฟล์"
+          >
+            <div className="w-9 h-9 sm:w-10 sm:h-10 rounded-2xl bg-gradient-to-tr from-[#7749BC] to-[#582B9E] text-white flex items-center justify-center font-bold text-xs sm:text-sm shadow-md shadow-purple-900/20 shrink-0 overflow-hidden ring-2 ring-transparent hover:ring-[#7749BC]/40">
               {avatar ? (
                 <img src={avatar} alt="Admin Profile" className="w-full h-full object-cover" />
               ) : (
@@ -232,9 +239,22 @@ export default function AdminTopBar({
                 Administrator
               </span>
             </div>
-          </div>
+          </button>
         </div>
       </div>
+
+      {/* Account Profile Modal */}
+      <AccountModal
+        isOpen={showAccount}
+        onClose={() => setShowAccount(false)}
+        user={{
+          name: adminName,
+          role: 'admin',
+          email: user?.email || 'admin@go.buu.ac.th',
+          id: user?.id || 'admin-01',
+          department: user?.department || 'ศูนย์คอมพิวเตอร์และสารสนเทศ',
+        }}
+      />
     </header>
   );
 }
