@@ -34,6 +34,7 @@ export default function StudentTopBar({
   const storageKey = getUserAvatarKey(user);
 
   useEffect(() => {
+    let active = true;
     function loadAvatar() {
       try {
         const stored = localStorage.getItem(storageKey);
@@ -43,14 +44,44 @@ export default function StudentTopBar({
       } catch {}
     }
     loadAvatar();
+
+    // Fetch cross-device server avatar
+    fetch('/api/profile')
+      .then((r) => (r.ok ? r.json() : null))
+      .then((data) => {
+        if (active && data?.user?.avatar) {
+          setAvatar(data.user.avatar);
+          try {
+            localStorage.setItem(storageKey, data.user.avatar);
+          } catch {}
+        }
+      })
+      .catch(() => {});
+
     const handleAvatarUpdate = (e) => {
       if (!e.detail?.key || e.detail.key === storageKey) {
-        loadAvatar();
+        if (e.detail?.avatar) {
+          setAvatar(e.detail.avatar);
+        } else {
+          loadAvatar();
+        }
       }
     };
     window.addEventListener('buu_avatar_updated', handleAvatarUpdate);
-    return () => window.removeEventListener('buu_avatar_updated', handleAvatarUpdate);
+    return () => {
+      active = false;
+      window.removeEventListener('buu_avatar_updated', handleAvatarUpdate);
+    };
   }, [storageKey, user]);
+
+  useEffect(() => {
+    const handleOpenAccount = () => {
+      setShowNotifications(false);
+      setShowAccount(true);
+    };
+    window.addEventListener('buu_open_account', handleOpenAccount);
+    return () => window.removeEventListener('buu_open_account', handleOpenAccount);
+  }, []);
 
   useEffect(() => {
     let active = true;
@@ -229,7 +260,10 @@ export default function StudentTopBar({
           {/* Student Profile Avatar with Name & Code */}
           <button
             type="button"
-            onClick={() => setShowAccount(true)}
+            onClick={() => {
+              setShowNotifications(false);
+              setShowAccount(true);
+            }}
             className="flex items-center gap-2 pl-1 sm:pl-2 rounded-2xl p-1 hover:bg-neutral-100 dark:hover:bg-slate-800 transition-colors cursor-pointer text-left"
             title="ดูข้อมูลบัญชีผู้ใช้ / เปลี่ยนรูปโปรไฟล์"
           >

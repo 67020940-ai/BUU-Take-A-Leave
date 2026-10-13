@@ -32,9 +32,23 @@ export default function AdminTopBar({
   const [avatar, setAvatar] = useState(null);
 
   useEffect(() => {
+    let active = true;
     const key = getUserAvatarKey(user || { role: 'admin', id: 'admin-01' });
     const saved = localStorage.getItem(key);
     if (saved) setAvatar(saved);
+
+    // Fetch cross-device server avatar
+    fetch('/api/profile')
+      .then((r) => (r.ok ? r.json() : null))
+      .then((data) => {
+        if (active && data?.user?.avatar) {
+          setAvatar(data.user.avatar);
+          try {
+            localStorage.setItem(key, data.user.avatar);
+          } catch {}
+        }
+      })
+      .catch(() => {});
 
     function handleAvatarUpdate(e) {
       if (e.detail?.key && e.detail.key !== key) return;
@@ -42,8 +56,20 @@ export default function AdminTopBar({
       else setAvatar(localStorage.getItem(key));
     }
     window.addEventListener('buu_avatar_updated', handleAvatarUpdate);
-    return () => window.removeEventListener('buu_avatar_updated', handleAvatarUpdate);
+    return () => {
+      active = false;
+      window.removeEventListener('buu_avatar_updated', handleAvatarUpdate);
+    };
   }, [user]);
+
+  useEffect(() => {
+    const handleOpenAccount = () => {
+      setShowNotifications(false);
+      setShowAccount(true);
+    };
+    window.addEventListener('buu_open_account', handleOpenAccount);
+    return () => window.removeEventListener('buu_open_account', handleOpenAccount);
+  }, []);
 
   useEffect(() => {
     let active = true;
@@ -220,7 +246,10 @@ export default function AdminTopBar({
           {/* Admin Profile Avatar with Name & Role */}
           <button
             type="button"
-            onClick={() => setShowAccount(true)}
+            onClick={() => {
+              setShowNotifications(false);
+              setShowAccount(true);
+            }}
             className="flex items-center gap-2 pl-1 sm:pl-2 rounded-2xl p-1 hover:bg-neutral-100 dark:hover:bg-slate-800 transition-colors cursor-pointer text-left"
             title="ดูข้อมูลบัญชีผู้ใช้ / เปลี่ยนรูปโปรไฟล์"
           >

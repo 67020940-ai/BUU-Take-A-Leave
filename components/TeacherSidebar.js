@@ -26,7 +26,6 @@ import {
 import BuuLogo from '@/components/BuuLogo';
 import SettingsModal from '@/components/SettingsModal';
 import SupportModal from '@/components/SupportModal';
-import AccountModal from '@/components/AccountModal';
 import { getUserAvatarKey } from '@/lib/ui';
 
 export default function TeacherSidebar({
@@ -434,7 +433,10 @@ export default function TeacherSidebar({
                 {/* ข้อมูลบัญชีผู้ใช้ */}
                 <button
                   type="button"
-                  onClick={() => setShowAccount(true)}
+                  onClick={() => {
+                    if (onCloseMobile) onCloseMobile();
+                    window.dispatchEvent(new CustomEvent('buu_open_account'));
+                  }}
                   className="w-full flex items-center gap-2.5 px-3 py-2 rounded-2xl text-xs font-semibold text-neutral-700 dark:text-neutral-300 hover:bg-neutral-100 dark:hover:bg-slate-800 transition-colors cursor-pointer text-left"
                   title="ข้อมูลบัญชีผู้ใช้"
                 >
@@ -480,13 +482,6 @@ export default function TeacherSidebar({
           </button>
         </div>
       </aside>
-
-      {/* Account Modal */}
-      <AccountModal
-        isOpen={showAccount}
-        onClose={() => setShowAccount(false)}
-        user={{ ...user, role: 'teacher' }}
-      />
 
       {/* Settings Modal */}
       <SettingsModal isOpen={showSettings} onClose={() => setShowSettings(false)} />

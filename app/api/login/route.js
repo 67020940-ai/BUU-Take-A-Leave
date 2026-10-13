@@ -17,31 +17,28 @@ export async function POST(request) {
       return NextResponse.json({ error: 'กรุณาใช้อีเมลมหาวิทยาลัยบูรพา (@buu.ac.th หรือ @go.buu.ac.th)' }, { status: 400 });
     }
 
-    // PROTOTYPE MODE: Mock users for Vercel deployment (instant, no DB dependency)
-    const mockUsers = {
-      'admin@buu.ac.th': { id: 'admin-mock', role: 'admin', name: 'ผู้ดูแลระบบ' },
-      'teacher-teeradech@buu.ac.th': { id: 'teacher-mock', role: 'teacher', name: 'ดร.ธีรเดช' },
-      '66000001@go.buu.ac.th': { id: 'student-mock', role: 'student', name: 'จุฑามาศ แสงทอง' },
-    };
-
+    // Try database first so avatar and profile are persisted across devices
     let finalUser = null;
-    if (password === '1234') {
+    try {
+      const dbUser = await findUser(cleanEmail, password);
+      if (dbUser) finalUser = dbUser;
+    } catch (dbErr) {
+      console.warn('Database query bypassed during login:', dbErr.message);
+    }
+
+    // Fallback for prototype mock users if DB didn't match
+    if (!finalUser && password === '1234') {
+      const mockUsers = {
+        'admin@buu.ac.th': { id: 'admin-mock', role: 'admin', name: 'ผู้ดูแลระบบ' },
+        'teacher-teeradech@buu.ac.th': { id: 'teacher-mock', role: 'teacher', name: 'ดร.ธีรเดช' },
+        '66000001@go.buu.ac.th': { id: 'student-mock', role: 'student', name: 'จุฑามาศ แสงทอง' },
+      };
       if (mockUsers[cleanEmail]) {
         finalUser = mockUsers[cleanEmail];
       } else if (cleanEmail.startsWith('teacher-')) {
         finalUser = { id: 'teacher-mock', role: 'teacher', name: 'อาจารย์ผู้สอน' };
       } else if (/^\d{8}@go\.buu\.ac\.th$/.test(cleanEmail)) {
         finalUser = { id: 'student-mock', role: 'student', name: 'นิสิตมหาวิทยาลัยบูรพา' };
-      }
-    }
-
-    // If not matched via mock, try database safely
-    if (!finalUser) {
-      try {
-        const dbUser = await findUser(cleanEmail, password);
-        if (dbUser) finalUser = dbUser;
-      } catch (dbErr) {
-        console.warn('Database query bypassed during login:', dbErr.message);
       }
     }
 

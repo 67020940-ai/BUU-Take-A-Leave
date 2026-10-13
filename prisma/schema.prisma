@@ -16,6 +16,8 @@ model User {
   studentId String?
   faculty   String?
   major     String?
+  avatar    String?
+  phone     String?
   createdAt DateTime @default(now())
 
   enrollments   Enrollment[]

@@ -15,6 +15,7 @@ export default function AccountModal({ isOpen, onClose, user }) {
 
   useEffect(() => {
     if (isOpen) {
+      // 1. Initial check from props or localStorage
       try {
         const stored = localStorage.getItem(storageKey);
         if (stored) {
@@ -25,21 +26,68 @@ export default function AccountModal({ isOpen, onClose, user }) {
           setAvatar(null);
         }
       } catch {}
+
+      // 2. Fetch fresh avatar & contact info from server so it works across any device/browser
+      fetch('/api/profile')
+        .then((res) => (res.ok ? res.json() : null))
+        .then((data) => {
+          if (data?.user) {
+            if (data.user.avatar) {
+              setAvatar(data.user.avatar);
+              try {
+                localStorage.setItem(storageKey, data.user.avatar);
+              } catch {}
+            }
+            if (data.user.phone) setPhone(data.user.phone);
+            if (data.user.email) setEmail(data.user.email);
+          }
+        })
+        .catch(() => {});
     }
   }, [isOpen, storageKey, user]);
 
   if (!isOpen) return null;
 
-  function handleSave(e) {
+  async function handleSave(e) {
     e.preventDefault();
+
+    // 1. Save to local storage for instant offline feedback
     if (avatar) {
       try {
         localStorage.setItem(storageKey, avatar);
-        window.dispatchEvent(new CustomEvent('buu_avatar_updated', { detail: { key: storageKey } }));
+        window.dispatchEvent(new CustomEvent('buu_avatar_updated', { detail: { key: storageKey, avatar } }));
       } catch (err) {
-        console.error('Error saving avatar:', err);
+        console.error('Error saving avatar locally:', err);
       }
     }
+
+    // 2. Persist to server database via /api/profile so changing computers/devices preserves the avatar!
+    try {
+      const res = await fetch('/api/profile', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          avatar,
+          phone,
+        }),
+      });
+      if (res.ok) {
+        const data = await res.json();
+        const serverAvatar = data.avatar || avatar;
+        if (serverAvatar) {
+          try {
+            localStorage.setItem(storageKey, serverAvatar);
+          } catch {}
+          window.dispatchEvent(new CustomEvent('buu_avatar_updated', { detail: { key: storageKey, avatar: serverAvatar } }));
+        }
+      } else {
+        window.dispatchEvent(new CustomEvent('buu_avatar_updated', { detail: { key: storageKey, avatar } }));
+      }
+    } catch (apiErr) {
+      console.warn('Could not sync profile to server:', apiErr);
+      window.dispatchEvent(new CustomEvent('buu_avatar_updated', { detail: { key: storageKey, avatar } }));
+    }
+
     setSaved(true);
     setTimeout(() => {
       setSaved(false);
