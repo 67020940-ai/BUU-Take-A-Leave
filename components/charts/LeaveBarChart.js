@@ -54,12 +54,17 @@ export default function LeaveBarChart({
 
   const data = {
     labels,
-    datasets: datasets.map((ds) => ({
-      borderRadius: 6,
-      borderSkipped: false,
-      maxBarThickness: labels.length > 15 ? 24 : 42,
-      ...ds,
-    })),
+    datasets: datasets.map((ds, dsIndex) => {
+      // In stacked mode, only round the top corners of the top-most visible dataset, or keep corners clean
+      const isStacked = stacked;
+      return {
+        borderRadius: isStacked ? (dsIndex === datasets.length - 1 ? { topLeft: 8, topRight: 8 } : 0) : 6,
+        borderSkipped: false,
+        barThickness: labels.length > 8 ? 28 : 48,
+        maxBarThickness: 56,
+        ...ds,
+      };
+    }),
   };
 
   const options = {
@@ -124,13 +129,14 @@ export default function LeaveBarChart({
         },
         ticks: {
           font: {
-            size: labels.length > 20 ? 9 : 10,
-            weight: '500',
+            size: 11,
+            weight: '600',
           },
           color: isDark ? '#94A3B8' : '#64748B',
-          maxRotation: 45,
+          maxRotation: labels.length > 5 ? 45 : 0,
           minRotation: 0,
-          autoSkip: labels.length > 31,
+          autoSkip: false,
+          padding: 8,
         },
         border: {
           display: false,

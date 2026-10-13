@@ -559,6 +559,7 @@ export default function StudentHomepageView({
                 summaries={currentSummaries}
                 semester={selectedTerm}
                 searchQuery={searchQuery}
+                hideHeader={true}
                 onSelectCourseForLeave={(cId, cCode) => {
                   setTargetCourseForLeave(cId);
                   handleSwitchTab('leave', { courseId: cId, code: cCode });

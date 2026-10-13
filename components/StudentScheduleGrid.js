@@ -52,6 +52,7 @@ export default function StudentScheduleGrid({
   semester = '1/2569',
   searchQuery = '',
   onSelectCourseForLeave,
+  hideHeader = false,
 }) {
   const [selectedCourse, setSelectedCourse] = useState(null);
   const [modalTab, setModalTab] = useState('prep'); // 'prep' | 'exam' | 'syllabus' | 'info'
@@ -126,26 +127,28 @@ export default function StudentScheduleGrid({
   return (
     <div className="bg-white dark:bg-slate-900 rounded-3xl border border-neutral-200/90 dark:border-slate-800 shadow-xs overflow-hidden">
       {/* Schedule Header Title */}
-      <div className="p-4 sm:p-5 border-b border-neutral-100 dark:border-slate-800 flex flex-wrap items-center justify-between gap-3 bg-neutral-50/70 dark:bg-slate-900/60">
-        <div className="flex items-center gap-2.5">
-          <div className="w-9 h-9 rounded-2xl bg-purple-100 dark:bg-purple-950 text-[#7749BC] dark:text-purple-300 flex items-center justify-center shadow-2xs">
-            <CalendarDays className="w-5 h-5" />
+      {!hideHeader && (
+        <div className="p-4 sm:p-5 border-b border-neutral-100 dark:border-slate-800 flex flex-wrap items-center justify-between gap-3 bg-neutral-50/70 dark:bg-slate-900/60">
+          <div className="flex items-center gap-2.5">
+            <div className="w-9 h-9 rounded-2xl bg-purple-100 dark:bg-purple-950 text-[#7749BC] dark:text-purple-300 flex items-center justify-center shadow-2xs">
+              <CalendarDays className="w-5 h-5" />
+            </div>
+            <div>
+              <h3 className="text-sm sm:text-base font-bold text-neutral-900 dark:text-white">
+                ตารางเรียน (Class Schedule)
+              </h3>
+              <p className="text-xs text-neutral-500 dark:text-neutral-400">
+                ตารางเรียนและห้องเรียนประจำสัปดาห์ ภาคเรียนที่ {semester} • คลิกที่วิชาเพื่อดูแนวข้อสอบ & ข้อมูลเตรียมตัวก่อนเรียน
+              </p>
+            </div>
           </div>
-          <div>
-            <h3 className="text-sm sm:text-base font-bold text-neutral-900 dark:text-white">
-              ตารางเรียน (Class Schedule)
-            </h3>
-            <p className="text-xs text-neutral-500 dark:text-neutral-400">
-              ตารางเรียนและห้องเรียนประจำสัปดาห์ ภาคเรียนที่ {semester} • คลิกที่วิชาเพื่อดูแนวข้อสอบ & ข้อมูลเตรียมตัวก่อนเรียน
-            </p>
-          </div>
-        </div>
 
-        <div className="flex items-center gap-2 text-xs text-neutral-500 dark:text-neutral-400">
-          <span className="w-3 h-3 rounded-md bg-[#DDD6FE] dark:bg-purple-900/90 border border-purple-300 dark:border-purple-600" />
-          <span className="hidden sm:inline font-medium">วิชาที่ลงทะเบียนเรียน</span>
+          <div className="flex items-center gap-2 text-xs text-neutral-500 dark:text-neutral-400">
+            <span className="w-3 h-3 rounded-md bg-[#DDD6FE] dark:bg-purple-900/90 border border-purple-300 dark:border-purple-600" />
+            <span className="hidden sm:inline font-medium">วิชาที่ลงทะเบียนเรียน</span>
+          </div>
         </div>
-      </div>
+      )}
 
       {/* 1. Mobile Day-by-Day View (< md) */}
       <div className="block md:hidden p-3.5 sm:p-4 space-y-4">
