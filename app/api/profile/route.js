@@ -10,14 +10,24 @@ export async function GET() {
     return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
   }
 
-  // If user is from DB, fetch fresh avatar and phone
+  // If user is from DB, fetch fresh avatar and phone and all details
   try {
     const dbUser = await prisma.user.findUnique({
       where: { id: user.id },
-      select: { id: true, email: true, name: true, role: true, avatar: true, phone: true },
+      select: {
+        id: true,
+        email: true,
+        name: true,
+        role: true,
+        studentId: true,
+        faculty: true,
+        major: true,
+        avatar: true,
+        phone: true,
+      },
     });
     if (dbUser) {
-      return NextResponse.json({ user: dbUser });
+      return NextResponse.json({ user: { ...user, ...dbUser } });
     }
   } catch (err) {
     console.warn('DB profile fetch error:', err.message);

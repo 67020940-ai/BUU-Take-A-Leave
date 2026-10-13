@@ -5,6 +5,7 @@ import { X, User, Mail, Phone, GraduationCap, Building2, ShieldCheck, Check, Sav
 import { getUserAvatarKey } from '@/lib/ui';
 
 export default function AccountModal({ isOpen, onClose, user }) {
+  const [profileData, setProfileData] = useState(user || null);
   const [email, setEmail] = useState(user?.email || '67020381@go.buu.ac.th');
   const [phone, setPhone] = useState(user?.phone || '081-234-5678');
   const [avatar, setAvatar] = useState(user?.avatar || null);
@@ -12,6 +13,14 @@ export default function AccountModal({ isOpen, onClose, user }) {
   const fileInputRef = useRef(null);
 
   const storageKey = getUserAvatarKey(user);
+
+  useEffect(() => {
+    if (user) {
+      setProfileData((prev) => ({ ...prev, ...user }));
+      if (user.email) setEmail(user.email);
+      if (user.phone) setPhone(user.phone);
+    }
+  }, [user]);
 
   useEffect(() => {
     if (isOpen) {
@@ -32,6 +41,7 @@ export default function AccountModal({ isOpen, onClose, user }) {
         .then((res) => (res.ok ? res.json() : null))
         .then((data) => {
           if (data?.user) {
+            setProfileData((prev) => ({ ...prev, ...data.user }));
             if (data.user.avatar) {
               setAvatar(data.user.avatar);
               try {
@@ -108,16 +118,20 @@ export default function AccountModal({ isOpen, onClose, user }) {
     }
   }
 
-  const isTeacher = user?.role === 'teacher';
-  const name = user?.name || (isTeacher ? 'ผศ.ดร.อาจารย์ ผู้สอน' : 'สมชาย สายเสมอ');
-  const code = user?.studentCode || (isTeacher ? 'อาจารย์ประจำภาควิชา' : '67020381');
-  const faculty = user?.faculty || 'คณะวิทยาการสารสนเทศ';
-  const major = user?.major || (isTeacher ? 'สาขาวิทยาการคอมพิวเตอร์' : 'สาขาวิทยาการคอมพิวเตอร์');
-  const statusLabel = isTeacher ? 'อาจารย์ประจำการ' : 'นิสิตปัจจุบัน';
+  const role = profileData?.role || user?.role || 'student';
+  const isTeacher = role === 'teacher';
+  const isAdmin = role === 'admin';
+  const isStudent = role === 'student';
+
+  const name = profileData?.name || user?.name || (isAdmin ? 'ผู้ดูแลระบบ' : isTeacher ? 'ดร.ธีรเดช' : 'จุฑามาศ แสงทอง');
+  const code = profileData?.studentId || profileData?.studentCode || user?.studentId || user?.studentCode || (isStudent ? (profileData?.email ? profileData.email.split('@')[0] : '66000001') : null);
+  const faculty = profileData?.faculty || user?.faculty || (isAdmin ? 'ศูนย์คอมพิวเตอร์และสารสนเทศ' : 'คณะวิทยาการสารสนเทศ');
+  const major = profileData?.major || profileData?.department || user?.major || user?.department || (isAdmin ? 'ฝ่ายพัฒนาระบบสารสนเทศ' : 'สาขาวิชาวิทยาการคอมพิวเตอร์');
+  const statusLabel = isAdmin ? 'ผู้ดูแลระบบ (Admin)' : isTeacher ? 'อาจารย์ผู้สอน' : 'นิสิตปัจจุบัน';
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-xs animate-in fade-in duration-150">
-      <div className="w-full max-w-md bg-white dark:bg-slate-900 rounded-3xl border border-neutral-200 dark:border-slate-800 shadow-2xl overflow-hidden animate-in zoom-in-95 duration-150 max-h-[92vh] overflow-y-auto">
+      <div className="w-full max-w-md bg-white dark:bg-slate-900 rounded-3xl border border-neutral-200 dark:border-slate-800 shadow-2xl overflow-hidden animate-in zoom-in-95 duration-150 max-h-[90vh] overflow-y-auto my-auto">
         <div className="p-5 border-b border-neutral-100 dark:border-slate-800 flex items-center justify-between">
           <div className="flex items-center gap-3">
             <div className="w-10 h-10 rounded-2xl bg-purple-100 dark:bg-purple-950 text-[#7749BC] dark:text-purple-300 flex items-center justify-center">
@@ -176,16 +190,18 @@ export default function AccountModal({ isOpen, onClose, user }) {
               <span className="text-neutral-500 dark:text-neutral-400">ชื่อ-นามสกุล</span>
               <span className="font-bold text-neutral-900 dark:text-neutral-100">{name}</span>
             </div>
+            {code && (
+              <div className="flex items-center justify-between">
+                <span className="text-neutral-500 dark:text-neutral-400">รหัสนิสิต</span>
+                <span className="font-mono font-bold text-[#7749BC] dark:text-purple-300">{code}</span>
+              </div>
+            )}
             <div className="flex items-center justify-between">
-              <span className="text-neutral-500 dark:text-neutral-400">{isTeacher ? 'ตำแหน่ง' : 'รหัสนิสิต'}</span>
-              <span className="font-mono font-bold text-[#7749BC] dark:text-purple-300">{code}</span>
-            </div>
-            <div className="flex items-center justify-between">
-              <span className="text-neutral-500 dark:text-neutral-400">คณะ</span>
+              <span className="text-neutral-500 dark:text-neutral-400">{isAdmin ? 'หน่วยงาน' : 'คณะ'}</span>
               <span className="font-medium text-neutral-800 dark:text-neutral-200">{faculty}</span>
             </div>
             <div className="flex items-center justify-between">
-              <span className="text-neutral-500 dark:text-neutral-400">{isTeacher ? 'ภาควิชา' : 'สาขาวิชา'}</span>
+              <span className="text-neutral-500 dark:text-neutral-400">{isAdmin ? 'ฝ่าย' : isTeacher ? 'ภาควิชา' : 'สาขาวิชา'}</span>
               <span className="font-medium text-neutral-800 dark:text-neutral-200">{major}</span>
             </div>
             <div className="flex items-center justify-between">

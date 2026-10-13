@@ -14,6 +14,7 @@ import {
 import { useRouter } from 'next/navigation';
 import ThemeToggle from '@/components/ThemeToggle';
 import AccountModal from '@/components/AccountModal';
+import NotificationDetailModal from '@/components/NotificationDetailModal';
 import { resolveNotificationLink, getUserAvatarKey } from '@/lib/ui';
 
 export default function StudentTopBar({
@@ -29,6 +30,7 @@ export default function StudentTopBar({
   const router = useRouter();
   const [notifications, setNotifications] = useState([]);
   const [showNotifications, setShowNotifications] = useState(false);
+  const [selectedNotification, setSelectedNotification] = useState(null);
   const [showAccount, setShowAccount] = useState(false);
   const [avatar, setAvatar] = useState(user?.avatar || null);
   const storageKey = getUserAvatarKey(user);
@@ -110,8 +112,7 @@ export default function StudentTopBar({
   function handleNotificationClick(n) {
     markRead(n.id);
     setShowNotifications(false);
-    const target = resolveNotificationLink(n?.link, user?.role || 'student');
-    if (target) router.push(target);
+    setSelectedNotification(n);
   }
 
   function handlePrevSemester() {
@@ -288,6 +289,14 @@ export default function StudentTopBar({
 
       {/* Account Profile Modal */}
       <AccountModal isOpen={showAccount} onClose={() => setShowAccount(false)} user={user} />
+
+      {/* Notification Detail Modal */}
+      <NotificationDetailModal
+        isOpen={!!selectedNotification}
+        onClose={() => setSelectedNotification(null)}
+        notification={selectedNotification}
+        userRole="student"
+      />
     </header>
   );
 }
