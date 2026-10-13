@@ -25,6 +25,10 @@ import {
   HelpCircle,
   RotateCcw,
   ArrowRight,
+  Database,
+  Download,
+  Server,
+  HardDrive,
 } from 'lucide-react';
 import AdminSidebar from '@/components/AdminSidebar';
 import AdminTopBar from '@/components/AdminTopBar';
@@ -54,7 +58,7 @@ export default function AdminDashboard({ user, courses = [], leaves = [], ticket
     if (typeof window !== 'undefined') {
       const sp = new URLSearchParams(window.location.search);
       const tabParam = sp.get('tab');
-      if (tabParam && ['overview', 'tickets', 'courses', 'leaves'].includes(tabParam)) {
+      if (tabParam && ['overview', 'tickets', 'courses', 'leaves', 'backup'].includes(tabParam)) {
         setActiveTab(tabParam);
       }
       const handlePopState = () => {
@@ -826,6 +830,88 @@ export default function AdminDashboard({ user, courses = [], leaves = [], ticket
                     ))}
                   </tbody>
                 </table>
+              </div>
+            </div>
+          )}
+
+          {/* ================= SESSION 5: BACKUP (สำรองข้อมูล) ================= */}
+          {activeTab === 'backup' && (
+            <div className="space-y-6 animate-in fade-in duration-150">
+              <div className="p-6 rounded-3xl bg-white dark:bg-slate-900 border border-neutral-200/80 dark:border-slate-800 shadow-2xs space-y-4">
+                <div className="flex items-start justify-between gap-4">
+                  <div className="flex items-center gap-3">
+                    <div className="w-12 h-12 rounded-2xl bg-purple-100 dark:bg-purple-950 text-[#7749BC] dark:text-purple-300 flex items-center justify-center shrink-0">
+                      <Database className="w-6 h-6" />
+                    </div>
+                    <div>
+                      <h2 className="text-base font-bold text-neutral-900 dark:text-neutral-100">
+                        ระบบสำรองข้อมูล (Data Backup & Disaster Recovery)
+                      </h2>
+                      <p className="text-xs text-neutral-500 dark:text-neutral-400 mt-0.5">
+                        ดาวน์โหลดสำเนาฐานข้อมูล SQLite และ Snapshot ข้อมูลทุกตารางเพื่อป้องกันข้อมูลสูญหาย
+                      </p>
+                    </div>
+                  </div>
+                </div>
+
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4 pt-2">
+                  {/* Card 1: JSON Full Snapshot */}
+                  <div className="p-5 rounded-2xl border border-neutral-200 dark:border-slate-800 bg-neutral-50/50 dark:bg-slate-800/40 space-y-4 flex flex-col justify-between">
+                    <div className="space-y-2">
+                      <div className="flex items-center gap-2 text-[#7749BC] dark:text-purple-300 font-bold text-sm">
+                        <Server className="w-4 h-4" />
+                        <span>ฐานข้อมูลแบบโครงสร้าง (JSON Snapshot)</span>
+                      </div>
+                      <p className="text-xs text-neutral-600 dark:text-neutral-400 leading-relaxed">
+                        ส่งออกข้อมูลตารางทั้งหมดในระบบ (Users, Courses, Leaves, Notifications, Tickets) ในรูปแบบ JSON พร้อมสถิติสรุป สามารถเปิดดูและนำเข้าสู่ระบบรายงานอื่นได้ทันที
+                      </p>
+                    </div>
+                    <a
+                      href="/api/admin/backup?type=json"
+                      download
+                      className="inline-flex items-center justify-center gap-2 px-4 py-2.5 rounded-xl bg-[#7749BC] hover:bg-[#683ca8] text-white text-xs font-bold transition-all shadow-xs cursor-pointer"
+                    >
+                      <Download className="w-4 h-4" />
+                      <span>ดาวน์โหลด JSON Snapshot</span>
+                    </a>
+                  </div>
+
+                  {/* Card 2: Raw SQLite File */}
+                  <div className="p-5 rounded-2xl border border-neutral-200 dark:border-slate-800 bg-neutral-50/50 dark:bg-slate-800/40 space-y-4 flex flex-col justify-between">
+                    <div className="space-y-2">
+                      <div className="flex items-center gap-2 text-emerald-600 dark:text-emerald-400 font-bold text-sm">
+                        <HardDrive className="w-4 h-4" />
+                        <span>ไฟล์ฐานข้อมูลต้นฉบับ (SQLite File)</span>
+                      </div>
+                      <p className="text-xs text-neutral-600 dark:text-neutral-400 leading-relaxed">
+                        ดาวน์โหลดสำเนาไฟล์ฐานข้อมูลจริง (<code className="font-mono bg-neutral-200/60 dark:bg-slate-700 px-1 py-0.5 rounded">dev.db</code>) เพื่อเก็บกู้คืน (Disaster Recovery) หรือย้ายระบบ
+                      </p>
+                    </div>
+                    <a
+                      href="/api/admin/backup?type=sqlite"
+                      download
+                      className="inline-flex items-center justify-center gap-2 px-4 py-2.5 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-bold transition-all shadow-xs cursor-pointer"
+                    >
+                      <Download className="w-4 h-4" />
+                      <span>ดาวน์โหลด SQLite Database</span>
+                    </a>
+                  </div>
+                </div>
+
+                {/* Automation Guide Box */}
+                <div className="p-4 rounded-2xl bg-purple-50/50 dark:bg-purple-950/20 border border-purple-200 dark:border-purple-900/50 space-y-2 text-xs">
+                  <div className="font-bold text-[#7749BC] dark:text-purple-300 flex items-center gap-1.5">
+                    <ShieldCheck className="w-4 h-4" />
+                    <span>คำแนะนำการสำรองข้อมูลอัตโนมัติบนเซิร์ฟเวอร์ (Automated Cron Job)</span>
+                  </div>
+                  <p className="text-neutral-600 dark:text-neutral-400">
+                    ระบบมีสคริปต์สำรองข้อมูลและกู้คืน (Backup & Restore CLI) เตรียมไว้ในโฟลเดอร์ <code className="font-mono font-semibold">scripts/</code>:
+                  </p>
+                  <ul className="list-disc list-inside space-y-1 text-neutral-700 dark:text-neutral-300 font-mono text-[11px] bg-white dark:bg-slate-900 p-3 rounded-xl border border-neutral-200/80 dark:border-slate-800">
+                    <li>สำรองข้อมูลอัตโนมัติ: <span className="text-[#7749BC]">node scripts/backup.js</span></li>
+                    <li>กู้คืนข้อมูลจากชุดสำรอง: <span className="text-emerald-600">node scripts/restore.js backups/backup_YYYYMMDD_HHMMSS</span></li>
+                  </ul>
+                </div>
               </div>
             </div>
           )}

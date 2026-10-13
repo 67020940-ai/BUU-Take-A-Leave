@@ -14,12 +14,13 @@ import {
   PanelLeftClose,
   PanelLeft,
   ShieldCheck,
+  Database,
 } from 'lucide-react';
 import BuuLogo from '@/components/BuuLogo';
 import SettingsModal from '@/components/SettingsModal';
 
 export default function AdminSidebar({
-  activeTab = 'overview', // 'overview' | 'tickets' | 'courses' | 'leaves'
+  activeTab = 'overview', // 'overview' | 'tickets' | 'courses' | 'leaves' | 'backup'
   onSelectTab,
   openTicketsCount = 0,
   isOpenMobile = false,
@@ -59,6 +60,11 @@ export default function AdminSidebar({
       key: 'leaves',
       label: 'คำร้องลาทั้งระบบ',
       icon: ClipboardCheck,
+    },
+    {
+      key: 'backup',
+      label: 'สำรองข้อมูล (Backup)',
+      icon: Database,
     },
   ];
 
