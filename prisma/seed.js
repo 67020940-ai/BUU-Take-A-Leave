@@ -2480,58 +2480,7 @@ async function main() {
     await prisma.enrollment.createMany({ data: enrollmentsToCreate });
   }
 
-  // 6. ตัวอย่างใบลา
-  const sampleStudent = students[0];
-  const sampleEnroll = await prisma.enrollment.findFirst({
-    where: { studentId: sampleStudent.id },
-    include: { course: true },
-  });
-  if (sampleEnroll) {
-    const l1 = await prisma.leaveRequest.create({
-      data: {
-        studentId: sampleStudent.id,
-        courseId: sampleEnroll.course.id,
-        type: 'ลาป่วย',
-        period: 'เต็มคาบเรียน 3 ชั่วโมง',
-        startDate: '2026-08-20',
-        endDate: '2026-08-20',
-        reason: 'มีอาการไข้หวัด พักรักษาตัวที่บ้านตามแพทย์สั่ง',
-        status: 'อนุมัติ',
-        teacherComment: 'อนุมัติการลาตามระเบียบเรียบร้อย',
-      },
-    });
-    if (sampleEnroll.course.teacherId) {
-      await prisma.notification.create({
-        data: {
-          userId: sampleEnroll.course.teacherId,
-          message: `${sampleStudent.name} ยื่นคำร้องลา "${sampleEnroll.course.name}" (${l1.type})`,
-          link: '/teacher/requests',
-        },
-      });
-    }
-    await prisma.notification.create({
-      data: {
-        userId: sampleStudent.id,
-        message: `คำร้องลา "${sampleEnroll.course.name}" ได้รับการอนุมัติแล้ว`,
-        link: '/student?tab=history',
-        read: true,
-      },
-    });
-  }
-
-  // 7. คำร้องแจ้งปัญหาตัวอย่าง
-  await prisma.ticket.create({
-    data: {
-      userId: sampleStudent.id,
-      userName: sampleStudent.name,
-      subject: 'สอบถามเรื่องการนับเปอร์เซ็นต์เวลาเรียน',
-      message: 'หากลาป่วยที่มีใบรับรองแพทย์ จะถูกนำมาคิดในโควต้า 20% หรือไม่ครับ',
-      status: 'ตอบกลับแล้ว',
-      reply: 'การลาป่วยที่มีใบรับรองแพทย์และได้รับอนุมัติจากอาจารย์ จะไม่ถือเป็นการขาดเรียนครับ',
-    },
-  });
-
-  // 8. user-credentials.xlsx
+  // 6. user-credentials.xlsx
   const workbook = new ExcelJS.Workbook();
   workbook.creator = 'BUU Take A Leave';
   workbook.created = new Date();
