@@ -127,6 +127,76 @@ export default function AvatarUploadModal({ isOpen, onClose, user, onAvatarUpdat
     if (file) handleFileSelect(file);
   }
 
+  async function optimizeImageForUpload(file) {
+    if (typeof window === 'undefined' || !window.Image || !document.createElement) {
+      return file;
+    }
+
+    return new Promise((resolve) => {
+      try {
+        const reader = new FileReader();
+        reader.onload = (e) => {
+          const img = new Image();
+          img.onload = () => {
+            try {
+              const MAX_DIM = 800;
+              let width = img.width;
+              let height = img.height;
+
+              if (width <= MAX_DIM && height <= MAX_DIM && file.size <= 250 * 1024) {
+                resolve(file);
+                return;
+              }
+
+              if (width > height) {
+                if (width > MAX_DIM) {
+                  height = Math.round((height * MAX_DIM) / width);
+                  width = MAX_DIM;
+                }
+              } else {
+                if (height > MAX_DIM) {
+                  width = Math.round((width * MAX_DIM) / height);
+                  height = MAX_DIM;
+                }
+              }
+
+              const canvas = document.createElement('canvas');
+              canvas.width = width;
+              canvas.height = height;
+              const ctx = canvas.getContext('2d');
+              ctx.drawImage(img, 0, 0, width, height);
+
+              const isPng = file.type === 'image/png';
+              const mime = isPng ? 'image/png' : 'image/jpeg';
+              canvas.toBlob(
+                (blob) => {
+                  if (!blob) {
+                    resolve(file);
+                    return;
+                  }
+                  const newExt = isPng ? '.png' : '.jpg';
+                  const baseName = file.name.replace(/\.[^/.]+$/, '');
+                  const optimizedFile = new File([blob], `${baseName}${newExt}`, { type: mime });
+                  resolve(optimizedFile);
+                },
+                mime,
+                0.88
+              );
+            } catch {
+              resolve(file);
+            }
+          };
+          img.onerror = () => resolve(file);
+          img.src = e.target.result;
+        };
+        reader.onerror = () => resolve(file);
+        reader.readAsDataURL(file);
+      } catch {
+        resolve(file);
+      }
+    });
+  }
+
   async function handleUpload() {
     if (!selectedFile || isUploading) return;
 
@@ -141,8 +211,9 @@ export default function AvatarUploadModal({ isOpen, onClose, user, onAvatarUpdat
     setSuccessMessage('');
 
     try {
+      const fileToUpload = await optimizeImageForUpload(selectedFile);
       const formData = new FormData();
-      formData.append('file', selectedFile);
+      formData.append('file', fileToUpload);
 
       const response = await fetch('/api/avatar', {
         method: 'POST',

@@ -1,6 +1,7 @@
 import { NextResponse } from 'next/server';
 import { getCurrentUser } from '@/lib/auth';
 import { prisma } from '@/lib/prisma';
+import { updateUserAvatar } from '@/lib/db';
 import fs from 'fs';
 import path from 'path';
 import crypto from 'crypto';
@@ -9,23 +10,38 @@ const MAX_FILE_SIZE = 5 * 1024 * 1024; // 5MB
 const ALLOWED_MIME_TYPES = new Set(['image/jpeg', 'image/png', 'image/webp']);
 const ALLOWED_EXTENSIONS = new Set(['jpg', 'jpeg', 'png', 'webp']);
 
-// Helper to clean up previous avatar file from disk
-function deleteOldAvatarFile(oldAvatarUrl) {
+// Helper to clean up previous avatar file (from disk or Vercel Blob)
+async function deleteOldAvatar(oldAvatarUrl) {
   if (!oldAvatarUrl || typeof oldAvatarUrl !== 'string') return;
-  if (!oldAvatarUrl.startsWith('/uploads/avatars/')) return;
 
-  try {
-    const filename = path.basename(oldAvatarUrl);
-    // Sanity check filename to prevent path traversal
-    if (!/^[a-zA-Z0-9_\-.]+\.(jpg|jpeg|png|webp)$/i.test(filename)) return;
-
-    const filePath = path.join(process.cwd(), 'public', 'uploads', 'avatars', filename);
-    if (fs.existsSync(filePath)) {
-      fs.unlinkSync(filePath);
+  // 1. If it's a Vercel Blob URL and token is configured
+  if (oldAvatarUrl.includes('blob.vercel-storage.com') && process.env.BLOB_READ_WRITE_TOKEN) {
+    try {
+      const { del } = await import('@vercel/blob');
+      await del(oldAvatarUrl);
+    } catch (err) {
+      console.warn('Failed to delete old Vercel blob:', err.message);
     }
-  } catch (err) {
-    console.warn('Failed to delete old avatar file:', err.message);
+    return;
   }
+
+  // 2. If it's a local file in /uploads/avatars/
+  if (oldAvatarUrl.startsWith('/uploads/avatars/')) {
+    try {
+      const filename = path.basename(oldAvatarUrl);
+      if (!/^[a-zA-Z0-9_\-.]+\.(jpg|jpeg|png|webp)$/i.test(filename)) return;
+
+      const filePath = path.join(process.cwd(), 'public', 'uploads', 'avatars', filename);
+      if (fs.existsSync(filePath)) {
+        fs.unlinkSync(filePath);
+      }
+    } catch (err) {
+      console.warn('Failed to delete old avatar file:', err.message);
+    }
+    return;
+  }
+
+  // 3. Base64 data URLs require no disk/blob deletion
 }
 
 export async function GET() {
@@ -35,13 +51,24 @@ export async function GET() {
   }
 
   try {
-    const dbUser = await prisma.user.findUnique({
-      where: { id: user.id },
-      select: { id: true, avatar: true },
-    });
+    let avatar = user.avatar || null;
+    if (user.email) {
+      const dbUser = await prisma.user.findUnique({
+        where: { email: user.email.toLowerCase() },
+        select: { avatar: true },
+      });
+      if (dbUser?.avatar) avatar = dbUser.avatar;
+    } else if (user.id) {
+      const dbUser = await prisma.user.findUnique({
+        where: { id: user.id },
+        select: { avatar: true },
+      });
+      if (dbUser?.avatar) avatar = dbUser.avatar;
+    }
+
     return NextResponse.json({
       ok: true,
-      avatar: dbUser?.avatar || user.avatar || null,
+      avatar,
     });
   } catch (err) {
     return NextResponse.json({
@@ -96,62 +123,71 @@ export async function POST(request) {
     const normalizedExt = rawExt === 'jpeg' ? 'jpg' : rawExt;
     const uniqueFilename = `avatar_${crypto.randomUUID()}_${Date.now()}.${normalizedExt}`;
 
-    // 6. Read and delete existing old avatar file if present
+    // 6. Read and delete existing old avatar if present
     let currentAvatar = user.avatar || null;
     try {
-      const existingDbUser = await prisma.user.findUnique({
-        where: { id: user.id },
-        select: { avatar: true },
-      });
-      if (existingDbUser?.avatar) {
-        currentAvatar = existingDbUser.avatar;
+      if (user.email) {
+        const existingDbUser = await prisma.user.findUnique({
+          where: { email: user.email.toLowerCase() },
+          select: { avatar: true },
+        });
+        if (existingDbUser?.avatar) {
+          currentAvatar = existingDbUser.avatar;
+        }
       }
     } catch (dbReadErr) {
       console.warn('DB check existing avatar error:', dbReadErr.message);
     }
 
     if (currentAvatar) {
-      deleteOldAvatarFile(currentAvatar);
+      await deleteOldAvatar(currentAvatar);
     }
 
-    // 7. Save new file to public/uploads/avatars/
-    const uploadDir = path.join(process.cwd(), 'public', 'uploads', 'avatars');
-    if (!fs.existsSync(uploadDir)) {
-      fs.mkdirSync(uploadDir, { recursive: true });
-    }
-
+    // 7. Store new file:
+    // Strategy:
+    // A) If Vercel Blob Token exists: use @vercel/blob for persistent CDN storage
+    // B) If local disk is writable (e.g. dev/self-hosted): save to public/uploads/avatars/
+    // C) Fallback (e.g. Vercel serverless read-only fs without Blob token): use Data URL directly
     const arrayBuffer = await file.arrayBuffer();
     const buffer = Buffer.from(arrayBuffer);
-    const destinationPath = path.join(uploadDir, uniqueFilename);
-    fs.writeFileSync(destinationPath, buffer);
+    let newAvatarUrl = null;
 
-    const newAvatarUrl = `/uploads/avatars/${uniqueFilename}`;
-
-    // 8. Bind URL directly to user_id in the database
-    try {
-      await prisma.user.update({
-        where: { id: user.id },
-        data: { avatar: newAvatarUrl },
-      });
-    } catch (updateErr) {
-      // If user session is based on mock ID, upsert user record by email
+    if (process.env.BLOB_READ_WRITE_TOKEN) {
       try {
-        await prisma.user.upsert({
-          where: { email: user.email },
-          update: { avatar: newAvatarUrl },
-          create: {
-            id: user.id,
-            email: user.email,
-            name: user.name || 'ผู้ใช้งาน',
-            password: '',
-            role: user.role || 'student',
-            avatar: newAvatarUrl,
-          },
+        const { put } = await import('@vercel/blob');
+        const blob = await put(`avatars/${uniqueFilename}`, buffer, {
+          access: 'public',
+          contentType: mimeType,
         });
-      } catch (upsertErr) {
-        console.warn('Could not update avatar in DB:', upsertErr.message);
+        if (blob?.url) {
+          newAvatarUrl = blob.url;
+        }
+      } catch (blobErr) {
+        console.warn('Vercel Blob upload failed, falling back:', blobErr.message);
       }
     }
+
+    if (!newAvatarUrl) {
+      try {
+        const uploadDir = path.join(process.cwd(), 'public', 'uploads', 'avatars');
+        if (!fs.existsSync(uploadDir)) {
+          fs.mkdirSync(uploadDir, { recursive: true });
+        }
+        const destinationPath = path.join(uploadDir, uniqueFilename);
+        fs.writeFileSync(destinationPath, buffer);
+        newAvatarUrl = `/uploads/avatars/${uniqueFilename}`;
+      } catch (fsErr) {
+        console.warn('Filesystem write failed (serverless read-only environment):', fsErr.message);
+      }
+    }
+
+    if (!newAvatarUrl) {
+      const base64Data = buffer.toString('base64');
+      newAvatarUrl = `data:${mimeType};base64,${base64Data}`;
+    }
+
+    // 8. Bind URL directly to user in the database
+    await updateUserAvatar(user, newAvatarUrl);
 
     return NextResponse.json({
       ok: true,
@@ -179,25 +215,20 @@ export async function DELETE() {
   try {
     let currentAvatar = user.avatar || null;
     try {
-      const dbUser = await prisma.user.findUnique({
-        where: { id: user.id },
-        select: { avatar: true },
-      });
-      if (dbUser?.avatar) currentAvatar = dbUser.avatar;
+      if (user.email) {
+        const dbUser = await prisma.user.findUnique({
+          where: { email: user.email.toLowerCase() },
+          select: { avatar: true },
+        });
+        if (dbUser?.avatar) currentAvatar = dbUser.avatar;
+      }
     } catch {}
 
     if (currentAvatar) {
-      deleteOldAvatarFile(currentAvatar);
+      await deleteOldAvatar(currentAvatar);
     }
 
-    try {
-      await prisma.user.update({
-        where: { id: user.id },
-        data: { avatar: null },
-      });
-    } catch (err) {
-      console.warn('DB delete avatar error:', err.message);
-    }
+    await updateUserAvatar(user, null);
 
     return NextResponse.json({
       ok: true,
