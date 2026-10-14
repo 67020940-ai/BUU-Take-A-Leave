@@ -2,10 +2,11 @@ node_modules
 .next
 .env
 .env*.local
-prisma/*.db
 prisma/*.db-journal
+prisma/*.bak*
+*.bak*
+!prisma/dev.db
 /uploads
-/user-credentials.xlsx
 .neon
 .vercel
 .env*

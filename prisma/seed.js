@@ -1,105 +1,2340 @@
-// ข้อมูลตั้งต้นสำหรับใช้งานจริง — รายวิชา/อาจารย์/วัน-เวลาเรียน อ้างอิงจากไฟล์
-// "ประกาศ รายวิชาลงทะเบียนสำหรับนิสิต 1-69.pdf" (เทอม 1/2569, รหัสนิสิต 66-69)
-// ไฟล์ประกาศไม่มีรายชื่อนิสิตจริงเป็นรายบุคคล จึงสร้างบัญชีนิสิตตัวอย่างต่อรุ่นไว้ให้ทดสอบระบบได้ครบ
-// ชื่ออาจารย์ในไฟล์เป็นชื่อย่อ (ไม่มีอีเมลจริง) จึงออกอีเมลชั่วคราวให้ - ควรเปลี่ยนเป็นอีเมลจริงเมื่อได้ข้อมูลจากทางคณะ
+// ข้อมูลตั้งต้นสำหรับ BUU Take A Leave
+// ซิงก์ตรงจากไฟล์ Google Drive: ตารางสอนอาจารย์ และ ตารางเรียนนิสิต ปีการศึกษา 2569
+// ครอบคลุมทั้งภาคเรียนที่ 1/2569 และ ภาคเรียนที่ 2/2569
 const { PrismaClient } = require('@prisma/client');
 const bcrypt = require('bcryptjs');
 const path = require('path');
 const ExcelJS = require('exceljs');
 
 const prisma = new PrismaClient();
-
 const PASSWORD_PLAIN = '1234';
-const TERM = '1/2569';
 
-// ---------- อาจารย์ผู้สอน (8 คน ตามชื่อย่อในไฟล์ประกาศ) ----------
 const TEACHERS = [
-  { key: 'teeradech', email: 'teacher-teeradech@buu.ac.th', name: 'ดร.ธีรเดช' },
-  { key: 'wannaprapa', email: 'teacher-wannaprapa@buu.ac.th', name: 'ผศ.วรรณประภา' },
-  { key: 'khwanchadin', email: 'teacher-khwanchadin@buu.ac.th', name: 'ผศ.ดร.ขวัญชฎิล' },
-  { key: 'chatchapon', email: 'teacher-chatchapon@buu.ac.th', name: 'ผศ.ดร.ฉัชพน' },
-  { key: 'srihathai', email: 'teacher-srihathai@buu.ac.th', name: 'ผศ.ดร.ศรีหทัย' },
-  { key: 'akara', email: 'teacher-akara@buu.ac.th', name: 'ผศ.ดร.อัครา' },
-  { key: 'somruethai', email: 'teacher-somruethai@buu.ac.th', name: 'อ.สมฤทัย' },
-  { key: 'preeyanuch', email: 'teacher-preeyanuch@buu.ac.th', name: 'ผศ.ดร.ปรียานุช' },
+  {
+    "email": "teacher-teeradech@buu.ac.th",
+    "name": "ดร.ธีรเดช มานะกุล",
+    "faculty": "คณะวิทยาการสารสนเทศ",
+    "major": "ภาควิชาสารสนเทศศึกษา"
+  },
+  {
+    "email": "teacher-wannaprapa@buu.ac.th",
+    "name": "ผศ.วรรณประภา เอี่ยมฤทธิ์",
+    "faculty": "คณะวิทยาการสารสนเทศ",
+    "major": "ภาควิชาสารสนเทศศึกษา"
+  },
+  {
+    "email": "teacher-khwanchadin@buu.ac.th",
+    "name": "ผศ.ดร.ขวัญชฎิล พิศาลพงศ์",
+    "faculty": "คณะวิทยาการสารสนเทศ",
+    "major": "ภาควิชาสารสนเทศศึกษา"
+  },
+  {
+    "email": "teacher-chatchapon@buu.ac.th",
+    "name": "ผศ.ดร.ณิชพน โชติจันทรกุล",
+    "faculty": "คณะวิทยาการสารสนเทศ",
+    "major": "ภาควิชาสารสนเทศศึกษา"
+  },
+  {
+    "email": "teacher-srihathai@buu.ac.th",
+    "name": "ผศ.ดร.ศรีหทัย เวลล์ส",
+    "faculty": "คณะวิทยาการสารสนเทศ",
+    "major": "ภาควิชาสารสนเทศศึกษา"
+  },
+  {
+    "email": "teacher-akara@buu.ac.th",
+    "name": "ผศ.ดร.อัครา ธรรมมาสถิตย์กุล",
+    "faculty": "คณะวิทยาการสารสนเทศ",
+    "major": "ภาควิชาสารสนเทศศึกษา"
+  },
+  {
+    "email": "teacher-somruethai@buu.ac.th",
+    "name": "อ.สมฤทัย ธีรเรืองสิริ",
+    "faculty": "คณะวิทยาการสารสนเทศ",
+    "major": "ภาควิชาสารสนเทศศึกษา"
+  },
+  {
+    "email": "teacher-preeyanuch@buu.ac.th",
+    "name": "ผศ.ดร.ปรียานุช วรวิกโฆษิต",
+    "faculty": "คณะวิทยาการสารสนเทศ",
+    "major": "ภาควิชาสารสนเทศศึกษา"
+  }
 ];
 
-// ---------- รายวิชาทั้งหมด (แต่ละกลุ่มเรียนคือ 1 แถว) ----------
-// group: '' = ไม่มีกลุ่มเรียนเฉพาะ (วิชาศึกษาทั่วไป จัดตารางผ่านระบบ Reg ของมหาวิทยาลัยเอง)
 const COURSES = [
-  // รหัส 66
-  { code: '24543164', name: 'Seminar on Current Issues and Trend in Information Science', group: '01', day: 'FR', time: '13:00-15:50', teacher: 'teeradech' },
-  { code: '24543164', name: 'Seminar on Current Issues and Trend in Information Science', group: '02', day: 'FR', time: '09:00-11:50', teacher: 'teeradech' },
-  { code: '24545164', name: 'Library of Congress Classification', group: '01', day: 'WE', time: '09:00-11:50', teacher: 'wannaprapa' },
-  { code: '24545164', name: 'Library of Congress Classification', group: '02', day: 'WE', time: '13:00-15:50', teacher: 'wannaprapa' },
-  { code: '24545464', name: 'Research and Statistics in Information Studies', group: '01', day: 'WE', time: '13:00-16:50', teacher: 'khwanchadin' },
-  { code: '24545464', name: 'Research and Statistics in Information Studies', group: '02', day: 'WE', time: '08:00-11:50', teacher: 'khwanchadin' },
-  { code: '24537264', name: 'Web Design for Information Work', group: '01', day: 'FR', time: '08:00-11:50', teacher: 'chatchapon' },
-  { code: '24537264', name: 'Web Design for Information Work', group: '02', day: 'FR', time: '13:00-16:50', teacher: 'chatchapon' },
-  { code: '24549164', name: 'Pre Cooperative Education', group: '01', day: 'TH', time: '08:00-11:50', teacher: 'srihathai' },
-  { code: '24549164', name: 'Pre Cooperative Education', group: '02', day: 'TH', time: '08:00-11:50', teacher: 'teeradech' },
-  { code: '24527364', name: 'Data Communication and Computer Networks', group: '01', day: 'TU', time: '13:00-15:50', teacher: 'chatchapon' }, // เลือก 1 ใน 2 (รหัส 66)
-  { code: '24531464', name: 'Information for Children and Young Adults', group: '01', day: 'TU', time: '09:00-11:50', teacher: 'khwanchadin' }, // เลือก 1 ใน 2 (รหัส 66)
-
-  // รหัส 67
-  { code: '89539764', name: 'Entrepreneurship in the 21st Century', group: '', day: null, time: null, teacher: null },
-  { code: '24527664', name: 'Information Systems Analysis and Design', group: '01', day: 'MO', time: '13:00-15:50', teacher: 'akara' },
-  { code: '24527664', name: 'Information Systems Analysis and Design', group: '02', day: 'MO', time: '09:00-11:50', teacher: 'akara' },
-  { code: '24535164', name: 'Organization of Information Resources', group: '01', day: 'TH', time: '09:00-11:50', teacher: 'somruethai' },
-  { code: '24535164', name: 'Organization of Information Resources', group: '02', day: 'TH', time: '16:00-18:50', teacher: 'somruethai' },
-  { code: '24537364', name: 'Library Automation Systems', group: '01', day: 'MO', time: '08:00-11:50', teacher: 'preeyanuch' },
-  { code: '24537364', name: 'Library Automation Systems', group: '02', day: 'MO', time: '13:00-16:50', teacher: 'preeyanuch' },
-  { code: '24527364', name: 'Data Communication and Computer Networks', group: '02', day: 'TU', time: '17:00-19:50', teacher: 'chatchapon' }, // เลือก 2 ใน 4 (รหัส 67)
-  { code: '24527564', name: 'Open Source Program Application', group: '01', day: 'TU', time: '13:00-16:50', teacher: 'akara' },
-  { code: '24531264', name: 'Information Behavior and Users', group: '01', day: 'FR', time: '09:00-11:50', teacher: 'somruethai' },
-  { code: '24521764', name: 'Knowledge Management', group: '01', day: 'TU', time: '09:00-11:50', teacher: 'srihathai' },
-
-  // รหัส 68
-  { code: '89510764', name: 'Love, Sex and Health', group: '', day: null, time: null, teacher: null },
-  { code: '89520264', name: 'Thinking Process for Understanding Oneself and Others', group: '', day: null, time: null, teacher: null },
-  { code: '89520364', name: 'Creative Activities', group: '', day: null, time: null, teacher: null },
-  { code: '89530064', name: 'Opportunities and Challenges for Future Careers', group: '', day: null, time: null, teacher: null },
-  { code: '24534164', name: 'English for Information Professional', group: '01', day: 'WE', time: '09:00-11:50', teacher: 'preeyanuch' },
-  { code: '24534164', name: 'English for Information Professional', group: '02', day: 'WE', time: '13:00-15:50', teacher: 'preeyanuch' },
-  { code: '24527564', name: 'Open Source Program Application', group: '02', day: 'TU', time: '08:00-11:50', teacher: 'akara' }, // เลือก 2 ใน 4 (รหัส 68)
-  { code: '24531264', name: 'Information Behavior and Users', group: '02', day: 'FR', time: '13:00-15:50', teacher: 'somruethai' },
-  { code: '24521764', name: 'Knowledge Management', group: '02', day: 'TU', time: '16:00-18:50', teacher: 'srihathai' },
-  { code: '24531464', name: 'Information for Children and Young Adults', group: '02', day: 'TU', time: '13:00-15:50', teacher: 'khwanchadin' },
-
-  // รหัส 69
-  { code: '89510169', name: 'English for Everyday Communication', group: '', day: null, time: null, teacher: null },
-  { code: '89520169', name: 'Creativity in Problem Solving', group: '', day: null, time: null, teacher: null },
-  { code: '89520269', name: 'Smart Digital and Artificial Intelligence Usage Skills', group: '', day: null, time: null, teacher: null },
-  { code: '24514169', name: 'Reading for Information Professional', group: '01', day: 'MO', time: '09:00-11:50', teacher: 'srihathai' },
-  { code: '24514169', name: 'Reading for Information Professional', group: '02', day: 'MO', time: '13:00-15:50', teacher: 'srihathai' },
-  { code: '24516269', name: 'Introduction to Information Sciences', group: '01', day: 'TU', time: '09:00-11:50', teacher: 'teeradech' },
-  { code: '24516269', name: 'Introduction to Information Sciences', group: '02', day: 'TU', time: '17:00-19:50', teacher: 'teeradech' },
-  { code: '24515169', name: 'Digital Information and Record Management', group: '01', day: 'MO', time: '13:00-15:50', teacher: 'wannaprapa' },
-  { code: '24515169', name: 'Digital Information and Record Management', group: '02', day: 'MO', time: '09:00-11:50', teacher: 'wannaprapa' },
+  {
+    "code": "24514169",
+    "name": "การอ่านเพื่อวิชาชีพสารสนเทศ",
+    "term": "1/2569",
+    "group": "01",
+    "totalSessions": 15,
+    "day": "TU",
+    "time": "09:00-11:50",
+    "room": null,
+    "teacherName": "ดร.ธีรเดช มานะกุล"
+  },
+  {
+    "code": "24515169",
+    "name": "การจัดการเอกสารและสารสนเทศดิจิทัล",
+    "term": "1/2569",
+    "group": "02",
+    "totalSessions": 15,
+    "day": "MO",
+    "time": "09:00-11:50",
+    "room": null,
+    "teacherName": "ผศ.วรรณประภา เอี่ยมฤทธิ์"
+  },
+  {
+    "code": "24516269",
+    "name": "สารสนเทศศาสตร์",
+    "term": "1/2569",
+    "group": "01",
+    "totalSessions": 15,
+    "day": "MO",
+    "time": "13:00-15:50",
+    "room": null,
+    "teacherName": "ผศ.วรรณประภา เอี่ยมฤทธิ์"
+  },
+  {
+    "code": "24521764",
+    "name": "การจัดการความรู้",
+    "term": "1/2569",
+    "group": "01",
+    "totalSessions": 15,
+    "day": "TU",
+    "time": "09:00-11:50",
+    "room": null,
+    "teacherName": "ผศ.ดร.ศรีหทัย เวลล์ส"
+  },
+  {
+    "code": "24521764",
+    "name": "การจัดการความรู้",
+    "term": "1/2569",
+    "group": "02",
+    "totalSessions": 15,
+    "day": "TU",
+    "time": "16:00-18:50",
+    "room": null,
+    "teacherName": "ผศ.ดร.ศรีหทัย เวลล์ส"
+  },
+  {
+    "code": "24527364",
+    "name": "การสื่อสารข้อมูลและเครือข่ายคอมพิวเตอร์",
+    "term": "1/2569",
+    "group": "01",
+    "totalSessions": 15,
+    "day": "TU",
+    "time": "13:00-15:50",
+    "room": null,
+    "teacherName": "ผศ.ดร.ณิชพน โชติจันทรกุล"
+  },
+  {
+    "code": "24527364",
+    "name": "การสื่อสารข้อมูลและเครือข่ายคอมพิวเตอร์",
+    "term": "1/2569",
+    "group": "02",
+    "totalSessions": 15,
+    "day": "TU",
+    "time": "13:00-15:50",
+    "room": null,
+    "teacherName": "ผศ.ดร.ณิชพน โชติจันทรกุล"
+  },
+  {
+    "code": "24527564",
+    "name": "การประยุกต์โปรแกรมกลุ่มโอเพนซอร์ส",
+    "term": "1/2569",
+    "group": "01",
+    "totalSessions": 15,
+    "day": "TU",
+    "time": "13:00-16:50",
+    "room": null,
+    "teacherName": "ผศ.ดร.อัครา ธรรมมาสถิตย์กุล"
+  },
+  {
+    "code": "24527564",
+    "name": "การประยุกต์โปรแกรมกลุ่มโอเพนซอร์ส",
+    "term": "1/2569",
+    "group": "02",
+    "totalSessions": 15,
+    "day": "TU",
+    "time": "08:00-11:50",
+    "room": null,
+    "teacherName": "ผศ.ดร.อัครา ธรรมมาสถิตย์กุล"
+  },
+  {
+    "code": "24527664",
+    "name": "การวิเคราะห์และออกแบบระบบสารสนเทศ",
+    "term": "1/2569",
+    "group": "01",
+    "totalSessions": 15,
+    "day": "MO",
+    "time": "13:00-15:50",
+    "room": null,
+    "teacherName": "ผศ.ดร.อัครา ธรรมมาสถิตย์กุล"
+  },
+  {
+    "code": "24531264",
+    "name": "พฤติกรรมสารสนเทศและผู้ใช้",
+    "term": "1/2569",
+    "group": "01",
+    "totalSessions": 15,
+    "day": "FR",
+    "time": "09:00-11:50",
+    "room": null,
+    "teacherName": "อ.สมฤทัย ธีรเรืองสิริ"
+  },
+  {
+    "code": "24531264",
+    "name": "พฤติกรรมสารสนเทศและผู้ใช้",
+    "term": "1/2569",
+    "group": "02",
+    "totalSessions": 15,
+    "day": "FR",
+    "time": "13:00-15:50",
+    "room": null,
+    "teacherName": "อ.สมฤทัย ธีรเรืองสิริ"
+  },
+  {
+    "code": "24531464",
+    "name": "สารสนเทศสำหรับเด็กและเยาวชน",
+    "term": "1/2569",
+    "group": "01",
+    "totalSessions": 15,
+    "day": "TU",
+    "time": "09:00-11:50",
+    "room": null,
+    "teacherName": "ผศ.ดร.ขวัญชฎิล พิศาลพงศ์"
+  },
+  {
+    "code": "24531464",
+    "name": "สารสนเทศสำหรับเด็กและเยาวชน",
+    "term": "1/2569",
+    "group": "02",
+    "totalSessions": 15,
+    "day": "TU",
+    "time": "13:00-15:50",
+    "room": null,
+    "teacherName": "ผศ.ดร.ขวัญชฎิล พิศาลพงศ์"
+  },
+  {
+    "code": "24534164",
+    "name": "ภาษาอังกฤษเพื่อวิชาชีพสารสนเทศ",
+    "term": "1/2569",
+    "group": "01",
+    "totalSessions": 15,
+    "day": "WE",
+    "time": "09:00-11:50",
+    "room": null,
+    "teacherName": "ผศ.ดร.ปรียานุช วรวิกโฆษิต"
+  },
+  {
+    "code": "24535164",
+    "name": "การจัดระบบทรัพยากรสารสนเทศ",
+    "term": "1/2569",
+    "group": "01",
+    "totalSessions": 15,
+    "day": "TH",
+    "time": "09:00-11:50",
+    "room": null,
+    "teacherName": "อ.สมฤทัย ธีรเรืองสิริ"
+  },
+  {
+    "code": "24537264",
+    "name": "การออกแบบเว็บสำหรับงานสารสนเทศ",
+    "term": "1/2569",
+    "group": "01",
+    "totalSessions": 15,
+    "day": "FR",
+    "time": "08:00-11:50",
+    "room": null,
+    "teacherName": "ผศ.ดร.ณิชพน โชติจันทรกุล"
+  },
+  {
+    "code": "24537364",
+    "name": "การจัดการควระบบห้องสมุดอัตโนมัติ",
+    "term": "1/2569",
+    "group": "01",
+    "totalSessions": 15,
+    "day": "MO",
+    "time": "08:00-11:50",
+    "room": null,
+    "teacherName": "ผศ.ดร.ปรียานุช วรวิกโฆษิต"
+  },
+  {
+    "code": "24543164",
+    "name": "สัมนาทิศทางและแนวโน้มทางสารสนเทศศาสตร์",
+    "term": "1/2569",
+    "group": "01",
+    "totalSessions": 15,
+    "day": "FR",
+    "time": "13:00-15:50",
+    "room": null,
+    "teacherName": "ดร.ธีรเดช มานะกุล"
+  },
+  {
+    "code": "24545164",
+    "name": "การวิเคราะห์หมวดหมู่ระบบหอสมุดรัฐสภาอเมริกัน",
+    "term": "1/2569",
+    "group": "01",
+    "totalSessions": 15,
+    "day": "WE",
+    "time": "09:00-11:50",
+    "room": null,
+    "teacherName": "ผศ.วรรณประภา เอี่ยมฤทธิ์"
+  },
+  {
+    "code": "24545464",
+    "name": "การวิจัยและสถิติทางสารสนเทศศึกษา",
+    "term": "1/2569",
+    "group": "01",
+    "totalSessions": 15,
+    "day": "WE",
+    "time": "13:00-16:50",
+    "room": null,
+    "teacherName": "ผศ.ดร.ขวัญชฎิล พิศาลพงศ์"
+  },
+  {
+    "code": "24549164",
+    "name": "เตรียมสหกิจศึกษา",
+    "term": "1/2569",
+    "group": "01",
+    "totalSessions": 15,
+    "day": "TH",
+    "time": "08:00-11:50",
+    "room": null,
+    "teacherName": "ผศ.ดร.ศรีหทัย เวลล์ส"
+  },
+  {
+    "code": "89510169",
+    "name": "การสื่อสารภาษาอังกฤษ",
+    "term": "1/2569",
+    "group": "",
+    "totalSessions": 15,
+    "day": null,
+    "time": null,
+    "room": null,
+    "teacherName": null
+  },
+  {
+    "code": "89510764",
+    "name": "ความรัก เพศสัมพันธ์และสุขภาพ",
+    "term": "1/2569",
+    "group": "",
+    "totalSessions": 15,
+    "day": null,
+    "time": null,
+    "room": null,
+    "teacherName": null
+  },
+  {
+    "code": "89520169",
+    "name": "การแก้ไขปัญหาอย่างสร้างสรรต์ในยุคดิจิทัล",
+    "term": "1/2569",
+    "group": "",
+    "totalSessions": 15,
+    "day": null,
+    "time": null,
+    "room": null,
+    "teacherName": null
+  },
+  {
+    "code": "89520264",
+    "name": "กระบวนการคิดเพื่อเข้าใจตนเองและผู้อื่น",
+    "term": "1/2569",
+    "group": "",
+    "totalSessions": 15,
+    "day": null,
+    "time": null,
+    "room": null,
+    "teacherName": null
+  },
+  {
+    "code": "89520269",
+    "name": "ทักษะดิจิทัลและใช้ปัญญาประดิษฐ์อย่างฉลาด",
+    "term": "1/2569",
+    "group": "01",
+    "totalSessions": 15,
+    "day": "MO",
+    "time": "09:00-11:50",
+    "room": null,
+    "teacherName": "ผศ.ดร.ศรีหทัย เวลล์ส"
+  },
+  {
+    "code": "89520364",
+    "name": "กิจกรรมสร้างสรรค์",
+    "term": "1/2569",
+    "group": "",
+    "totalSessions": 15,
+    "day": null,
+    "time": null,
+    "room": null,
+    "teacherName": null
+  },
+  {
+    "code": "89530064",
+    "name": "โอกาสและความท้าทายในการทำงานในโลกอนาคต",
+    "term": "1/2569",
+    "group": "",
+    "totalSessions": 15,
+    "day": null,
+    "time": null,
+    "room": null,
+    "teacherName": null
+  },
+  {
+    "code": "89539764",
+    "name": "การเป็นผู้ประกอบการในศตวรรษที่ 21",
+    "term": "1/2569",
+    "group": "01",
+    "totalSessions": 15,
+    "day": null,
+    "time": null,
+    "room": null,
+    "teacherName": null
+  },
+  {
+    "code": "24515269",
+    "name": "การพัฒนาทรัพยากรสารสนเทศ",
+    "term": "2/2569",
+    "group": "01",
+    "totalSessions": 15,
+    "day": "MO",
+    "time": "09:00-11:50",
+    "room": "QS2-400",
+    "teacherName": "อ.สมฤทัย ธีรเรืองสิริ"
+  },
+  {
+    "code": "24517269",
+    "name": "โปรแกรมประยุกต์สำหรับสำนักงานอัตโนมัติ",
+    "term": "2/2569",
+    "group": "01",
+    "totalSessions": 15,
+    "day": "TU",
+    "time": "08:00-11:50",
+    "room": "QS2-407",
+    "teacherName": "ผศ.ดร.อัครา ธรรมมาสถิตย์กุล"
+  },
+  {
+    "code": "24517369",
+    "name": "ความฉลาดทางดิจิทัล",
+    "term": "2/2569",
+    "group": "01",
+    "totalSessions": 15,
+    "day": "TU",
+    "time": "13:00-16:50",
+    "room": "QS2-701",
+    "teacherName": "ดร.ธีรเดช มานะกุล"
+  },
+  {
+    "code": "24522264",
+    "name": "การนำเสนอและการฝึกอบรมในงานสารสนเทศ",
+    "term": "2/2569",
+    "group": "01",
+    "totalSessions": 15,
+    "day": "TH",
+    "time": "08:00-11:50",
+    "room": "QS2-407",
+    "teacherName": "ผศ.ดร.ขวัญชฎิล พิศาลพงศ์"
+  },
+  {
+    "code": "24522364",
+    "name": "การส่งเสริมบริการสารสนเทศในห้องสมุด",
+    "term": "2/2569",
+    "group": "01",
+    "totalSessions": 15,
+    "day": "TU",
+    "time": "09:00-11:50",
+    "room": null,
+    "teacherName": "ผศ.ดร.ปรียานุช วรวิกโฆษิต"
+  },
+  {
+    "code": "24525164",
+    "name": "การจัดการเอกสารและสารสนเทศอิเล็กทรอนิกส์",
+    "term": "2/2569",
+    "group": "01",
+    "totalSessions": 15,
+    "day": "WE",
+    "time": "09:00-11:50",
+    "room": "QS2-400",
+    "teacherName": "ผศ.วรรณประภา เอี่ยมฤทธิ์"
+  },
+  {
+    "code": "24525264",
+    "name": "วิทยาการคำนวณ",
+    "term": "2/2569",
+    "group": "01",
+    "totalSessions": 15,
+    "day": "MO",
+    "time": "08:00-11:50",
+    "room": "QS2-400",
+    "teacherName": "ผศ.ดร.ณิชพน โชติจันทรกุล"
+  },
+  {
+    "code": "24526164",
+    "name": "Information Sources and Services",
+    "term": "2/2569",
+    "group": "01",
+    "totalSessions": 15,
+    "day": "MO",
+    "time": "09:00-11:50",
+    "room": null,
+    "teacherName": "ผศ.วรรณประภา เอี่ยมฤทธิ์"
+  },
+  {
+    "code": "24526164",
+    "name": "Information Sources and Services",
+    "term": "2/2569",
+    "group": "02",
+    "totalSessions": 15,
+    "day": "MO",
+    "time": "17:00-19:50",
+    "room": "QS2-400",
+    "teacherName": "ผศ.วรรณประภา เอี่ยมฤทธิ์"
+  },
+  {
+    "code": "24527164",
+    "name": "การค้นคืนสารสนเทศดิจิทัล",
+    "term": "2/2569",
+    "group": "01",
+    "totalSessions": 15,
+    "day": "MO",
+    "time": "13:00-16:50",
+    "room": "QS2-701",
+    "teacherName": "ผศ.ดร.ปรียานุช วรวิกโฆษิต"
+  },
+  {
+    "code": "24527764",
+    "name": "Programming in Information Work",
+    "term": "2/2569",
+    "group": "01",
+    "totalSessions": 15,
+    "day": "FR",
+    "time": "13:00-16:50",
+    "room": null,
+    "teacherName": "ผศ.ดร.อัครา ธรรมมาสถิตย์กุล"
+  },
+  {
+    "code": "24531364",
+    "name": "สารสนเทศภูมิปัญญาท้องถิ่น",
+    "term": "2/2569",
+    "group": "01",
+    "totalSessions": 15,
+    "day": "MO",
+    "time": "13:00-15:50",
+    "room": null,
+    "teacherName": "ผศ.ดร.ศรีหทัย เวลล์ส"
+  },
+  {
+    "code": "24531364",
+    "name": "สารสนเทศภูมิปัญญาท้องถิ่น",
+    "term": "2/2569",
+    "group": "02",
+    "totalSessions": 15,
+    "day": "MO",
+    "time": "17:00-19:50",
+    "room": "QS2-415",
+    "teacherName": "ผศ.ดร.ศรีหทัย เวลล์ส"
+  },
+  {
+    "code": "24533164",
+    "name": "การจัดการสถาบันสารสนเทศ",
+    "term": "2/2569",
+    "group": "01",
+    "totalSessions": 15,
+    "day": "WE",
+    "time": "09:00-11:50",
+    "room": null,
+    "teacherName": "ผศ.ดร.ขวัญชฎิล พิศาลพงศ์"
+  },
+  {
+    "code": "24535864",
+    "name": "การทำรายการทรัพยากรสารสนเทศ",
+    "term": "2/2569",
+    "group": "01",
+    "totalSessions": 15,
+    "day": "FR",
+    "time": "09:00-11:50",
+    "room": null,
+    "teacherName": "อ.สมฤทัย ธีรเรืองสิริ"
+  },
+  {
+    "code": "24537164",
+    "name": "การจัดการฐานข้อมูลสำหรับงานสารสนเทศ",
+    "term": "2/2569",
+    "group": "01",
+    "totalSessions": 15,
+    "day": "WE",
+    "time": "13:00-16:50",
+    "room": null,
+    "teacherName": "ผศ.ดร.ณิชพน โชติจันทรกุล"
+  },
+  {
+    "code": "24541164",
+    "name": "จดหมายเหตุและพิพิธภัณฑ์",
+    "term": "2/2569",
+    "group": "01",
+    "totalSessions": 15,
+    "day": "TU",
+    "time": "16:00-18:50",
+    "room": null,
+    "teacherName": "ผศ.ดร.ศรีหทัย เวลล์ส"
+  },
+  {
+    "code": "24546164",
+    "name": "การคิดเชิงออกแบบสำหรับห้องสมุดและสถาบันบริการสารสนเทศ",
+    "term": "2/2569",
+    "group": "01",
+    "totalSessions": 15,
+    "day": "TU",
+    "time": "13:00-15:50",
+    "room": null,
+    "teacherName": "ผศ.ดร.ปรียานุช วรวิกโฆษิต"
+  },
+  {
+    "code": "24546364",
+    "name": "การสร้างสรรค์นวัตกรรมเพื่อการจัดการสารสนเทศ",
+    "term": "2/2569",
+    "group": "01",
+    "totalSessions": 15,
+    "day": "WE",
+    "time": "17:00-19:50",
+    "room": null,
+    "teacherName": "ดร.ธีรเดช มานะกุล"
+  },
+  {
+    "code": "24549264",
+    "name": "สหกิจศึกษา",
+    "term": "2/2569",
+    "group": "01",
+    "totalSessions": 15,
+    "day": null,
+    "time": null,
+    "room": null,
+    "teacherName": "ผศ.ดร.ศรีหทัย เวลล์ส"
+  },
+  {
+    "code": "24549264",
+    "name": "สหกิจศึกษา",
+    "term": "2/2569",
+    "group": "02",
+    "totalSessions": 15,
+    "day": null,
+    "time": null,
+    "room": null,
+    "teacherName": "ผศ.ดร.ปรียานุช วรวิกโฆษิต"
+  },
+  {
+    "code": "24549264",
+    "name": "สหกิจศึกษา",
+    "term": "2/2569",
+    "group": "03",
+    "totalSessions": 15,
+    "day": null,
+    "time": null,
+    "room": null,
+    "teacherName": "ผศ.วรรณประภา เอี่ยมฤทธิ์"
+  },
+  {
+    "code": "24549264",
+    "name": "สหกิจศึกษา",
+    "term": "2/2569",
+    "group": "04",
+    "totalSessions": 15,
+    "day": null,
+    "time": null,
+    "room": null,
+    "teacherName": "ผศ.ดร.ขวัญชฎิล พิศาลพงศ์"
+  },
+  {
+    "code": "24549264",
+    "name": "สหกิจศึกษา",
+    "term": "2/2569",
+    "group": "05",
+    "totalSessions": 15,
+    "day": null,
+    "time": null,
+    "room": null,
+    "teacherName": "ผศ.ดร.ณิชพน โชติจันทรกุล"
+  },
+  {
+    "code": "24549264",
+    "name": "สหกิจศึกษา",
+    "term": "2/2569",
+    "group": "06",
+    "totalSessions": 15,
+    "day": null,
+    "time": null,
+    "room": null,
+    "teacherName": "ผศ.ดร.อัครา ธรรมมาสถิตย์กุล"
+  }
 ];
 
-// ---------- ความต้องการลงทะเบียนต่อรุ่น ----------
-const COHORTS = {
-  66: {
-    required: ['24543164', '24545164', '24545464', '24537264', '24549164'],
-    electives: [{ pick: 1, options: ['24527364#01', '24531464#01'] }],
+const ENROLLMENTS_DATA = [
+  {
+    "studentId": "66000001",
+    "courseKey": "24527364#1/2569#01"
   },
-  67: {
-    required: ['89539764', '24527664', '24535164', '24537364'],
-    electives: [{ pick: 2, options: ['24527364#02', '24527564#01', '24531264#01', '24521764#01'] }],
+  {
+    "studentId": "66000001",
+    "courseKey": "24531464#1/2569#01"
   },
-  68: {
-    required: ['89510764', '89520264', '89520364', '89530064', '24534164'],
-    electives: [{ pick: 2, options: ['24527564#02', '24531264#02', '24521764#02', '24531464#02'] }],
+  {
+    "studentId": "66000001",
+    "courseKey": "24537264#1/2569#01"
   },
-  69: {
-    required: ['89510169', '89520169', '89520269', '24514169', '24516269', '24515169'],
-    electives: [],
+  {
+    "studentId": "66000001",
+    "courseKey": "24543164#1/2569#01"
   },
-};
+  {
+    "studentId": "66000001",
+    "courseKey": "24545164#1/2569#01"
+  },
+  {
+    "studentId": "66000001",
+    "courseKey": "24545464#1/2569#01"
+  },
+  {
+    "studentId": "66000001",
+    "courseKey": "24549164#1/2569#01"
+  },
+  {
+    "studentId": "66000002",
+    "courseKey": "24527364#1/2569#01"
+  },
+  {
+    "studentId": "66000002",
+    "courseKey": "24531464#1/2569#01"
+  },
+  {
+    "studentId": "66000002",
+    "courseKey": "24537264#1/2569#01"
+  },
+  {
+    "studentId": "66000002",
+    "courseKey": "24543164#1/2569#01"
+  },
+  {
+    "studentId": "66000002",
+    "courseKey": "24545164#1/2569#01"
+  },
+  {
+    "studentId": "66000002",
+    "courseKey": "24545464#1/2569#01"
+  },
+  {
+    "studentId": "66000002",
+    "courseKey": "24549164#1/2569#01"
+  },
+  {
+    "studentId": "66000003",
+    "courseKey": "24527364#1/2569#01"
+  },
+  {
+    "studentId": "66000003",
+    "courseKey": "24531464#1/2569#01"
+  },
+  {
+    "studentId": "66000003",
+    "courseKey": "24537264#1/2569#01"
+  },
+  {
+    "studentId": "66000003",
+    "courseKey": "24543164#1/2569#01"
+  },
+  {
+    "studentId": "66000003",
+    "courseKey": "24545164#1/2569#01"
+  },
+  {
+    "studentId": "66000003",
+    "courseKey": "24545464#1/2569#01"
+  },
+  {
+    "studentId": "66000003",
+    "courseKey": "24549164#1/2569#01"
+  },
+  {
+    "studentId": "66000004",
+    "courseKey": "24527364#1/2569#01"
+  },
+  {
+    "studentId": "66000004",
+    "courseKey": "24531464#1/2569#01"
+  },
+  {
+    "studentId": "66000004",
+    "courseKey": "24537264#1/2569#01"
+  },
+  {
+    "studentId": "66000004",
+    "courseKey": "24543164#1/2569#01"
+  },
+  {
+    "studentId": "66000004",
+    "courseKey": "24545164#1/2569#01"
+  },
+  {
+    "studentId": "66000004",
+    "courseKey": "24545464#1/2569#01"
+  },
+  {
+    "studentId": "66000004",
+    "courseKey": "24549164#1/2569#01"
+  },
+  {
+    "studentId": "66000005",
+    "courseKey": "24527364#1/2569#01"
+  },
+  {
+    "studentId": "66000005",
+    "courseKey": "24531464#1/2569#01"
+  },
+  {
+    "studentId": "66000005",
+    "courseKey": "24537264#1/2569#01"
+  },
+  {
+    "studentId": "66000005",
+    "courseKey": "24543164#1/2569#01"
+  },
+  {
+    "studentId": "66000005",
+    "courseKey": "24545164#1/2569#01"
+  },
+  {
+    "studentId": "66000005",
+    "courseKey": "24545464#1/2569#01"
+  },
+  {
+    "studentId": "66000005",
+    "courseKey": "24549164#1/2569#01"
+  },
+  {
+    "studentId": "66000006",
+    "courseKey": "24527364#1/2569#01"
+  },
+  {
+    "studentId": "66000006",
+    "courseKey": "24531464#1/2569#01"
+  },
+  {
+    "studentId": "66000006",
+    "courseKey": "24537264#1/2569#01"
+  },
+  {
+    "studentId": "66000006",
+    "courseKey": "24543164#1/2569#01"
+  },
+  {
+    "studentId": "66000006",
+    "courseKey": "24545164#1/2569#01"
+  },
+  {
+    "studentId": "66000006",
+    "courseKey": "24545464#1/2569#01"
+  },
+  {
+    "studentId": "66000006",
+    "courseKey": "24549164#1/2569#01"
+  },
+  {
+    "studentId": "66000007",
+    "courseKey": "24527364#1/2569#01"
+  },
+  {
+    "studentId": "66000007",
+    "courseKey": "24531464#1/2569#01"
+  },
+  {
+    "studentId": "66000007",
+    "courseKey": "24537264#1/2569#01"
+  },
+  {
+    "studentId": "66000007",
+    "courseKey": "24543164#1/2569#01"
+  },
+  {
+    "studentId": "66000007",
+    "courseKey": "24545164#1/2569#01"
+  },
+  {
+    "studentId": "66000007",
+    "courseKey": "24545464#1/2569#01"
+  },
+  {
+    "studentId": "66000007",
+    "courseKey": "24549164#1/2569#01"
+  },
+  {
+    "studentId": "66000008",
+    "courseKey": "24527364#1/2569#01"
+  },
+  {
+    "studentId": "66000008",
+    "courseKey": "24531464#1/2569#01"
+  },
+  {
+    "studentId": "66000008",
+    "courseKey": "24537264#1/2569#01"
+  },
+  {
+    "studentId": "66000008",
+    "courseKey": "24543164#1/2569#01"
+  },
+  {
+    "studentId": "66000008",
+    "courseKey": "24545164#1/2569#01"
+  },
+  {
+    "studentId": "66000008",
+    "courseKey": "24545464#1/2569#01"
+  },
+  {
+    "studentId": "66000008",
+    "courseKey": "24549164#1/2569#01"
+  },
+  {
+    "studentId": "66000001",
+    "courseKey": "24531364#2/2569#02"
+  },
+  {
+    "studentId": "66000001",
+    "courseKey": "24541164#2/2569#01"
+  },
+  {
+    "studentId": "66000001",
+    "courseKey": "24549264#2/2569#01"
+  },
+  {
+    "studentId": "66000002",
+    "courseKey": "24531364#2/2569#01"
+  },
+  {
+    "studentId": "66000002",
+    "courseKey": "24541164#2/2569#01"
+  },
+  {
+    "studentId": "66000002",
+    "courseKey": "24549264#2/2569#01"
+  },
+  {
+    "studentId": "66000003",
+    "courseKey": "24531364#2/2569#02"
+  },
+  {
+    "studentId": "66000003",
+    "courseKey": "24541164#2/2569#01"
+  },
+  {
+    "studentId": "66000003",
+    "courseKey": "24549264#2/2569#01"
+  },
+  {
+    "studentId": "66000004",
+    "courseKey": "24531364#2/2569#01"
+  },
+  {
+    "studentId": "66000004",
+    "courseKey": "24541164#2/2569#01"
+  },
+  {
+    "studentId": "66000004",
+    "courseKey": "24549264#2/2569#01"
+  },
+  {
+    "studentId": "66000005",
+    "courseKey": "24531364#2/2569#02"
+  },
+  {
+    "studentId": "66000005",
+    "courseKey": "24541164#2/2569#01"
+  },
+  {
+    "studentId": "66000005",
+    "courseKey": "24549264#2/2569#01"
+  },
+  {
+    "studentId": "66000006",
+    "courseKey": "24531364#2/2569#01"
+  },
+  {
+    "studentId": "66000006",
+    "courseKey": "24541164#2/2569#01"
+  },
+  {
+    "studentId": "66000006",
+    "courseKey": "24549264#2/2569#01"
+  },
+  {
+    "studentId": "66000007",
+    "courseKey": "24531364#2/2569#02"
+  },
+  {
+    "studentId": "66000007",
+    "courseKey": "24541164#2/2569#01"
+  },
+  {
+    "studentId": "66000007",
+    "courseKey": "24549264#2/2569#01"
+  },
+  {
+    "studentId": "66000008",
+    "courseKey": "24531364#2/2569#01"
+  },
+  {
+    "studentId": "66000008",
+    "courseKey": "24541164#2/2569#01"
+  },
+  {
+    "studentId": "66000008",
+    "courseKey": "24549264#2/2569#01"
+  },
+  {
+    "studentId": "67000001",
+    "courseKey": "24521764#1/2569#01"
+  },
+  {
+    "studentId": "67000001",
+    "courseKey": "24527364#1/2569#02"
+  },
+  {
+    "studentId": "67000001",
+    "courseKey": "24527564#1/2569#01"
+  },
+  {
+    "studentId": "67000001",
+    "courseKey": "24527664#1/2569#01"
+  },
+  {
+    "studentId": "67000001",
+    "courseKey": "24531264#1/2569#01"
+  },
+  {
+    "studentId": "67000001",
+    "courseKey": "24535164#1/2569#01"
+  },
+  {
+    "studentId": "67000001",
+    "courseKey": "24537364#1/2569#01"
+  },
+  {
+    "studentId": "67000001",
+    "courseKey": "89539764#1/2569#01"
+  },
+  {
+    "studentId": "67000002",
+    "courseKey": "24521764#1/2569#01"
+  },
+  {
+    "studentId": "67000002",
+    "courseKey": "24527364#1/2569#02"
+  },
+  {
+    "studentId": "67000002",
+    "courseKey": "24527564#1/2569#01"
+  },
+  {
+    "studentId": "67000002",
+    "courseKey": "24527664#1/2569#01"
+  },
+  {
+    "studentId": "67000002",
+    "courseKey": "24531264#1/2569#01"
+  },
+  {
+    "studentId": "67000002",
+    "courseKey": "24535164#1/2569#01"
+  },
+  {
+    "studentId": "67000002",
+    "courseKey": "24537364#1/2569#01"
+  },
+  {
+    "studentId": "67000002",
+    "courseKey": "89539764#1/2569#01"
+  },
+  {
+    "studentId": "67000003",
+    "courseKey": "24521764#1/2569#01"
+  },
+  {
+    "studentId": "67000003",
+    "courseKey": "24527364#1/2569#02"
+  },
+  {
+    "studentId": "67000003",
+    "courseKey": "24527564#1/2569#01"
+  },
+  {
+    "studentId": "67000003",
+    "courseKey": "24527664#1/2569#01"
+  },
+  {
+    "studentId": "67000003",
+    "courseKey": "24531264#1/2569#01"
+  },
+  {
+    "studentId": "67000003",
+    "courseKey": "24535164#1/2569#01"
+  },
+  {
+    "studentId": "67000003",
+    "courseKey": "24537364#1/2569#01"
+  },
+  {
+    "studentId": "67000003",
+    "courseKey": "89539764#1/2569#01"
+  },
+  {
+    "studentId": "67000004",
+    "courseKey": "24521764#1/2569#01"
+  },
+  {
+    "studentId": "67000004",
+    "courseKey": "24527364#1/2569#02"
+  },
+  {
+    "studentId": "67000004",
+    "courseKey": "24527564#1/2569#01"
+  },
+  {
+    "studentId": "67000004",
+    "courseKey": "24527664#1/2569#01"
+  },
+  {
+    "studentId": "67000004",
+    "courseKey": "24531264#1/2569#01"
+  },
+  {
+    "studentId": "67000004",
+    "courseKey": "24535164#1/2569#01"
+  },
+  {
+    "studentId": "67000004",
+    "courseKey": "24537364#1/2569#01"
+  },
+  {
+    "studentId": "67000004",
+    "courseKey": "89539764#1/2569#01"
+  },
+  {
+    "studentId": "67000005",
+    "courseKey": "24521764#1/2569#01"
+  },
+  {
+    "studentId": "67000005",
+    "courseKey": "24527364#1/2569#02"
+  },
+  {
+    "studentId": "67000005",
+    "courseKey": "24527564#1/2569#01"
+  },
+  {
+    "studentId": "67000005",
+    "courseKey": "24527664#1/2569#01"
+  },
+  {
+    "studentId": "67000005",
+    "courseKey": "24531264#1/2569#01"
+  },
+  {
+    "studentId": "67000005",
+    "courseKey": "24535164#1/2569#01"
+  },
+  {
+    "studentId": "67000005",
+    "courseKey": "24537364#1/2569#01"
+  },
+  {
+    "studentId": "67000005",
+    "courseKey": "89539764#1/2569#01"
+  },
+  {
+    "studentId": "67000006",
+    "courseKey": "24521764#1/2569#01"
+  },
+  {
+    "studentId": "67000006",
+    "courseKey": "24527364#1/2569#02"
+  },
+  {
+    "studentId": "67000006",
+    "courseKey": "24527564#1/2569#01"
+  },
+  {
+    "studentId": "67000006",
+    "courseKey": "24527664#1/2569#01"
+  },
+  {
+    "studentId": "67000006",
+    "courseKey": "24531264#1/2569#01"
+  },
+  {
+    "studentId": "67000006",
+    "courseKey": "24535164#1/2569#01"
+  },
+  {
+    "studentId": "67000006",
+    "courseKey": "24537364#1/2569#01"
+  },
+  {
+    "studentId": "67000006",
+    "courseKey": "89539764#1/2569#01"
+  },
+  {
+    "studentId": "67000007",
+    "courseKey": "24521764#1/2569#01"
+  },
+  {
+    "studentId": "67000007",
+    "courseKey": "24527364#1/2569#02"
+  },
+  {
+    "studentId": "67000007",
+    "courseKey": "24527564#1/2569#01"
+  },
+  {
+    "studentId": "67000007",
+    "courseKey": "24527664#1/2569#01"
+  },
+  {
+    "studentId": "67000007",
+    "courseKey": "24531264#1/2569#01"
+  },
+  {
+    "studentId": "67000007",
+    "courseKey": "24535164#1/2569#01"
+  },
+  {
+    "studentId": "67000007",
+    "courseKey": "24537364#1/2569#01"
+  },
+  {
+    "studentId": "67000007",
+    "courseKey": "89539764#1/2569#01"
+  },
+  {
+    "studentId": "67000008",
+    "courseKey": "24521764#1/2569#01"
+  },
+  {
+    "studentId": "67000008",
+    "courseKey": "24527364#1/2569#02"
+  },
+  {
+    "studentId": "67000008",
+    "courseKey": "24527564#1/2569#01"
+  },
+  {
+    "studentId": "67000008",
+    "courseKey": "24527664#1/2569#01"
+  },
+  {
+    "studentId": "67000008",
+    "courseKey": "24531264#1/2569#01"
+  },
+  {
+    "studentId": "67000008",
+    "courseKey": "24535164#1/2569#01"
+  },
+  {
+    "studentId": "67000008",
+    "courseKey": "24537364#1/2569#01"
+  },
+  {
+    "studentId": "67000008",
+    "courseKey": "89539764#1/2569#01"
+  },
+  {
+    "studentId": "67000001",
+    "courseKey": "24522364#2/2569#01"
+  },
+  {
+    "studentId": "67000001",
+    "courseKey": "24526164#2/2569#01"
+  },
+  {
+    "studentId": "67000001",
+    "courseKey": "24527764#2/2569#01"
+  },
+  {
+    "studentId": "67000001",
+    "courseKey": "24531364#2/2569#01"
+  },
+  {
+    "studentId": "67000001",
+    "courseKey": "24533164#2/2569#01"
+  },
+  {
+    "studentId": "67000001",
+    "courseKey": "24535864#2/2569#01"
+  },
+  {
+    "studentId": "67000001",
+    "courseKey": "24537164#2/2569#01"
+  },
+  {
+    "studentId": "67000001",
+    "courseKey": "24541164#2/2569#01"
+  },
+  {
+    "studentId": "67000001",
+    "courseKey": "24546164#2/2569#01"
+  },
+  {
+    "studentId": "67000001",
+    "courseKey": "24546364#2/2569#01"
+  },
+  {
+    "studentId": "67000002",
+    "courseKey": "24522364#2/2569#01"
+  },
+  {
+    "studentId": "67000002",
+    "courseKey": "24526164#2/2569#01"
+  },
+  {
+    "studentId": "67000002",
+    "courseKey": "24527764#2/2569#01"
+  },
+  {
+    "studentId": "67000002",
+    "courseKey": "24531364#2/2569#01"
+  },
+  {
+    "studentId": "67000002",
+    "courseKey": "24533164#2/2569#01"
+  },
+  {
+    "studentId": "67000002",
+    "courseKey": "24535864#2/2569#01"
+  },
+  {
+    "studentId": "67000002",
+    "courseKey": "24537164#2/2569#01"
+  },
+  {
+    "studentId": "67000002",
+    "courseKey": "24541164#2/2569#01"
+  },
+  {
+    "studentId": "67000002",
+    "courseKey": "24546164#2/2569#01"
+  },
+  {
+    "studentId": "67000002",
+    "courseKey": "24546364#2/2569#01"
+  },
+  {
+    "studentId": "67000003",
+    "courseKey": "24522364#2/2569#01"
+  },
+  {
+    "studentId": "67000003",
+    "courseKey": "24526164#2/2569#01"
+  },
+  {
+    "studentId": "67000003",
+    "courseKey": "24527764#2/2569#01"
+  },
+  {
+    "studentId": "67000003",
+    "courseKey": "24531364#2/2569#01"
+  },
+  {
+    "studentId": "67000003",
+    "courseKey": "24533164#2/2569#01"
+  },
+  {
+    "studentId": "67000003",
+    "courseKey": "24535864#2/2569#01"
+  },
+  {
+    "studentId": "67000003",
+    "courseKey": "24537164#2/2569#01"
+  },
+  {
+    "studentId": "67000003",
+    "courseKey": "24541164#2/2569#01"
+  },
+  {
+    "studentId": "67000003",
+    "courseKey": "24546164#2/2569#01"
+  },
+  {
+    "studentId": "67000003",
+    "courseKey": "24546364#2/2569#01"
+  },
+  {
+    "studentId": "67000004",
+    "courseKey": "24522364#2/2569#01"
+  },
+  {
+    "studentId": "67000004",
+    "courseKey": "24526164#2/2569#01"
+  },
+  {
+    "studentId": "67000004",
+    "courseKey": "24527764#2/2569#01"
+  },
+  {
+    "studentId": "67000004",
+    "courseKey": "24531364#2/2569#01"
+  },
+  {
+    "studentId": "67000004",
+    "courseKey": "24533164#2/2569#01"
+  },
+  {
+    "studentId": "67000004",
+    "courseKey": "24535864#2/2569#01"
+  },
+  {
+    "studentId": "67000004",
+    "courseKey": "24537164#2/2569#01"
+  },
+  {
+    "studentId": "67000004",
+    "courseKey": "24541164#2/2569#01"
+  },
+  {
+    "studentId": "67000004",
+    "courseKey": "24546164#2/2569#01"
+  },
+  {
+    "studentId": "67000004",
+    "courseKey": "24546364#2/2569#01"
+  },
+  {
+    "studentId": "67000005",
+    "courseKey": "24522364#2/2569#01"
+  },
+  {
+    "studentId": "67000005",
+    "courseKey": "24526164#2/2569#01"
+  },
+  {
+    "studentId": "67000005",
+    "courseKey": "24527764#2/2569#01"
+  },
+  {
+    "studentId": "67000005",
+    "courseKey": "24531364#2/2569#01"
+  },
+  {
+    "studentId": "67000005",
+    "courseKey": "24533164#2/2569#01"
+  },
+  {
+    "studentId": "67000005",
+    "courseKey": "24535864#2/2569#01"
+  },
+  {
+    "studentId": "67000005",
+    "courseKey": "24537164#2/2569#01"
+  },
+  {
+    "studentId": "67000005",
+    "courseKey": "24541164#2/2569#01"
+  },
+  {
+    "studentId": "67000005",
+    "courseKey": "24546164#2/2569#01"
+  },
+  {
+    "studentId": "67000005",
+    "courseKey": "24546364#2/2569#01"
+  },
+  {
+    "studentId": "67000006",
+    "courseKey": "24522364#2/2569#01"
+  },
+  {
+    "studentId": "67000006",
+    "courseKey": "24526164#2/2569#01"
+  },
+  {
+    "studentId": "67000006",
+    "courseKey": "24527764#2/2569#01"
+  },
+  {
+    "studentId": "67000006",
+    "courseKey": "24531364#2/2569#01"
+  },
+  {
+    "studentId": "67000006",
+    "courseKey": "24533164#2/2569#01"
+  },
+  {
+    "studentId": "67000006",
+    "courseKey": "24535864#2/2569#01"
+  },
+  {
+    "studentId": "67000006",
+    "courseKey": "24537164#2/2569#01"
+  },
+  {
+    "studentId": "67000006",
+    "courseKey": "24541164#2/2569#01"
+  },
+  {
+    "studentId": "67000006",
+    "courseKey": "24546164#2/2569#01"
+  },
+  {
+    "studentId": "67000006",
+    "courseKey": "24546364#2/2569#01"
+  },
+  {
+    "studentId": "67000007",
+    "courseKey": "24522364#2/2569#01"
+  },
+  {
+    "studentId": "67000007",
+    "courseKey": "24526164#2/2569#01"
+  },
+  {
+    "studentId": "67000007",
+    "courseKey": "24527764#2/2569#01"
+  },
+  {
+    "studentId": "67000007",
+    "courseKey": "24531364#2/2569#01"
+  },
+  {
+    "studentId": "67000007",
+    "courseKey": "24533164#2/2569#01"
+  },
+  {
+    "studentId": "67000007",
+    "courseKey": "24535864#2/2569#01"
+  },
+  {
+    "studentId": "67000007",
+    "courseKey": "24537164#2/2569#01"
+  },
+  {
+    "studentId": "67000007",
+    "courseKey": "24541164#2/2569#01"
+  },
+  {
+    "studentId": "67000007",
+    "courseKey": "24546164#2/2569#01"
+  },
+  {
+    "studentId": "67000007",
+    "courseKey": "24546364#2/2569#01"
+  },
+  {
+    "studentId": "67000008",
+    "courseKey": "24522364#2/2569#01"
+  },
+  {
+    "studentId": "67000008",
+    "courseKey": "24526164#2/2569#01"
+  },
+  {
+    "studentId": "67000008",
+    "courseKey": "24527764#2/2569#01"
+  },
+  {
+    "studentId": "67000008",
+    "courseKey": "24531364#2/2569#01"
+  },
+  {
+    "studentId": "67000008",
+    "courseKey": "24533164#2/2569#01"
+  },
+  {
+    "studentId": "67000008",
+    "courseKey": "24535864#2/2569#01"
+  },
+  {
+    "studentId": "67000008",
+    "courseKey": "24537164#2/2569#01"
+  },
+  {
+    "studentId": "67000008",
+    "courseKey": "24541164#2/2569#01"
+  },
+  {
+    "studentId": "67000008",
+    "courseKey": "24546164#2/2569#01"
+  },
+  {
+    "studentId": "67000008",
+    "courseKey": "24546364#2/2569#01"
+  },
+  {
+    "studentId": "68000001",
+    "courseKey": "24521764#1/2569#02"
+  },
+  {
+    "studentId": "68000001",
+    "courseKey": "24527564#1/2569#02"
+  },
+  {
+    "studentId": "68000001",
+    "courseKey": "24531264#1/2569#02"
+  },
+  {
+    "studentId": "68000001",
+    "courseKey": "24531464#1/2569#02"
+  },
+  {
+    "studentId": "68000001",
+    "courseKey": "24534164#1/2569#01"
+  },
+  {
+    "studentId": "68000001",
+    "courseKey": "89510764#1/2569#"
+  },
+  {
+    "studentId": "68000001",
+    "courseKey": "89520264#1/2569#"
+  },
+  {
+    "studentId": "68000001",
+    "courseKey": "89520364#1/2569#"
+  },
+  {
+    "studentId": "68000001",
+    "courseKey": "89530064#1/2569#"
+  },
+  {
+    "studentId": "68000002",
+    "courseKey": "24521764#1/2569#02"
+  },
+  {
+    "studentId": "68000002",
+    "courseKey": "24527564#1/2569#02"
+  },
+  {
+    "studentId": "68000002",
+    "courseKey": "24531264#1/2569#02"
+  },
+  {
+    "studentId": "68000002",
+    "courseKey": "24531464#1/2569#02"
+  },
+  {
+    "studentId": "68000002",
+    "courseKey": "24534164#1/2569#01"
+  },
+  {
+    "studentId": "68000002",
+    "courseKey": "89510764#1/2569#"
+  },
+  {
+    "studentId": "68000002",
+    "courseKey": "89520264#1/2569#"
+  },
+  {
+    "studentId": "68000002",
+    "courseKey": "89520364#1/2569#"
+  },
+  {
+    "studentId": "68000002",
+    "courseKey": "89530064#1/2569#"
+  },
+  {
+    "studentId": "68000003",
+    "courseKey": "24521764#1/2569#02"
+  },
+  {
+    "studentId": "68000003",
+    "courseKey": "24527564#1/2569#02"
+  },
+  {
+    "studentId": "68000003",
+    "courseKey": "24531264#1/2569#02"
+  },
+  {
+    "studentId": "68000003",
+    "courseKey": "24531464#1/2569#02"
+  },
+  {
+    "studentId": "68000003",
+    "courseKey": "24534164#1/2569#01"
+  },
+  {
+    "studentId": "68000003",
+    "courseKey": "89510764#1/2569#"
+  },
+  {
+    "studentId": "68000003",
+    "courseKey": "89520264#1/2569#"
+  },
+  {
+    "studentId": "68000003",
+    "courseKey": "89520364#1/2569#"
+  },
+  {
+    "studentId": "68000003",
+    "courseKey": "89530064#1/2569#"
+  },
+  {
+    "studentId": "68000004",
+    "courseKey": "24521764#1/2569#02"
+  },
+  {
+    "studentId": "68000004",
+    "courseKey": "24527564#1/2569#02"
+  },
+  {
+    "studentId": "68000004",
+    "courseKey": "24531264#1/2569#02"
+  },
+  {
+    "studentId": "68000004",
+    "courseKey": "24531464#1/2569#02"
+  },
+  {
+    "studentId": "68000004",
+    "courseKey": "24534164#1/2569#01"
+  },
+  {
+    "studentId": "68000004",
+    "courseKey": "89510764#1/2569#"
+  },
+  {
+    "studentId": "68000004",
+    "courseKey": "89520264#1/2569#"
+  },
+  {
+    "studentId": "68000004",
+    "courseKey": "89520364#1/2569#"
+  },
+  {
+    "studentId": "68000004",
+    "courseKey": "89530064#1/2569#"
+  },
+  {
+    "studentId": "68000005",
+    "courseKey": "24521764#1/2569#02"
+  },
+  {
+    "studentId": "68000005",
+    "courseKey": "24527564#1/2569#02"
+  },
+  {
+    "studentId": "68000005",
+    "courseKey": "24531264#1/2569#02"
+  },
+  {
+    "studentId": "68000005",
+    "courseKey": "24531464#1/2569#02"
+  },
+  {
+    "studentId": "68000005",
+    "courseKey": "24534164#1/2569#01"
+  },
+  {
+    "studentId": "68000005",
+    "courseKey": "89510764#1/2569#"
+  },
+  {
+    "studentId": "68000005",
+    "courseKey": "89520264#1/2569#"
+  },
+  {
+    "studentId": "68000005",
+    "courseKey": "89520364#1/2569#"
+  },
+  {
+    "studentId": "68000005",
+    "courseKey": "89530064#1/2569#"
+  },
+  {
+    "studentId": "68000006",
+    "courseKey": "24521764#1/2569#02"
+  },
+  {
+    "studentId": "68000006",
+    "courseKey": "24527564#1/2569#02"
+  },
+  {
+    "studentId": "68000006",
+    "courseKey": "24531264#1/2569#02"
+  },
+  {
+    "studentId": "68000006",
+    "courseKey": "24531464#1/2569#02"
+  },
+  {
+    "studentId": "68000006",
+    "courseKey": "24534164#1/2569#01"
+  },
+  {
+    "studentId": "68000006",
+    "courseKey": "89510764#1/2569#"
+  },
+  {
+    "studentId": "68000006",
+    "courseKey": "89520264#1/2569#"
+  },
+  {
+    "studentId": "68000006",
+    "courseKey": "89520364#1/2569#"
+  },
+  {
+    "studentId": "68000006",
+    "courseKey": "89530064#1/2569#"
+  },
+  {
+    "studentId": "68000007",
+    "courseKey": "24521764#1/2569#02"
+  },
+  {
+    "studentId": "68000007",
+    "courseKey": "24527564#1/2569#02"
+  },
+  {
+    "studentId": "68000007",
+    "courseKey": "24531264#1/2569#02"
+  },
+  {
+    "studentId": "68000007",
+    "courseKey": "24531464#1/2569#02"
+  },
+  {
+    "studentId": "68000007",
+    "courseKey": "24534164#1/2569#01"
+  },
+  {
+    "studentId": "68000007",
+    "courseKey": "89510764#1/2569#"
+  },
+  {
+    "studentId": "68000007",
+    "courseKey": "89520264#1/2569#"
+  },
+  {
+    "studentId": "68000007",
+    "courseKey": "89520364#1/2569#"
+  },
+  {
+    "studentId": "68000007",
+    "courseKey": "89530064#1/2569#"
+  },
+  {
+    "studentId": "68000008",
+    "courseKey": "24521764#1/2569#02"
+  },
+  {
+    "studentId": "68000008",
+    "courseKey": "24527564#1/2569#02"
+  },
+  {
+    "studentId": "68000008",
+    "courseKey": "24531264#1/2569#02"
+  },
+  {
+    "studentId": "68000008",
+    "courseKey": "24531464#1/2569#02"
+  },
+  {
+    "studentId": "68000008",
+    "courseKey": "24534164#1/2569#01"
+  },
+  {
+    "studentId": "68000008",
+    "courseKey": "89510764#1/2569#"
+  },
+  {
+    "studentId": "68000008",
+    "courseKey": "89520264#1/2569#"
+  },
+  {
+    "studentId": "68000008",
+    "courseKey": "89520364#1/2569#"
+  },
+  {
+    "studentId": "68000008",
+    "courseKey": "89530064#1/2569#"
+  },
+  {
+    "studentId": "68000001",
+    "courseKey": "24522264#2/2569#01"
+  },
+  {
+    "studentId": "68000001",
+    "courseKey": "24525164#2/2569#01"
+  },
+  {
+    "studentId": "68000001",
+    "courseKey": "24525264#2/2569#01"
+  },
+  {
+    "studentId": "68000001",
+    "courseKey": "24526164#2/2569#02"
+  },
+  {
+    "studentId": "68000001",
+    "courseKey": "24527164#2/2569#01"
+  },
+  {
+    "studentId": "68000001",
+    "courseKey": "24531364#2/2569#02"
+  },
+  {
+    "studentId": "68000002",
+    "courseKey": "24522264#2/2569#01"
+  },
+  {
+    "studentId": "68000002",
+    "courseKey": "24525164#2/2569#01"
+  },
+  {
+    "studentId": "68000002",
+    "courseKey": "24525264#2/2569#01"
+  },
+  {
+    "studentId": "68000002",
+    "courseKey": "24526164#2/2569#02"
+  },
+  {
+    "studentId": "68000002",
+    "courseKey": "24527164#2/2569#01"
+  },
+  {
+    "studentId": "68000002",
+    "courseKey": "24531364#2/2569#02"
+  },
+  {
+    "studentId": "68000003",
+    "courseKey": "24522264#2/2569#01"
+  },
+  {
+    "studentId": "68000003",
+    "courseKey": "24525164#2/2569#01"
+  },
+  {
+    "studentId": "68000003",
+    "courseKey": "24525264#2/2569#01"
+  },
+  {
+    "studentId": "68000003",
+    "courseKey": "24526164#2/2569#02"
+  },
+  {
+    "studentId": "68000003",
+    "courseKey": "24527164#2/2569#01"
+  },
+  {
+    "studentId": "68000003",
+    "courseKey": "24531364#2/2569#02"
+  },
+  {
+    "studentId": "68000004",
+    "courseKey": "24522264#2/2569#01"
+  },
+  {
+    "studentId": "68000004",
+    "courseKey": "24525164#2/2569#01"
+  },
+  {
+    "studentId": "68000004",
+    "courseKey": "24525264#2/2569#01"
+  },
+  {
+    "studentId": "68000004",
+    "courseKey": "24526164#2/2569#02"
+  },
+  {
+    "studentId": "68000004",
+    "courseKey": "24527164#2/2569#01"
+  },
+  {
+    "studentId": "68000004",
+    "courseKey": "24531364#2/2569#02"
+  },
+  {
+    "studentId": "68000005",
+    "courseKey": "24522264#2/2569#01"
+  },
+  {
+    "studentId": "68000005",
+    "courseKey": "24525164#2/2569#01"
+  },
+  {
+    "studentId": "68000005",
+    "courseKey": "24525264#2/2569#01"
+  },
+  {
+    "studentId": "68000005",
+    "courseKey": "24526164#2/2569#02"
+  },
+  {
+    "studentId": "68000005",
+    "courseKey": "24527164#2/2569#01"
+  },
+  {
+    "studentId": "68000005",
+    "courseKey": "24531364#2/2569#02"
+  },
+  {
+    "studentId": "68000006",
+    "courseKey": "24522264#2/2569#01"
+  },
+  {
+    "studentId": "68000006",
+    "courseKey": "24525164#2/2569#01"
+  },
+  {
+    "studentId": "68000006",
+    "courseKey": "24525264#2/2569#01"
+  },
+  {
+    "studentId": "68000006",
+    "courseKey": "24526164#2/2569#02"
+  },
+  {
+    "studentId": "68000006",
+    "courseKey": "24527164#2/2569#01"
+  },
+  {
+    "studentId": "68000006",
+    "courseKey": "24531364#2/2569#02"
+  },
+  {
+    "studentId": "68000007",
+    "courseKey": "24522264#2/2569#01"
+  },
+  {
+    "studentId": "68000007",
+    "courseKey": "24525164#2/2569#01"
+  },
+  {
+    "studentId": "68000007",
+    "courseKey": "24525264#2/2569#01"
+  },
+  {
+    "studentId": "68000007",
+    "courseKey": "24526164#2/2569#02"
+  },
+  {
+    "studentId": "68000007",
+    "courseKey": "24527164#2/2569#01"
+  },
+  {
+    "studentId": "68000007",
+    "courseKey": "24531364#2/2569#02"
+  },
+  {
+    "studentId": "68000008",
+    "courseKey": "24522264#2/2569#01"
+  },
+  {
+    "studentId": "68000008",
+    "courseKey": "24525164#2/2569#01"
+  },
+  {
+    "studentId": "68000008",
+    "courseKey": "24525264#2/2569#01"
+  },
+  {
+    "studentId": "68000008",
+    "courseKey": "24526164#2/2569#02"
+  },
+  {
+    "studentId": "68000008",
+    "courseKey": "24527164#2/2569#01"
+  },
+  {
+    "studentId": "68000008",
+    "courseKey": "24531364#2/2569#02"
+  },
+  {
+    "studentId": "69000001",
+    "courseKey": "24514169#1/2569#01"
+  },
+  {
+    "studentId": "69000001",
+    "courseKey": "24515169#1/2569#02"
+  },
+  {
+    "studentId": "69000001",
+    "courseKey": "24516269#1/2569#01"
+  },
+  {
+    "studentId": "69000001",
+    "courseKey": "89510169#1/2569#"
+  },
+  {
+    "studentId": "69000001",
+    "courseKey": "89520169#1/2569#"
+  },
+  {
+    "studentId": "69000001",
+    "courseKey": "89520269#1/2569#01"
+  },
+  {
+    "studentId": "69000002",
+    "courseKey": "24514169#1/2569#01"
+  },
+  {
+    "studentId": "69000002",
+    "courseKey": "24515169#1/2569#02"
+  },
+  {
+    "studentId": "69000002",
+    "courseKey": "24516269#1/2569#01"
+  },
+  {
+    "studentId": "69000002",
+    "courseKey": "89510169#1/2569#"
+  },
+  {
+    "studentId": "69000002",
+    "courseKey": "89520169#1/2569#"
+  },
+  {
+    "studentId": "69000002",
+    "courseKey": "89520269#1/2569#01"
+  },
+  {
+    "studentId": "69000003",
+    "courseKey": "24514169#1/2569#01"
+  },
+  {
+    "studentId": "69000003",
+    "courseKey": "24515169#1/2569#02"
+  },
+  {
+    "studentId": "69000003",
+    "courseKey": "24516269#1/2569#01"
+  },
+  {
+    "studentId": "69000003",
+    "courseKey": "89510169#1/2569#"
+  },
+  {
+    "studentId": "69000003",
+    "courseKey": "89520169#1/2569#"
+  },
+  {
+    "studentId": "69000003",
+    "courseKey": "89520269#1/2569#01"
+  },
+  {
+    "studentId": "69000004",
+    "courseKey": "24514169#1/2569#01"
+  },
+  {
+    "studentId": "69000004",
+    "courseKey": "24515169#1/2569#02"
+  },
+  {
+    "studentId": "69000004",
+    "courseKey": "24516269#1/2569#01"
+  },
+  {
+    "studentId": "69000004",
+    "courseKey": "89510169#1/2569#"
+  },
+  {
+    "studentId": "69000004",
+    "courseKey": "89520169#1/2569#"
+  },
+  {
+    "studentId": "69000004",
+    "courseKey": "89520269#1/2569#01"
+  },
+  {
+    "studentId": "69000005",
+    "courseKey": "24514169#1/2569#01"
+  },
+  {
+    "studentId": "69000005",
+    "courseKey": "24515169#1/2569#02"
+  },
+  {
+    "studentId": "69000005",
+    "courseKey": "24516269#1/2569#01"
+  },
+  {
+    "studentId": "69000005",
+    "courseKey": "89510169#1/2569#"
+  },
+  {
+    "studentId": "69000005",
+    "courseKey": "89520169#1/2569#"
+  },
+  {
+    "studentId": "69000005",
+    "courseKey": "89520269#1/2569#01"
+  },
+  {
+    "studentId": "69000006",
+    "courseKey": "24514169#1/2569#01"
+  },
+  {
+    "studentId": "69000006",
+    "courseKey": "24515169#1/2569#02"
+  },
+  {
+    "studentId": "69000006",
+    "courseKey": "24516269#1/2569#01"
+  },
+  {
+    "studentId": "69000006",
+    "courseKey": "89510169#1/2569#"
+  },
+  {
+    "studentId": "69000006",
+    "courseKey": "89520169#1/2569#"
+  },
+  {
+    "studentId": "69000006",
+    "courseKey": "89520269#1/2569#01"
+  },
+  {
+    "studentId": "69000007",
+    "courseKey": "24514169#1/2569#01"
+  },
+  {
+    "studentId": "69000007",
+    "courseKey": "24515169#1/2569#02"
+  },
+  {
+    "studentId": "69000007",
+    "courseKey": "24516269#1/2569#01"
+  },
+  {
+    "studentId": "69000007",
+    "courseKey": "89510169#1/2569#"
+  },
+  {
+    "studentId": "69000007",
+    "courseKey": "89520169#1/2569#"
+  },
+  {
+    "studentId": "69000007",
+    "courseKey": "89520269#1/2569#01"
+  },
+  {
+    "studentId": "69000008",
+    "courseKey": "24514169#1/2569#01"
+  },
+  {
+    "studentId": "69000008",
+    "courseKey": "24515169#1/2569#02"
+  },
+  {
+    "studentId": "69000008",
+    "courseKey": "24516269#1/2569#01"
+  },
+  {
+    "studentId": "69000008",
+    "courseKey": "89510169#1/2569#"
+  },
+  {
+    "studentId": "69000008",
+    "courseKey": "89520169#1/2569#"
+  },
+  {
+    "studentId": "69000008",
+    "courseKey": "89520269#1/2569#01"
+  },
+  {
+    "studentId": "69000001",
+    "courseKey": "24515269#2/2569#01"
+  },
+  {
+    "studentId": "69000001",
+    "courseKey": "24517269#2/2569#01"
+  },
+  {
+    "studentId": "69000001",
+    "courseKey": "24517369#2/2569#01"
+  },
+  {
+    "studentId": "69000002",
+    "courseKey": "24515269#2/2569#01"
+  },
+  {
+    "studentId": "69000002",
+    "courseKey": "24517269#2/2569#01"
+  },
+  {
+    "studentId": "69000002",
+    "courseKey": "24517369#2/2569#01"
+  },
+  {
+    "studentId": "69000003",
+    "courseKey": "24515269#2/2569#01"
+  },
+  {
+    "studentId": "69000003",
+    "courseKey": "24517269#2/2569#01"
+  },
+  {
+    "studentId": "69000003",
+    "courseKey": "24517369#2/2569#01"
+  },
+  {
+    "studentId": "69000004",
+    "courseKey": "24515269#2/2569#01"
+  },
+  {
+    "studentId": "69000004",
+    "courseKey": "24517269#2/2569#01"
+  },
+  {
+    "studentId": "69000004",
+    "courseKey": "24517369#2/2569#01"
+  },
+  {
+    "studentId": "69000005",
+    "courseKey": "24515269#2/2569#01"
+  },
+  {
+    "studentId": "69000005",
+    "courseKey": "24517269#2/2569#01"
+  },
+  {
+    "studentId": "69000005",
+    "courseKey": "24517369#2/2569#01"
+  },
+  {
+    "studentId": "69000006",
+    "courseKey": "24515269#2/2569#01"
+  },
+  {
+    "studentId": "69000006",
+    "courseKey": "24517269#2/2569#01"
+  },
+  {
+    "studentId": "69000006",
+    "courseKey": "24517369#2/2569#01"
+  },
+  {
+    "studentId": "69000007",
+    "courseKey": "24515269#2/2569#01"
+  },
+  {
+    "studentId": "69000007",
+    "courseKey": "24517269#2/2569#01"
+  },
+  {
+    "studentId": "69000007",
+    "courseKey": "24517369#2/2569#01"
+  },
+  {
+    "studentId": "69000008",
+    "courseKey": "24515269#2/2569#01"
+  },
+  {
+    "studentId": "69000008",
+    "courseKey": "24517269#2/2569#01"
+  },
+  {
+    "studentId": "69000008",
+    "courseKey": "24517369#2/2569#01"
+  }
+];
 
-const STUDENTS_PER_COHORT = 8;
-// รายชื่อเต็ม 32 ชื่อ ไม่ซ้ำกันเลยทั้งหมด (4 รุ่น x 8 คน ใช้คนละชื่อ)
 const STUDENT_NAMES = [
   'จุฑามาศ แสงทอง', 'มงคล ชัยมงคล', 'สุจิตรา บุญชู', 'พิชัย รักดี',
   'วิไล สมบูรณ์', 'สมเกียรติ พูนสวัสดิ์', 'ชัยวัฒน์ จันทร', 'กมลชนก ศรีสุข',
@@ -112,12 +2347,13 @@ const STUDENT_NAMES = [
 ];
 
 async function main() {
+  console.log('Seeding database with updated Google Drive metadata...');
   const password = await bcrypt.hash(PASSWORD_PLAIN, 10);
   const adminRows = [];
   const teacherRowList = [];
   const studentRows = [];
 
-  // ล้างข้อมูลเดิมทั้งหมด (เรียงตามลำดับ foreign key)
+  // ล้างข้อมูลเดิมทั้งหมด
   await prisma.notification.deleteMany();
   await prisma.leaveRequest.deleteMany();
   await prisma.ticket.deleteMany();
@@ -125,15 +2361,21 @@ async function main() {
   await prisma.course.deleteMany();
   await prisma.user.deleteMany();
 
-  // ---------- แอดมิน ----------
+  // 1. แอดมิน
   const admin = await prisma.user.create({
-    data: { email: 'admin@buu.ac.th', password, name: 'ผู้ดูแลระบบ', role: 'admin' },
+    data: {
+      email: 'admin@buu.ac.th',
+      password,
+      name: 'ผู้ดูแลระบบ',
+      role: 'admin',
+      faculty: 'คณะวิทยาการสารสนเทศ',
+      major: 'ภาควิชาสารสนเทศศึกษา',
+    },
   });
   adminRows.push({ name: admin.name, email: admin.email, password: PASSWORD_PLAIN });
 
-  // ---------- อาจารย์ ----------
-  const teacherByKey = {};
-  const teacherRows = {}; // key -> แถวในชีต (เติมคอลัมน์ "วิชาที่สอน" หลังสร้างรายวิชาเสร็จ)
+  // 2. อาจารย์
+  const teacherByName = {};
   for (const t of TEACHERS) {
     const user = await prisma.user.create({
       data: {
@@ -141,255 +2383,197 @@ async function main() {
         password,
         name: t.name,
         role: 'teacher',
-        faculty: 'คณะวิทยาการสารสนเทศ',
-        major: 'ภาควิชาการจัดการสารสนเทศ',
+        faculty: t.faculty || 'คณะวิทยาการสารสนเทศ',
+        major: t.major || 'ภาควิชาสารสนเทศศึกษา',
       },
     });
-    teacherByKey[t.key] = user;
-    const row = { name: t.name, email: t.email, password: PASSWORD_PLAIN, subjects: '', note: 'อีเมลชั่วคราว รอเปลี่ยนเป็นอีเมลจริง' };
-    teacherRows[t.key] = row;
-    teacherRowList.push(row);
+    teacherByName[t.name] = user;
+    teacherRowList.push({
+      name: t.name,
+      email: t.email,
+      password: PASSWORD_PLAIN,
+      subjects: '',
+    });
   }
 
-  // ---------- รายวิชา ----------
-  const courseByKey = {}; // `${code}#${group}` -> course record
+  // 3. รายวิชา
+  const courseByKey = {};
   for (const c of COURSES) {
-    const teacher = c.teacher ? teacherByKey[c.teacher] : null;
+    const teacher = c.teacherName ? teacherByName[c.teacherName] : null;
     const course = await prisma.course.create({
       data: {
         code: c.code,
         name: c.name,
-        term: TERM,
-        group: c.group,
-        totalSessions: 15,
+        term: c.term,
+        group: c.group || '',
+        totalSessions: c.totalSessions || 15,
+        day: c.day || null,
+        time: c.time || null,
+        room: c.room || null,
         teacherId: teacher?.id || null,
         teacherName: teacher?.name || null,
-        day: c.day,
-        time: c.time,
       },
     });
-    courseByKey[`${c.code}#${c.group}`] = course;
-    if (c.teacher) {
-      const row = teacherRows[c.teacher];
-      const label = c.group ? `${c.code}-${c.group}` : c.code;
-      row.subjects = row.subjects ? `${row.subjects}, ${label}` : label;
+    const key = `${c.code}#${c.term}#${c.group || ""}`;
+    courseByKey[key] = course;
+
+    if (c.teacherName) {
+      const row = teacherRowList.find((r) => r.name === c.teacherName);
+      if (row) {
+        const label = c.group ? `${c.code}-${c.group} [${c.term}]` : `${c.code} [${c.term}]`;
+        row.subjects = row.subjects ? `${row.subjects}, ${label}` : label;
+      }
     }
   }
 
-  // ---------- นิสิต + ลงทะเบียนตามรุ่น ----------
+  // 4. นิสิต
+  const studentByCode = {};
   const students = [];
-  const enrollments = [];
-  let nameIdx = 0;
-  for (const cohort of Object.keys(COHORTS)) {
-    const spec = COHORTS[cohort];
-    const cohortStudents = [];
-    for (let i = 0; i < STUDENTS_PER_COHORT; i++) {
-      const name = STUDENT_NAMES[nameIdx];
-      nameIdx++;
-      const code = `${cohort}${String(i + 1).padStart(6, '0')}`;
+  let nameIndex = 0;
+  for (const cohort of [66, 67, 68, 69]) {
+    for (let i = 1; i <= 8; i++) {
+      const studentId = `${cohort}${String(i).padStart(6, "0")}`;
+      const name = STUDENT_NAMES[nameIndex % STUDENT_NAMES.length];
+      nameIndex++;
+
       const student = await prisma.user.create({
         data: {
-          email: `${code}@go.buu.ac.th`,
+          email: `${studentId}@go.buu.ac.th`,
           password,
           name,
           role: 'student',
-          studentId: code,
+          studentId,
           faculty: 'คณะวิทยาการสารสนเทศ',
-          major: 'การจัดการสารสนเทศ',
+          major: 'ภาควิชาสารสนเทศศึกษา',
         },
       });
-      studentRows.push({ name: student.name, studentId: code, cohort: `รุ่น ${cohort}`, email: student.email, password: PASSWORD_PLAIN });
-      cohortStudents.push(student);
+      studentByCode[studentId] = student;
       students.push(student);
-    }
-
-    // วิชาบังคับ: ถ้ามีหลายกลุ่มเรียน สลับกลุ่มตามลำดับนิสิตเพื่อกระจายนิสิตในแต่ละกลุ่ม
-    for (const code of spec.required) {
-      const groupsForCode = COURSES.filter((c) => c.code === code);
-      cohortStudents.forEach((student, i) => {
-        const group = groupsForCode[i % groupsForCode.length].group;
-        const course = courseByKey[`${code}#${group}`];
-        if (course) enrollments.push({ studentId: student.id, courseId: course.id });
-      });
-    }
-
-    // วิชาเลือก: หมุนเวียนตัวเลือกให้นิสิตแต่ละคนเลือกครบตามจำนวนที่กำหนด
-    for (const elective of spec.electives) {
-      cohortStudents.forEach((student, i) => {
-        for (let p = 0; p < elective.pick; p++) {
-          const optionKey = elective.options[(i + p) % elective.options.length];
-          const course = courseByKey[optionKey];
-          if (course) enrollments.push({ studentId: student.id, courseId: course.id });
-        }
+      studentRows.push({
+        name: student.name,
+        studentId: student.studentId,
+        cohort: `รุ่น ${cohort}`,
+        email: student.email,
+        password: PASSWORD_PLAIN,
       });
     }
   }
 
-  if (enrollments.length) {
-    await prisma.enrollment.createMany({ data: enrollments });
-  }
-
-  // ---------- ใบลาตัวอย่าง (สำหรับทดสอบคิวอนุมัติ + ประวัติการอนุมัติ) ----------
-  const LEAVE_TYPES = ['ลาป่วย', 'ลากิจส่วนตัว', 'ลากิจกรรม', 'อื่นๆ'];
-  const PERIODS = ['เต็มคาบเรียน 3 ชั่วโมง'];
-  const REASONS = [
-    'มีนัดพบแพทย์ตามใบนัด',
-    'ป่วยเป็นไข้หวัดใหญ่ พักรักษาตัวที่บ้าน',
-    'ติดภารกิจครอบครัวเร่งด่วน',
-    'เป็นตัวแทนเข้าร่วมกิจกรรมของมหาวิทยาลัย',
-  ];
-
-  const leaveSpecs = [
-    { student: students[0], courseKey: '24543164#01', type: 0, period: 0, reason: 1, date: '2026-08-20', status: 'อนุมัติ', comment: 'อนุมัติการลาตามระเบียบเรียบร้อย' },
-    { student: students[1], courseKey: '24545164#01', type: 1, period: 0, reason: 2, date: '2026-08-25', status: 'รออนุมัติ' },
-    { student: students[8], courseKey: '24527664#01', type: 0, period: 0, reason: 0, date: '2026-08-18', status: 'ไม่อนุมัติ', comment: 'เอกสารประกอบไม่ครบถ้วนตามเกณฑ์' },
-    { student: students[9], courseKey: '24535164#01', type: 2, period: 0, reason: 3, date: '2026-08-22', status: 'อนุมัติ', comment: 'อนุมัติเนื่องจากเป็นตัวแทนเข้าร่วมกิจกรรมมหาวิทยาลัย' },
-    { student: students[16], courseKey: '24534164#01', type: 0, period: 0, reason: 1, date: '2026-08-27', status: 'รออนุมัติ' },
-    { student: students[17], courseKey: '24534164#02', type: 1, period: 0, reason: 2, date: '2026-08-19', status: 'อนุมัติ', comment: 'อนุมัติการลาตามระเบียบเรียบร้อย' },
-    { student: students[24], courseKey: '24514169#01', type: 3, period: 0, reason: 0, date: '2026-08-21', status: 'ไม่อนุมัติ', comment: 'เหตุผลไม่เข้าเกณฑ์การลาตามระเบียบ' },
-    { student: students[25], courseKey: '24516269#01', type: 0, period: 0, reason: 1, date: '2026-08-28', status: 'รออนุมัติ' },
-  ];
-
-  const leaves = [];
-  for (const spec of leaveSpecs) {
-    const course = courseByKey[spec.courseKey];
-    const leave = await prisma.leaveRequest.create({
-      data: {
-        studentId: spec.student.id,
-        courseId: course.id,
-        type: LEAVE_TYPES[spec.type],
-        period: PERIODS[spec.period],
-        startDate: spec.date,
-        endDate: spec.date,
-        reason: REASONS[spec.reason],
-        attachment: null,
-        status: spec.status,
-        teacherComment: spec.comment || null,
-      },
-    });
-    leaves.push({ leave, course, student: spec.student });
-  }
-
-  // ---------- การแจ้งเตือนจากใบลาตัวอย่าง ----------
-  for (const { leave, course, student } of leaves) {
-    if (leave.status === 'รออนุมัติ') {
-      if (course.teacherId) {
-        await prisma.notification.create({
-          data: {
-            userId: course.teacherId,
-            message: `${student.name} ยื่นคำร้องลา "${course.name}" (${leave.type})`,
-            link: '/teacher/requests',
-          },
+  // 5. ลงทะเบียนเรียน
+  const enrollmentsToCreate = [];
+  const seenEnroll = new Set();
+  for (const item of ENROLLMENTS_DATA) {
+    const student = studentByCode[item.studentId];
+    const course = courseByKey[item.courseKey];
+    if (student && course) {
+      const pair = `${student.id}_${course.id}`;
+      if (!seenEnroll.has(pair)) {
+        seenEnroll.add(pair);
+        enrollmentsToCreate.push({
+          studentId: student.id,
+          courseId: course.id,
         });
       }
-    } else {
-      const suffix = leave.teacherComment ? ` — หมายเหตุ: ${leave.teacherComment}` : '';
+    }
+  }
+  if (enrollmentsToCreate.length > 0) {
+    await prisma.enrollment.createMany({ data: enrollmentsToCreate });
+  }
+
+  // 6. ตัวอย่างใบลา
+  const sampleStudent = students[0];
+  const sampleEnroll = await prisma.enrollment.findFirst({
+    where: { studentId: sampleStudent.id },
+    include: { course: true },
+  });
+  if (sampleEnroll) {
+    const l1 = await prisma.leaveRequest.create({
+      data: {
+        studentId: sampleStudent.id,
+        courseId: sampleEnroll.course.id,
+        type: 'ลาป่วย',
+        period: 'เต็มคาบเรียน 3 ชั่วโมง',
+        startDate: '2026-08-20',
+        endDate: '2026-08-20',
+        reason: 'มีอาการไข้หวัด พักรักษาตัวที่บ้านตามแพทย์สั่ง',
+        status: 'อนุมัติ',
+        teacherComment: 'อนุมัติการลาตามระเบียบเรียบร้อย',
+      },
+    });
+    if (sampleEnroll.course.teacherId) {
       await prisma.notification.create({
         data: {
-          userId: student.id,
-          message: `คำร้องลา "${course.name}" (${leave.type}) ถูก${leave.status}แล้ว${suffix}`,
-          link: '/student?tab=history',
-          read: Math.random() > 0.5,
+          userId: sampleEnroll.course.teacherId,
+          message: `${sampleStudent.name} ยื่นคำร้องลา "${sampleEnroll.course.name}" (${l1.type})`,
+          link: '/teacher/requests',
         },
       });
     }
+    await prisma.notification.create({
+      data: {
+        userId: sampleStudent.id,
+        message: `คำร้องลา "${sampleEnroll.course.name}" ได้รับการอนุมัติแล้ว`,
+        link: '/student?tab=history',
+        read: true,
+      },
+    });
   }
 
-  // ---------- ตัวอย่างคำร้องแจ้งปัญหา ----------
-  const ticket1 = await prisma.ticket.create({
+  // 7. คำร้องแจ้งปัญหาตัวอย่าง
+  await prisma.ticket.create({
     data: {
-      userId: students[2].id,
-      userName: students[2].name,
-      subject: 'เข้าสู่ระบบไม่ได้',
-      message: 'ลองเข้าสู่ระบบหลายครั้งแล้วขึ้นว่ารหัสผ่านไม่ถูกต้อง',
+      userId: sampleStudent.id,
+      userName: sampleStudent.name,
+      subject: 'สอบถามเรื่องการนับเปอร์เซ็นต์เวลาเรียน',
+      message: 'หากลาป่วยที่มีใบรับรองแพทย์ จะถูกนำมาคิดในโควต้า 20% หรือไม่ครับ',
       status: 'ตอบกลับแล้ว',
-      reply: 'ตรวจสอบให้แล้วครับ ระบบรีเซ็ตรหัสผ่านให้เรียบร้อย ลองเข้าสู่ระบบใหม่อีกครั้งได้เลยครับ',
-    },
-  });
-  await prisma.ticket.create({
-    data: {
-      userId: teacherByKey.somruethai.id,
-      userName: teacherByKey.somruethai.name,
-      subject: 'ไฟล์แนบมีปัญหา',
-      message: 'เปิดไฟล์แนบใบลาของนิสิตบางคนไม่ได้',
-      status: 'เปิดเรื่อง',
-    },
-  });
-  await prisma.ticket.create({
-    data: {
-      userId: students[20].id,
-      userName: students[20].name,
-      subject: 'ข้อมูลเวลาเรียนไม่ถูกต้อง',
-      message: 'เปอร์เซ็นต์เวลาเรียนที่แสดงในระบบไม่ตรงกับที่คำนวณเอง',
-      status: 'เปิดเรื่อง',
-    },
-  });
-  await prisma.notification.create({
-    data: {
-      userId: ticket1.userId,
-      message: `ทีมงานตอบกลับคำร้อง "${ticket1.subject}" แล้ว`,
-      link: '/support',
+      reply: 'การลาป่วยที่มีใบรับรองแพทย์และได้รับอนุมัติจากอาจารย์ จะไม่ถือเป็นการขาดเรียนครับ',
     },
   });
 
-  // ---------- ไฟล์รายชื่อผู้ใช้ + รหัสผ่านทั้งหมด (.xlsx แยกชีตตามบทบาท) ----------
+  // 8. user-credentials.xlsx
   const workbook = new ExcelJS.Workbook();
-  workbook.creator = 'BUU e-Leave seed script';
+  workbook.creator = 'BUU Take A Leave';
   workbook.created = new Date();
 
   function addSheet(name, columns, rows) {
-    const sheet = workbook.addWorksheet(name, { views: [{ state: 'frozen', ySplit: 1 }] });
+    const sheet = workbook.addWorksheet(name, { views: [{ state: "frozen", ySplit: 1 }] });
     sheet.columns = columns;
     sheet.addRows(rows);
-    sheet.getRow(1).font = { bold: true, color: { argb: 'FFFFFFFF' } };
-    sheet.getRow(1).fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: 'FF7749BC' } };
-    sheet.getRow(1).alignment = { vertical: 'middle' };
-    sheet.autoFilter = { from: { row: 1, column: 1 }, to: { row: 1, column: columns.length } };
+    sheet.getRow(1).font = { bold: true, color: { argb: "FFFFFFFF" } };
+    sheet.getRow(1).fill = { type: "pattern", pattern: "solid", fgColor: { argb: "FF7749BC" } };
+    sheet.getRow(1).alignment = { vertical: "middle" };
     return sheet;
   }
 
-  addSheet(
-    'แอดมิน',
-    [
-      { header: 'ชื่อ-สกุล', key: 'name', width: 28 },
-      { header: 'อีเมล (Username)', key: 'email', width: 30 },
-      { header: 'รหัสผ่าน', key: 'password', width: 14 },
-    ],
-    adminRows
-  );
+  addSheet('แอดมิน', [
+    { header: 'ชื่อ-สกุล', key: 'name', width: 28 },
+    { header: 'อีเมล (Username)', key: 'email', width: 30 },
+    { header: 'รหัสผ่าน', key: 'password', width: 14 },
+  ], adminRows);
 
-  addSheet(
-    'อาจารย์',
-    [
-      { header: 'ชื่อ-สกุล', key: 'name', width: 24 },
-      { header: 'อีเมล (Username)', key: 'email', width: 32 },
-      { header: 'รหัสผ่าน', key: 'password', width: 12 },
-      { header: 'วิชาที่สอน (รหัสวิชา-กลุ่ม)', key: 'subjects', width: 55 },
-      { header: 'หมายเหตุ', key: 'note', width: 30 },
-    ],
-    teacherRowList
-  );
+  addSheet('อาจารย์', [
+    { header: 'ชื่อ-สกุล', key: 'name', width: 30 },
+    { header: 'อีเมล (Username)', key: 'email', width: 32 },
+    { header: 'รหัสผ่าน', key: 'password', width: 12 },
+    { header: 'วิชาที่สอน', key: 'subjects', width: 65 },
+  ], teacherRowList);
 
-  addSheet(
-    'นิสิต',
-    [
-      { header: 'ชื่อ-สกุล', key: 'name', width: 24 },
-      { header: 'รหัสนิสิต', key: 'studentId', width: 14 },
-      { header: 'รุ่น', key: 'cohort', width: 10 },
-      { header: 'อีเมล (Username)', key: 'email', width: 30 },
-      { header: 'รหัสผ่าน', key: 'password', width: 12 },
-    ],
-    studentRows
-  );
+  addSheet('นิสิต', [
+    { header: 'ชื่อ-สกุล', key: 'name', width: 24 },
+    { header: 'รหัสนิสิต', key: 'studentId', width: 14 },
+    { header: 'รุ่น', key: 'cohort', width: 10 },
+    { header: 'อีเมล (Username)', key: 'email', width: 30 },
+    { header: 'รหัสผ่าน', key: 'password', width: 12 },
+  ], studentRows);
 
   const outPath = path.join(__dirname, '..', 'user-credentials.xlsx');
   await workbook.xlsx.writeFile(outPath);
 
-  console.log('Seed complete.');
-  console.log(`- แอดมิน 1 คน, อาจารย์ ${TEACHERS.length} คน, นิสิต ${students.length} คน (${Object.keys(COHORTS).length} รุ่น x ${STUDENTS_PER_COHORT} คน)`);
-  console.log(`- รายวิชา ${COURSES.length} กลุ่มเรียน, เทอม ${TERM}`);
+  console.log('Seed completed successfully!');
+  console.log(`- แอดมิน: 1 คน, อาจารย์: ${TEACHERS.length} ท่าน, นิสิต: ${students.length} คน`);
+  console.log(`- รายวิชา: ${COURSES.length} กลุ่มเรียน, การลงทะเบียน: ${enrollmentsToCreate.length} รายการ`);
   console.log(`- รหัสผ่านทุกบัญชี: ${PASSWORD_PLAIN}`);
-  console.log(`- ไฟล์รายชื่อผู้ใช้ทั้งหมด (แยก 3 ชีต): ${outPath}`);
 }
 
 main()
