@@ -16,6 +16,7 @@ import {
   PanelLeftClose,
   PanelLeft,
   User,
+  Camera,
 } from 'lucide-react';
 import BuuLogo from '@/components/BuuLogo';
 import SettingsModal from '@/components/SettingsModal';
@@ -89,7 +90,7 @@ export default function StudentSidebar({
     }
   }
 
-  const [avatar, setAvatar] = useState(user?.avatar || '/avatars/juthamat.png');
+  const [avatar, setAvatar] = useState(user?.avatar || null);
   const storageKey = getUserAvatarKey(user);
 
   useEffect(() => {
@@ -98,13 +99,17 @@ export default function StudentSidebar({
         const stored = localStorage.getItem(storageKey);
         if (stored) setAvatar(stored);
         else if (user?.avatar) setAvatar(user.avatar);
-        else setAvatar('/avatars/juthamat.png');
+        else setAvatar(null);
       } catch {}
     }
     loadAvatar();
     const handleAvatarUpdate = (e) => {
       if (!e.detail?.key || e.detail.key === storageKey) {
-        loadAvatar();
+        if (e.detail?.avatar !== undefined) {
+          setAvatar(e.detail.avatar);
+        } else {
+          loadAvatar();
+        }
       }
     };
     window.addEventListener('buu_avatar_updated', handleAvatarUpdate);
@@ -184,9 +189,14 @@ export default function StudentSidebar({
           {/* Student Profile Card when not collapsed */}
           {!collapsed && user && (
             <div className="mx-3 mt-3 p-3 rounded-2xl bg-purple-50/70 dark:bg-purple-950/30 border border-purple-100 dark:border-purple-900/40 flex items-center gap-3">
-              <div className="w-9 h-9 rounded-xl bg-gradient-to-tr from-[#7749BC] to-[#582B9E] text-white flex items-center justify-center font-bold text-xs shadow-xs shrink-0 overflow-hidden">
+              <button
+                type="button"
+                onClick={() => window.dispatchEvent(new CustomEvent('buu_open_avatar_upload'))}
+                className="relative group w-9 h-9 rounded-xl bg-gradient-to-tr from-[#7749BC] to-[#582B9E] text-white flex items-center justify-center font-bold text-xs shadow-xs shrink-0 overflow-hidden cursor-pointer"
+                title="คลิกเพื่อเปลี่ยนรูปโปรไฟล์"
+              >
                 {avatar ? (
-                  <img src={avatar} alt="Profile" className="w-full h-full object-cover" />
+                  <img src={avatar} alt="Profile" className="w-full h-full object-cover group-hover:opacity-75 transition-opacity" />
                 ) : (
                   (user.name || 'นิสิต')
                     .split(' ')
@@ -194,7 +204,10 @@ export default function StudentSidebar({
                     .slice(0, 2)
                     .join('') || <User className="w-4 h-4" />
                 )}
-              </div>
+                <div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 flex items-center justify-center transition-opacity">
+                  <Camera className="w-3.5 h-3.5 text-white" />
+                </div>
+              </button>
               <div className="flex flex-col min-w-0">
                 <span className="text-xs font-bold text-neutral-900 dark:text-neutral-100 truncate">
                   {user.name || 'นิสิต'}
@@ -265,20 +278,6 @@ export default function StudentSidebar({
               )}
 
               <nav className="flex flex-col gap-1">
-                {/* ข้อมูลบัญชีผู้ใช้ */}
-                <button
-                  type="button"
-                  onClick={() => {
-                    if (onCloseMobile) onCloseMobile();
-                    window.dispatchEvent(new CustomEvent('buu_open_account'));
-                  }}
-                  className="w-full flex items-center gap-2.5 px-3 py-2 rounded-2xl text-xs font-semibold text-neutral-700 dark:text-neutral-300 hover:bg-neutral-100 dark:hover:bg-slate-800 transition-colors cursor-pointer text-left"
-                  title="ข้อมูลบัญชีผู้ใช้"
-                >
-                  <User className="w-4 h-4 shrink-0 text-[#7749BC] dark:text-purple-400" />
-                  {!collapsed && <span className="truncate">ข้อมูลบัญชีผู้ใช้</span>}
-                </button>
-
                 {/* แจ้งปัญหาระบบ */}
                 <button
                   type="button"

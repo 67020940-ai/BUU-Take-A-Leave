@@ -12,7 +12,6 @@ import {
   BookOpen,
   LifeBuoy,
   FileText,
-  User,
   Menu,
 } from 'lucide-react';
 

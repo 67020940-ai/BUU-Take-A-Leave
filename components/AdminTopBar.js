@@ -12,7 +12,7 @@ import {
 } from 'lucide-react';
 import { useRouter } from 'next/navigation';
 import ThemeToggle from '@/components/ThemeToggle';
-import AccountModal from '@/components/AccountModal';
+import AvatarUploadModal from '@/components/AvatarUploadModal';
 import NotificationDetailModal from '@/components/NotificationDetailModal';
 import { resolveNotificationLink, getNotificationTarget, getUserAvatarKey } from '@/lib/ui';
 
@@ -30,8 +30,8 @@ export default function AdminTopBar({
   const [notifications, setNotifications] = useState([]);
   const [showNotifications, setShowNotifications] = useState(false);
   const [selectedNotification, setSelectedNotification] = useState(null);
-  const [showAccount, setShowAccount] = useState(false);
-  const [avatar, setAvatar] = useState(user?.avatar || '/avatars/juthamat.png');
+  const [showAvatarUpload, setShowAvatarUpload] = useState(false);
+  const [avatar, setAvatar] = useState(user?.avatar || null);
 
   useEffect(() => {
     let active = true;
@@ -39,16 +39,16 @@ export default function AdminTopBar({
     const saved = localStorage.getItem(key);
     if (saved) setAvatar(saved);
     else if (user?.avatar) setAvatar(user.avatar);
-    else setAvatar('/avatars/juthamat.png');
+    else setAvatar(null);
 
     // Fetch cross-device server avatar
-    fetch('/api/profile')
+    fetch('/api/avatar')
       .then((r) => (r.ok ? r.json() : null))
       .then((data) => {
-        if (active && data?.user?.avatar) {
-          setAvatar(data.user.avatar);
+        if (active && data?.avatar) {
+          setAvatar(data.avatar);
           try {
-            localStorage.setItem(key, data.user.avatar);
+            localStorage.setItem(key, data.avatar);
           } catch {}
         }
       })
@@ -56,7 +56,7 @@ export default function AdminTopBar({
 
     function handleAvatarUpdate(e) {
       if (e.detail?.key && e.detail.key !== key) return;
-      if (e.detail?.avatar) setAvatar(e.detail.avatar);
+      if (e.detail?.avatar !== undefined) setAvatar(e.detail.avatar);
       else setAvatar(localStorage.getItem(key));
     }
     window.addEventListener('buu_avatar_updated', handleAvatarUpdate);
@@ -67,12 +67,16 @@ export default function AdminTopBar({
   }, [user]);
 
   useEffect(() => {
-    const handleOpenAccount = () => {
+    const handleOpenUpload = () => {
       setShowNotifications(false);
-      setShowAccount(true);
+      setShowAvatarUpload(true);
     };
-    window.addEventListener('buu_open_account', handleOpenAccount);
-    return () => window.removeEventListener('buu_open_account', handleOpenAccount);
+    window.addEventListener('buu_open_avatar_upload', handleOpenUpload);
+    window.addEventListener('buu_open_account', handleOpenUpload);
+    return () => {
+      window.removeEventListener('buu_open_avatar_upload', handleOpenUpload);
+      window.removeEventListener('buu_open_account', handleOpenUpload);
+    };
   }, []);
 
   useEffect(() => {
@@ -261,10 +265,10 @@ export default function AdminTopBar({
             type="button"
             onClick={() => {
               setShowNotifications(false);
-              setShowAccount(true);
+              setShowAvatarUpload(true);
             }}
             className="flex items-center gap-2 pl-1 sm:pl-2 rounded-2xl p-1 hover:bg-neutral-100 dark:hover:bg-slate-800 transition-colors cursor-pointer text-left"
-            title="ดูข้อมูลบัญชีผู้ใช้ / เปลี่ยนรูปโปรไฟล์"
+            title="เปลี่ยนรูปโปรไฟล์ (อัปโหลดรูปภาพ)"
           >
             <div className="w-9 h-9 sm:w-10 sm:h-10 rounded-2xl bg-gradient-to-tr from-[#7749BC] to-[#582B9E] text-white flex items-center justify-center font-bold text-xs sm:text-sm shadow-md shadow-purple-900/20 shrink-0 overflow-hidden ring-2 ring-transparent hover:ring-[#7749BC]/40">
               {avatar ? (
@@ -285,17 +289,12 @@ export default function AdminTopBar({
         </div>
       </div>
 
-      {/* Account Profile Modal */}
-      <AccountModal
-        isOpen={showAccount}
-        onClose={() => setShowAccount(false)}
-        user={{
-          name: adminName,
-          role: 'admin',
-          email: user?.email || 'admin@go.buu.ac.th',
-          id: user?.id || 'admin-01',
-          department: user?.department || 'ศูนย์คอมพิวเตอร์และสารสนเทศ',
-        }}
+      {/* Account Avatar Upload Modal */}
+      <AvatarUploadModal
+        isOpen={showAvatarUpload}
+        onClose={() => setShowAvatarUpload(false)}
+        user={user}
+        onAvatarUpdated={(newAvatar) => setAvatar(newAvatar)}
       />
 
       {/* Notification Detail Modal */}

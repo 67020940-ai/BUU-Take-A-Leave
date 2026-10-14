@@ -15,7 +15,7 @@ import {
 } from 'lucide-react';
 import { useRouter } from 'next/navigation';
 import ThemeToggle from '@/components/ThemeToggle';
-import AccountModal from '@/components/AccountModal';
+import AvatarUploadModal from '@/components/AvatarUploadModal';
 import NotificationDetailModal from '@/components/NotificationDetailModal';
 import { resolveNotificationLink, getNotificationTarget, getUserAvatarKey } from '@/lib/ui';
 
@@ -33,8 +33,8 @@ export default function TeacherTopBar({
   const [notifications, setNotifications] = useState([]);
   const [showNotifications, setShowNotifications] = useState(false);
   const [selectedNotification, setSelectedNotification] = useState(null);
-  const [showAccount, setShowAccount] = useState(false);
-  const [avatar, setAvatar] = useState(user?.avatar || '/avatars/juthamat.png');
+  const [showAvatarUpload, setShowAvatarUpload] = useState(false);
+  const [avatar, setAvatar] = useState(user?.avatar || null);
   const storageKey = getUserAvatarKey(user);
 
   useEffect(() => {
@@ -44,19 +44,19 @@ export default function TeacherTopBar({
         const stored = localStorage.getItem(storageKey);
         if (stored) setAvatar(stored);
         else if (user?.avatar) setAvatar(user.avatar);
-        else setAvatar('/avatars/juthamat.png');
+        else setAvatar(null);
       } catch {}
     }
     loadAvatar();
 
     // Fetch cross-device server avatar
-    fetch('/api/profile')
+    fetch('/api/avatar')
       .then((r) => (r.ok ? r.json() : null))
       .then((data) => {
-        if (active && data?.user?.avatar) {
-          setAvatar(data.user.avatar);
+        if (active && data?.avatar) {
+          setAvatar(data.avatar);
           try {
-            localStorage.setItem(storageKey, data.user.avatar);
+            localStorage.setItem(storageKey, data.avatar);
           } catch {}
         }
       })
@@ -64,7 +64,7 @@ export default function TeacherTopBar({
 
     const handleAvatarUpdate = (e) => {
       if (!e.detail?.key || e.detail.key === storageKey) {
-        if (e.detail?.avatar) {
+        if (e.detail?.avatar !== undefined) {
           setAvatar(e.detail.avatar);
         } else {
           loadAvatar();
@@ -79,12 +79,16 @@ export default function TeacherTopBar({
   }, [storageKey, user]);
 
   useEffect(() => {
-    const handleOpenAccount = () => {
+    const handleOpenUpload = () => {
       setShowNotifications(false);
-      setShowAccount(true);
+      setShowAvatarUpload(true);
     };
-    window.addEventListener('buu_open_account', handleOpenAccount);
-    return () => window.removeEventListener('buu_open_account', handleOpenAccount);
+    window.addEventListener('buu_open_avatar_upload', handleOpenUpload);
+    window.addEventListener('buu_open_account', handleOpenUpload);
+    return () => {
+      window.removeEventListener('buu_open_avatar_upload', handleOpenUpload);
+      window.removeEventListener('buu_open_account', handleOpenUpload);
+    };
   }, []);
 
   useEffect(() => {
@@ -270,15 +274,15 @@ export default function TeacherTopBar({
             )}
           </div>
 
-          {/* User Profile Avatar with Name "ธีรเดช" / user.name */}
+          {/* User Profile Avatar with Name / user.name */}
           <button
             type="button"
             onClick={() => {
               setShowNotifications(false);
-              setShowAccount(true);
+              setShowAvatarUpload(true);
             }}
             className="flex items-center gap-2 pl-1 sm:pl-2 rounded-2xl p-1 hover:bg-neutral-100 dark:hover:bg-slate-800 transition-colors cursor-pointer text-left"
-            title="ดูข้อมูลบัญชีผู้ใช้ / เปลี่ยนรูปโปรไฟล์"
+            title="เปลี่ยนรูปโปรไฟล์ (อัปโหลดรูปภาพ)"
           >
             <div className="w-9 h-9 sm:w-10 sm:h-10 rounded-2xl bg-gradient-to-tr from-[#7749BC] to-[#582B9E] text-white flex items-center justify-center font-bold text-xs sm:text-sm shadow-md shadow-purple-900/20 shrink-0 overflow-hidden ring-2 ring-transparent hover:ring-[#7749BC]/40">
               {avatar ? (
@@ -299,18 +303,12 @@ export default function TeacherTopBar({
         </div>
       </div>
 
-      {/* Account Profile Modal */}
-      <AccountModal
-        isOpen={showAccount}
-        onClose={() => setShowAccount(false)}
-        user={{
-          name: teacherName,
-          role: 'teacher',
-          email: user?.email || 'teacher@buu.ac.th',
-          id: user?.id || 'teacher-01',
-          faculty: user?.faculty || 'คณะวิทยาการสารสนเทศ',
-          major: user?.major || 'ภาควิชาการจัดการสารสนเทศ',
-        }}
+      {/* Account Avatar Upload Modal */}
+      <AvatarUploadModal
+        isOpen={showAvatarUpload}
+        onClose={() => setShowAvatarUpload(false)}
+        user={user}
+        onAvatarUpdated={(newAvatar) => setAvatar(newAvatar)}
       />
 
       {/* Notification Detail Modal */}
