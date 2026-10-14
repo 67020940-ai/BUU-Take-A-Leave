@@ -301,7 +301,7 @@ export default function TeacherScheduleGrid({ courses = [], customItems = null, 
             return (
               <div
                 key={day.key}
-                className={`grid grid-cols-9 min-h-[96px] ${
+                className={`grid grid-cols-9 min-h-[115px] ${
                   dayIdx < DAYS.length - 1 ? 'border-b border-neutral-200/70 dark:border-slate-800' : ''
                 }`}
               >
@@ -345,18 +345,35 @@ export default function TeacherScheduleGrid({ courses = [], customItems = null, 
                           left: `${leftPct}%`,
                           width: `calc(${widthPct}% - 8px)`,
                         }}
-                        className={`absolute top-2 bottom-2 ml-1 p-2.5 rounded-xl border shadow-xs cursor-pointer transition-all hover:scale-[1.01] hover:shadow-md flex flex-col justify-center ${theme.card}`}
-                        title="คลิกเพื่อดูรายละเอียดวิชา"
+                        className={`absolute top-1.5 bottom-1.5 ml-1 p-2.5 rounded-2xl border shadow-xs cursor-pointer transition-all hover:scale-[1.01] hover:shadow-md flex flex-col justify-between overflow-hidden ${theme.card}`}
+                        title={`${item.code} ${item.name} (${item.room})`}
                       >
-                        <p className={`font-bold text-xs tracking-tight truncate ${theme.title}`}>
-                          {item.code}
-                        </p>
-                        <p className={`text-[11px] font-medium mt-0.5 truncate ${theme.room}`}>
-                          ห้อง {item.room}
-                        </p>
-                        <p className={`text-[10px] font-mono mt-0.5 ${theme.time}`}>
-                          {item.time}
-                        </p>
+                        <div className="min-w-0">
+                          <div className="flex items-center justify-between gap-1 mb-1">
+                            <span className={`font-extrabold text-xs font-mono truncate ${theme.title}`}>
+                              {item.code}
+                            </span>
+                            {item.group && (
+                              <span className="text-[9px] px-1.5 py-0.5 rounded-full bg-white/80 dark:bg-slate-800/80 font-bold text-neutral-700 dark:text-neutral-300 shrink-0 border border-neutral-200/50 dark:border-slate-700 shadow-2xs">
+                                กลุ่ม {item.group}
+                              </span>
+                            )}
+                          </div>
+                          <p className="text-xs font-bold leading-snug line-clamp-2 text-neutral-900 dark:text-neutral-100">
+                            {item.name}
+                          </p>
+                        </div>
+
+                        <div className="flex items-center justify-between gap-2 pt-1.5 mt-auto border-t border-neutral-200/50 dark:border-slate-700/50 text-[10px]">
+                          <span className="flex items-center gap-1 font-medium text-neutral-700 dark:text-neutral-300 truncate">
+                            <MapPin className="w-3 h-3 shrink-0 text-[#7749BC] dark:text-purple-400" />
+                            <span className="truncate">ห้อง {item.room}</span>
+                          </span>
+                          <span className="flex items-center gap-1 font-mono text-neutral-600 dark:text-neutral-400 shrink-0">
+                            <Clock className="w-2.5 h-2.5 shrink-0 text-[#7749BC] dark:text-purple-400" />
+                            <span>{item.time}</span>
+                          </span>
+                        </div>
                       </div>
                     );
                   })}

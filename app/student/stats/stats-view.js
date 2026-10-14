@@ -23,10 +23,11 @@ import {
   CalendarDays,
   ShieldCheck,
   Award,
+  X,
 } from 'lucide-react';
 import LeaveBarChart from '@/components/charts/LeaveBarChart';
 import LeaveDonutChart from '@/components/charts/LeaveDonutChart';
-import { sortAcademicTerms } from '@/lib/ui';
+import { sortAcademicTerms, isTermStartedOrPassed } from '@/lib/ui';
 
 export default function StudentStatsView({ summaries = [], leaves = [] }) {
   // Extract unique academic terms
@@ -39,11 +40,13 @@ export default function StudentStatsView({ summaries = [], leaves = [] }) {
       if (l.courseTerm && l.courseTerm !== '-') terms.add(l.courseTerm);
     });
     if (terms.size === 0) terms.add('1/2569');
-    return sortAcademicTerms(Array.from(terms), false);
+    const validTerms = Array.from(terms).filter((t) => isTermStartedOrPassed(t, '1/2569'));
+    return sortAcademicTerms(validTerms, false);
   }, [summaries, leaves]);
 
   const [selectedTerm, setSelectedTerm] = useState('all');
   const [chartMode, setChartMode] = useState('breakdown'); // 'breakdown' | 'total'
+  const [selectedCategoryModal, setSelectedCategoryModal] = useState(null);
 
   // Multi-semester comparison breakdown
   const semesterBreakdown = useMemo(() => {
@@ -129,6 +132,20 @@ export default function StudentStatsView({ summaries = [], leaves = [] }) {
       quotaRemainingPercent,
     };
   }, [leaves, summaries, selectedTerm, academicTerms]);
+
+  const categoryLeaves = useMemo(() => {
+    if (!selectedCategoryModal) return [];
+    return leaves.filter((l) => {
+      const matchType =
+        l.type === selectedCategoryModal ||
+        (selectedCategoryModal === 'อื่น ๆ' &&
+          (l.type === 'อื่น ๆ' || l.type === 'อื่นๆ' || l.type === 'เหตุฉุกเฉิน'));
+      const cTerm =
+        l.courseTerm || summaries.find((s) => s.course?.id === l.courseId)?.course?.term;
+      const matchTerm = selectedTerm === 'all' || cTerm === selectedTerm;
+      return matchType && matchTerm;
+    });
+  }, [selectedCategoryModal, leaves, summaries, selectedTerm]);
 
   // Bar Chart Data Prep: Chronological Semesters Comparison
   const sortedSemesters = useMemo(() => {
@@ -385,6 +402,7 @@ export default function StudentStatsView({ summaries = [], leaves = [] }) {
               height={200}
               centerTitle="คำขอลาทั้งหมด"
               centerValue={`${stats.total}`}
+              onSelectCategory={(cat) => setSelectedCategoryModal(cat)}
             />
           </div>
 
@@ -493,6 +511,88 @@ export default function StudentStatsView({ summaries = [], leaves = [] }) {
           })}
         </div>
       </div>
+
+      {/* Category Breakdown Drill-down Modal */}
+      {selectedCategoryModal && (
+        <div
+          className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-xs animate-in fade-in duration-150"
+          onClick={() => setSelectedCategoryModal(null)}
+        >
+          <div
+            className="w-full max-w-lg bg-white dark:bg-slate-900 rounded-3xl border border-neutral-200 dark:border-slate-800 shadow-2xl p-5 sm:p-6 space-y-4 animate-in zoom-in-95 duration-150"
+            onClick={(e) => e.stopPropagation()}
+          >
+            <div className="flex items-center justify-between pb-3 border-b border-neutral-100 dark:border-slate-800">
+              <div className="flex items-center gap-2.5">
+                <span className="w-8 h-8 rounded-xl bg-purple-100 dark:bg-purple-950 text-[#7749BC] dark:text-purple-300 flex items-center justify-center font-bold">
+                  <HeartPulse className="w-4 h-4" />
+                </span>
+                <div>
+                  <h3 className="font-bold text-sm sm:text-base text-neutral-900 dark:text-neutral-100">
+                    รายละเอียดสัดส่วน: {selectedCategoryModal}
+                  </h3>
+                  <p className="text-xs text-neutral-500">
+                    {selectedTerm === 'all' ? 'รวมทุกภาคเรียน' : `ภาคเรียนที่ ${selectedTerm}`} • พบ {categoryLeaves.length} รายการ
+                  </p>
+                </div>
+              </div>
+              <button
+                type="button"
+                onClick={() => setSelectedCategoryModal(null)}
+                className="p-1.5 rounded-xl text-neutral-400 hover:text-neutral-700 dark:hover:text-neutral-200 hover:bg-neutral-100 dark:hover:bg-slate-800 cursor-pointer"
+              >
+                <X className="w-4 h-4" />
+              </button>
+            </div>
+
+            <div className="space-y-2 max-h-72 overflow-y-auto pr-1">
+              {categoryLeaves.length === 0 ? (
+                <div className="py-8 text-center text-xs text-neutral-400">
+                  ไม่มีประวัติการลาในหมวดหมู่ {selectedCategoryModal}
+                </div>
+              ) : (
+                categoryLeaves.map((l) => (
+                  <div
+                    key={l.id}
+                    className="p-3 rounded-2xl border border-neutral-200/80 dark:border-slate-800 bg-neutral-50/60 dark:bg-slate-800/40 space-y-1.5 text-xs"
+                  >
+                    <div className="flex items-center justify-between">
+                      <span className="font-bold text-neutral-900 dark:text-neutral-100">
+                        {l.courseCode ? `${l.courseCode} ${l.courseName || ''}` : l.courseName || 'ไม่ระบุวิชา'}
+                      </span>
+                      <span className={`px-2 py-0.5 rounded-full text-[10px] font-bold ${
+                        l.status === 'อนุมัติ'
+                          ? 'bg-emerald-100 text-emerald-700 dark:bg-emerald-950 dark:text-emerald-300'
+                          : l.status === 'ไม่อนุมัติ'
+                          ? 'bg-rose-100 text-rose-700 dark:bg-rose-950 dark:text-rose-300'
+                          : 'bg-amber-100 text-amber-700 dark:bg-amber-950 dark:text-amber-300'
+                      }`}>
+                        {l.status}
+                      </span>
+                    </div>
+                    <p className="text-neutral-600 dark:text-neutral-400 text-[11px]">
+                      {l.startDate === l.endDate ? l.startDate : `${l.startDate} ถึง ${l.endDate}`} • {l.period || 'เต็มคาบ'}
+                    </p>
+                    <p className="text-neutral-500 text-[11px]">
+                      เหตุผล: {l.reason}
+                    </p>
+                  </div>
+                ))
+              )}
+            </div>
+
+            <div className="pt-2 border-t border-neutral-100 dark:border-slate-800 flex justify-end">
+              <button
+                type="button"
+                onClick={() => setSelectedCategoryModal(null)}
+                className="px-4 py-2 rounded-xl bg-[#7749BC] text-white text-xs font-bold shadow-xs hover:bg-[#683ca8] cursor-pointer"
+              >
+                ปิดหน้าต่าง
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

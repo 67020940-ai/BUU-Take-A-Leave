@@ -34,6 +34,7 @@ export default function LeaveDonutChart({
   height = 240,
   centerTitle = '',
   centerValue = '',
+  onSelectCategory,
 }) {
   const [isMounted, setIsMounted] = useState(false);
   const [isDark, setIsDark] = useState(false);
@@ -90,6 +91,15 @@ export default function LeaveDonutChart({
     responsive: true,
     maintainAspectRatio: false,
     cutout: '72%',
+    onClick: (event, elements) => {
+      if (elements && elements.length > 0 && onSelectCategory) {
+        const index = elements[0].index;
+        const clickedLabel = displayLabels[index];
+        if (clickedLabel && clickedLabel !== 'ยังไม่มีข้อมูล') {
+          onSelectCategory(clickedLabel);
+        }
+      }
+    },
     plugins: {
       legend: {
         display: false, // We render a custom modern legend alongside
@@ -119,11 +129,11 @@ export default function LeaveDonutChart({
   };
 
   return (
-    <div className="flex flex-col xl:flex-row items-center justify-center gap-6 w-full">
+    <div className="flex flex-col xl:flex-row items-center justify-center gap-6 w-full relative z-10 pointer-events-auto">
       {/* Chart Canvas with Center Stat */}
       <div
         style={{ height, maxWidth: '100%' }}
-        className="relative flex items-center justify-center shrink-0 aspect-square max-w-[240px] w-full mx-auto"
+        className="relative flex items-center justify-center shrink-0 aspect-square max-w-[240px] w-full mx-auto cursor-pointer"
       >
         <Doughnut data={data} options={options} />
         <div className="absolute inset-0 flex flex-col items-center justify-center pointer-events-none">
@@ -146,7 +156,9 @@ export default function LeaveDonutChart({
           return (
             <div
               key={lbl}
-              className="flex items-center justify-between p-2.5 rounded-xl bg-neutral-50/70 dark:bg-slate-800/50 border border-neutral-200/50 dark:border-slate-700/50 hover:bg-neutral-100/70 transition-colors text-xs"
+              onClick={() => onSelectCategory && onSelectCategory(lbl)}
+              className="flex items-center justify-between p-2.5 rounded-xl bg-neutral-50/70 dark:bg-slate-800/50 border border-neutral-200/50 dark:border-slate-700/50 hover:bg-purple-50/80 dark:hover:bg-purple-950/40 hover:border-purple-300 dark:hover:border-purple-700 transition-all text-xs cursor-pointer active:scale-98 select-none relative z-10 shadow-2xs"
+              title={`คลิกเพื่อดูรายละเอียดสัดส่วน ${lbl}`}
             >
               <div className="flex items-center gap-2 min-w-0">
                 <span

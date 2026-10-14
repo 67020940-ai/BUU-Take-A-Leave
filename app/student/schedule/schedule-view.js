@@ -15,7 +15,7 @@ import {
   CheckCircle2,
   TrendingUp,
 } from 'lucide-react';
-import { DAY_LABEL_TH, formatThaiDay } from '@/lib/ui';
+import { DAY_LABEL_TH, formatThaiDay, formatTeacherFullName } from '@/lib/ui';
 
 export default function StudentScheduleView({ summaries = [] }) {
   // Extract unique academic terms
@@ -195,7 +195,7 @@ export default function StudentScheduleView({ summaries = [] }) {
                         </div>
                         <div className="flex items-center gap-1.5">
                           <UserRound className="w-3.5 h-3.5 text-neutral-400 shrink-0" />
-                          <span className="truncate max-w-[140px]">{course.teacherName || course.teacher?.name || 'อาจารย์ผู้สอน'}</span>
+                          <span className="truncate max-w-[160px]">{formatTeacherFullName(course.teacherName || course.teacher?.name)}</span>
                         </div>
                       </div>
                     </div>

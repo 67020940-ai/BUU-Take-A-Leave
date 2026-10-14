@@ -215,7 +215,7 @@ export default function AdminSidebar({
         </div>
 
           {/* Navigation Links Body */}
-          <div className="p-3 sm:p-4 space-y-6 overflow-y-auto max-h-[calc(100vh-140px)]">
+          <div className="px-3 pt-1.5 pb-3 sm:px-4 sm:pt-2 sm:pb-4 space-y-6 overflow-y-auto max-h-[calc(100vh-140px)]">
             <div className="space-y-1.5">
               {!collapsed ? (
                 <h3 className="px-3 text-xs font-bold uppercase tracking-wider text-neutral-400 dark:text-neutral-500 flex items-center gap-2">

@@ -12,12 +12,15 @@ import {
   ArrowRight,
   ClipboardCheck,
   ChevronRight,
+  Search,
+  X,
 } from 'lucide-react';
 import TeacherSidebar from '@/components/TeacherSidebar';
 import TeacherTopBar from '@/components/TeacherTopBar';
 import TeacherScheduleGrid from '@/components/TeacherScheduleGrid';
 import MobileBottomNav from '@/components/MobileBottomNav';
 import { useSidebarCollapsed } from '@/lib/useSidebarCollapsed';
+import { STATUS_DETAILS } from '@/lib/ui';
 
 export default function TeacherDashboard({
   user,
@@ -92,6 +95,93 @@ export default function TeacherDashboard({
 
   const [isSidebarCollapsed] = useSidebarCollapsed();
 
+  // Search logic supporting keywords:
+  // - ชื่อนิสิต (studentName)
+  // - รหัสนิสิต (studentCode)
+  // - การลาของนิสิต (all student leaves)
+  // - การลาที่อนุมัติแล้ว (approved leaves)
+  // - รายการที่รออนุมัติ (pending leaves)
+  // - ตารางสอน (schedule / courses)
+  const searchResults = useMemo(() => {
+    const trimmed = searchQuery.trim().toLowerCase();
+    if (!trimmed) return null;
+
+    const isScheduleMatch =
+      trimmed.includes('ตาราง') ||
+      trimmed.includes('สอน') ||
+      trimmed.includes('เรียน') ||
+      trimmed.includes('schedule') ||
+      trimmed.includes('คาบ');
+
+    const isPendingMatch =
+      trimmed.includes('รอ') ||
+      trimmed.includes('รออนุมัติ') ||
+      trimmed.includes('พิจารณา') ||
+      trimmed.includes('pending');
+
+    const isApprovedMatch =
+      trimmed.includes('อนุมัติแล้ว') ||
+      (trimmed.includes('อนุมัติ') && !trimmed.includes('รอ') && !trimmed.includes('ไม่')) ||
+      trimmed.includes('approved');
+
+    const isRejectedMatch =
+      trimmed.includes('ไม่อนุมัติ') ||
+      trimmed.includes('ปฏิเสธ') ||
+      trimmed.includes('rejected');
+
+    const isGeneralLeaveMatch =
+      trimmed.includes('การลา') ||
+      trimmed.includes('คำร้อง') ||
+      trimmed.includes('ใบลา') ||
+      trimmed.includes('ลา');
+
+    const matchedLeaves = leaves.filter((l) => {
+      if (isPendingMatch && l.status === 'รออนุมัติ') return true;
+      if (isApprovedMatch && l.status === 'อนุมัติ') return true;
+      if (isRejectedMatch && l.status === 'ไม่อนุมัติ') return true;
+      if (isGeneralLeaveMatch && !isPendingMatch && !isApprovedMatch && !isRejectedMatch) return true;
+
+      const sName = String(l.studentName || '').toLowerCase();
+      const sCode = String(l.studentCode || '').toLowerCase();
+      const reason = String(l.reason || '').toLowerCase();
+      const type = String(l.type || '').toLowerCase();
+      const cCode = String(l.courseCode || '').toLowerCase();
+      const cName = String(l.courseName || '').toLowerCase();
+
+      return (
+        sName.includes(trimmed) ||
+        sCode.includes(trimmed) ||
+        reason.includes(trimmed) ||
+        type.includes(trimmed) ||
+        cCode.includes(trimmed) ||
+        cName.includes(trimmed)
+      );
+    });
+
+    const matchedCourses = courses.filter((c) => {
+      if (isScheduleMatch) return true;
+      const cCode = String(c.code || '').toLowerCase();
+      const cName = String(c.name || '').toLowerCase();
+      const room = String(c.room || '').toLowerCase();
+      const day = String(c.day || '').toLowerCase();
+      return (
+        cCode.includes(trimmed) ||
+        cName.includes(trimmed) ||
+        room.includes(trimmed) ||
+        day.includes(trimmed)
+      );
+    });
+
+    return {
+      query: searchQuery.trim(),
+      leaves: matchedLeaves,
+      courses: matchedCourses,
+      isScheduleMatch,
+      isPendingMatch,
+      isApprovedMatch,
+    };
+  }, [searchQuery, leaves, courses]);
+
   return (
     <div className="min-h-screen bg-slate-50/70 dark:bg-slate-950 flex flex-col lg:flex-row">
       {/* 1. Left Sidebar (mode="menu", activeTab="home") */}
@@ -117,6 +207,124 @@ export default function TeacherDashboard({
         />
 
         <main className={`flex-1 p-4 sm:p-6 lg:p-8 pb-24 lg:pb-8 space-y-6 ${isSidebarCollapsed ? 'max-w-none' : 'max-w-7xl'} w-full mx-auto transition-all duration-300`}>
+          {/* Interactive Search Results Panel (เมื่อมีการค้นหา ชื่อนิสิต, รหัสนิสิต, การลา, ตารางสอน) */}
+          {searchResults && (
+            <div className="p-4 sm:p-5 rounded-3xl bg-white dark:bg-slate-900 border-2 border-[#7749BC]/70 dark:border-purple-600 shadow-md space-y-4 animate-in fade-in duration-150">
+              <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 pb-3 border-b border-neutral-100 dark:border-slate-800">
+                <div className="flex items-center gap-2.5">
+                  <span className="w-8 h-8 rounded-2xl bg-purple-100 dark:bg-purple-950 text-[#7749BC] dark:text-purple-300 flex items-center justify-center shrink-0">
+                    <Search className="w-4 h-4" />
+                  </span>
+                  <div>
+                    <h3 className="font-bold text-sm sm:text-base text-neutral-900 dark:text-neutral-100">
+                      ผลการค้นหา: &ldquo;<span className="text-[#7749BC] dark:text-purple-300">{searchQuery}</span>&rdquo;
+                    </h3>
+                    <p className="text-xs text-neutral-500 dark:text-neutral-400">
+                      พบคำร้อง {searchResults.leaves.length} รายการ และตารางสอน {searchResults.courses.length} คาบ
+                    </p>
+                  </div>
+                </div>
+                <button
+                  type="button"
+                  onClick={() => setSearchQuery('')}
+                  className="px-3 py-1.5 rounded-xl bg-neutral-100 dark:bg-slate-800 hover:bg-neutral-200 text-xs font-semibold text-neutral-600 dark:text-neutral-300 cursor-pointer self-start sm:self-auto flex items-center gap-1"
+                >
+                  <X className="w-3.5 h-3.5" />
+                  <span>ล้างการค้นหา</span>
+                </button>
+              </div>
+
+              {/* 1. Matched Leaves */}
+              {searchResults.leaves.length > 0 && (
+                <div className="space-y-2">
+                  <div className="flex items-center justify-between">
+                    <h4 className="text-xs font-bold text-neutral-500 uppercase tracking-wider">
+                      คำร้องขอลาของนิสิต ({searchResults.leaves.length})
+                    </h4>
+                    <Link
+                      href={`/teacher/requests?search=${encodeURIComponent(searchQuery)}`}
+                      className="text-xs font-semibold text-[#7749BC] dark:text-purple-300 hover:underline"
+                    >
+                      ดูคำร้องทั้งหมดในหน้ารายการ →
+                    </Link>
+                  </div>
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5 max-h-64 overflow-y-auto pr-1">
+                    {searchResults.leaves.slice(0, 6).map((leave) => {
+                      const status = STATUS_DETAILS[leave.status] || STATUS_DETAILS['รออนุมัติ'];
+                      return (
+                        <div
+                          key={leave.id}
+                          className="p-3 rounded-2xl border border-neutral-200/80 dark:border-slate-800 bg-neutral-50/60 dark:bg-slate-800/40 flex items-start justify-between gap-2 text-xs"
+                        >
+                          <div className="min-w-0">
+                            <div className="flex items-center gap-1.5">
+                              <span className="font-bold text-neutral-900 dark:text-neutral-100 truncate">
+                                {leave.studentName}
+                              </span>
+                              <span className="text-[10px] font-mono text-neutral-400">
+                                {leave.studentCode}
+                              </span>
+                            </div>
+                            <p className="text-[11px] text-neutral-500 truncate mt-0.5">
+                              {leave.courseName || leave.courseCode} • {leave.type}
+                            </p>
+                            <p className="text-[11px] text-neutral-400 truncate">
+                              เหตุผล: {leave.reason}
+                            </p>
+                          </div>
+                          <div className="flex flex-col items-end gap-1 shrink-0">
+                            <span className={`px-2 py-0.5 rounded-full text-[10px] font-bold border ${status.badge}`}>
+                              {status.label}
+                            </span>
+                            <Link
+                              href="/teacher/requests"
+                              className="text-[10px] text-[#7749BC] dark:text-purple-300 font-bold hover:underline"
+                            >
+                              ตรวจสอบ →
+                            </Link>
+                          </div>
+                        </div>
+                      );
+                    })}
+                  </div>
+                </div>
+              )}
+
+              {/* 2. Matched Schedule / Courses */}
+              {searchResults.courses.length > 0 && (
+                <div className="space-y-2 pt-2 border-t border-neutral-100 dark:border-slate-800">
+                  <h4 className="text-xs font-bold text-neutral-500 uppercase tracking-wider">
+                    ตารางสอนและรายวิชาที่พบ ({searchResults.courses.length})
+                  </h4>
+                  <div className="grid grid-cols-1 sm:grid-cols-3 gap-2">
+                    {searchResults.courses.map((c) => (
+                      <div
+                        key={c.id}
+                        className="p-3 rounded-xl border border-purple-200 dark:border-purple-800/60 bg-purple-50/40 dark:bg-purple-950/20 text-xs space-y-1"
+                      >
+                        <span className="font-mono font-bold text-[#7749BC] dark:text-purple-300 block">
+                          {c.code} กลุ่ม {c.group || '1'}
+                        </span>
+                        <p className="font-bold text-neutral-800 dark:text-neutral-200 truncate">
+                          {c.name}
+                        </p>
+                        <p className="text-[11px] text-neutral-500">
+                          {c.day ? `วัน${c.day}` : ''} • ห้อง {c.room || '-'}
+                        </p>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              )}
+
+              {searchResults.leaves.length === 0 && searchResults.courses.length === 0 && (
+                <div className="py-6 text-center text-xs text-neutral-400">
+                  ไม่พบข้อมูลคำร้องหรือตารางสอนที่ตรงกับ &ldquo;{searchQuery}&rdquo;
+                </div>
+              )}
+            </div>
+          )}
+
           {/* 4 Connected Horizontal Summary Boxes (Matching Student View & Screenshot 3) */}
           <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 sm:gap-4">
             {/* Box 1: คำร้องขอลาทั้งหมด */}

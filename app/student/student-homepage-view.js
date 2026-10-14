@@ -32,7 +32,7 @@ import StudentStatsView from './stats/stats-view';
 import StudentHistoryView from './history/history-view';
 import StudentScheduleView from './schedule/schedule-view';
 import { getCoursePrep } from '@/lib/coursePrepData';
-import { sortAcademicTerms } from '@/lib/ui';
+import { sortAcademicTerms, formatTeacherFullName } from '@/lib/ui';
 import { useSidebarCollapsed } from '@/lib/useSidebarCollapsed';
 
 export default function StudentHomepageView({
@@ -440,7 +440,7 @@ export default function StudentHomepageView({
                               {c.name}
                             </h4>
                             <p className="text-xs text-neutral-500 dark:text-neutral-400 truncate mt-0.5">
-                              {c.teacherName || c.teacher?.name || 'อาจารย์ผู้สอน'}
+                              {formatTeacherFullName(c.teacherName || c.teacher?.name)}
                             </p>
                           </div>
 
@@ -659,7 +659,7 @@ export default function StudentHomepageView({
                             <div className="flex items-center gap-3 flex-wrap text-xs text-slate-600 dark:text-slate-300 pt-0.5">
                               <span className="flex items-center gap-1 font-medium">
                                 <User className="w-3.5 h-3.5 text-[#7749BC] dark:text-purple-400 shrink-0" />
-                                <span>{c.teacherName || c.teacher?.name || 'อาจารย์ผู้สอน'}</span>
+                                <span>{formatTeacherFullName(c.teacherName || c.teacher?.name)}</span>
                               </span>
                               <span className="text-slate-400 dark:text-slate-600">•</span>
                               <span className="flex items-center gap-1 font-mono font-medium">
@@ -690,10 +690,11 @@ export default function StudentHomepageView({
 
                         {/* Distinct, beautiful prep box with rich color and dynamic course data */}
                         <div className="p-3.5 rounded-2xl bg-purple-50/70 dark:bg-slate-900/90 border border-purple-200/80 dark:border-purple-900/60 space-y-2">
-                          <div className="flex items-center gap-2">
-                            <span className="text-[10px] font-extrabold uppercase px-2.5 py-0.5 rounded-md bg-[#7749BC] text-white shadow-2xs">
-                              สัปดาห์ที่ {prep.week}
-                            </span>
+                          <div className="flex items-center gap-2.5">
+                            <div className="flex flex-col items-center justify-center text-center px-2.5 py-1 rounded-xl bg-[#7749BC] text-white shadow-2xs shrink-0 min-w-[54px]">
+                              <span className="text-[10px] font-bold leading-none tracking-tight">สัปดาห์</span>
+                              <span className="text-[11px] font-extrabold leading-none mt-1">ที่ {prep.week}</span>
+                            </div>
                             <span className="text-xs font-bold text-neutral-900 dark:text-purple-200 truncate">
                               {prep.topic}
                             </span>

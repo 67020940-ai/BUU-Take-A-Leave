@@ -45,7 +45,7 @@ const DAYS = [
 ];
 
 import { getCoursePrep } from '@/lib/coursePrepData';
-
+import { formatTeacherFullName } from '@/lib/ui';
 
 export default function StudentScheduleGrid({
   summaries = [],
@@ -109,7 +109,7 @@ export default function StudentScheduleGrid({
           group: c.group || '1',
           room: c.room || 'ไม่ระบุห้อง',
           time: c.time || '09:00 - 12:00',
-          teacherName: c.teacherName || c.teacher?.name || 'อาจารย์ผู้สอน',
+          teacherName: formatTeacherFullName(c.teacherName || c.teacher?.name),
           dayKey,
           startSlot,
           slotSpan,
@@ -141,11 +141,6 @@ export default function StudentScheduleGrid({
                 ตารางเรียนและห้องเรียนประจำสัปดาห์ ภาคเรียนที่ {semester} • คลิกที่วิชาเพื่อดูแนวข้อสอบ & ข้อมูลเตรียมตัวก่อนเรียน
               </p>
             </div>
-          </div>
-
-          <div className="flex items-center gap-2 text-xs text-neutral-500 dark:text-neutral-400">
-            <span className="w-3 h-3 rounded-md bg-[#DDD6FE] dark:bg-purple-900/90 border border-purple-300 dark:border-purple-600" />
-            <span className="hidden sm:inline font-medium">วิชาที่ลงทะเบียนเรียน</span>
           </div>
         </div>
       )}
@@ -493,10 +488,11 @@ export default function StudentScheduleGrid({
               <div className="space-y-3 animate-in fade-in duration-100">
                 {/* Current Week Banner */}
                 <div className="p-3.5 rounded-2xl bg-purple-50 dark:bg-purple-950/40 border border-purple-200 dark:border-purple-800/70 space-y-1">
-                  <div className="flex items-center gap-2">
-                    <span className="text-[10px] font-black uppercase px-2 py-0.5 rounded-full bg-[#7749BC] text-white">
-                      สัปดาห์ที่ {selectedCourse.prep.week}
-                    </span>
+                  <div className="flex items-center gap-2.5">
+                    <div className="flex flex-col items-center justify-center text-center px-2.5 py-1 rounded-xl bg-[#7749BC] text-white shadow-2xs shrink-0 min-w-[54px]">
+                      <span className="text-[10px] font-bold leading-none tracking-tight">สัปดาห์</span>
+                      <span className="text-[11px] font-extrabold leading-none mt-1">ที่ {selectedCourse.prep.week}</span>
+                    </div>
                     <h5 className="font-bold text-xs sm:text-sm text-neutral-900 dark:text-purple-100">
                       {selectedCourse.prep.topic}
                     </h5>

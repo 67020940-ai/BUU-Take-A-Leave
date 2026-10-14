@@ -30,11 +30,16 @@ export default function LoginPage() {
     e.preventDefault();
     setError('');
 
-    const form = e.currentTarget;
-    if (!form.checkValidity()) {
-      setEmailInvalid(!form.email.validity.valid);
-      setPasswordInvalid(!form.password.validity.valid);
-      form.reportValidity();
+    let hasError = false;
+    if (!email.trim() || !email.includes('@')) {
+      setEmailInvalid(true);
+      hasError = true;
+    }
+    if (!password.trim()) {
+      setPasswordInvalid(true);
+      hasError = true;
+    }
+    if (hasError) {
       return;
     }
 
@@ -110,7 +115,7 @@ export default function LoginPage() {
               </div>
             )}
 
-            <form onSubmit={handleSubmit} className="space-y-3.5">
+            <form onSubmit={handleSubmit} noValidate className="space-y-3.5">
               <div className="space-y-1">
                 <label htmlFor="email" className="text-xs font-semibold text-slate-700 dark:text-slate-300 flex items-center justify-between">
                   <span>E-mail</span>
@@ -123,28 +128,31 @@ export default function LoginPage() {
                   onChange={(e) => {
                     setEmail(e.target.value);
                     if (error) setError('');
-                    if (emailInvalid && e.target.validity.valid) {
+                    if (emailInvalid && e.target.value.trim() && e.target.value.includes('@')) {
                       setEmailInvalid(false);
                     }
                   }}
                   onBlur={(e) => {
-                    if (email && !e.target.validity.valid) {
+                    if (!email.trim() || !email.includes('@')) {
                       setEmailInvalid(true);
-                    } else if (e.target.validity.valid) {
+                    } else {
                       setEmailInvalid(false);
                     }
                   }}
-                  onInvalid={() => setEmailInvalid(true)}
                   placeholder="@go.buu.ac.th หรือ @buu.ac.th"
                   autoComplete="username"
                   disabled={loading}
-                  required
                   className={`w-full px-3.5 py-2.5 rounded-xl border bg-white dark:bg-slate-900 text-xs sm:text-sm font-medium text-slate-900 dark:text-slate-100 placeholder:text-slate-400 focus:outline-none transition-all shadow-2xs ${
-                    error || emailInvalid
+                    emailInvalid
                       ? 'border-rose-500 focus:border-rose-500 focus:ring-2 focus:ring-rose-500/20'
-                      : 'border-slate-200 dark:border-slate-700 focus:border-[#7749BC] focus:ring-1 focus:ring-[#7749BC] [&:not(:placeholder-shown):invalid]:border-rose-500 [&:not(:placeholder-shown):invalid]:focus:border-rose-500 [&:not(:placeholder-shown):invalid]:focus:ring-2 [&:not(:placeholder-shown):invalid]:focus:ring-rose-500/20'
+                      : 'border-slate-200 dark:border-slate-700 focus:border-[#7749BC] focus:ring-1 focus:ring-[#7749BC]'
                   }`}
                 />
+                {emailInvalid && (
+                  <p className="text-[11px] text-rose-500 dark:text-rose-400 font-medium mt-1">
+                    กรุณาใส่อีเมลที่ถูกต้อง
+                  </p>
+                )}
               </div>
 
               <div className="space-y-1">
@@ -169,24 +177,22 @@ export default function LoginPage() {
                     onChange={(e) => {
                       setPassword(e.target.value);
                       if (error) setError('');
-                      if (passwordInvalid && e.target.value) {
+                      if (passwordInvalid && e.target.value.trim()) {
                         setPasswordInvalid(false);
                       }
                     }}
-                    onBlur={(e) => {
-                      if (password && !e.target.validity.valid) {
+                    onBlur={() => {
+                      if (!password.trim()) {
                         setPasswordInvalid(true);
-                      } else if (e.target.validity.valid) {
+                      } else {
                         setPasswordInvalid(false);
                       }
                     }}
-                    onInvalid={() => setPasswordInvalid(true)}
                     placeholder="••••••••"
                     autoComplete="current-password"
                     disabled={loading}
-                    required
                     className={`w-full pl-3.5 pr-10 py-2.5 rounded-xl border bg-white dark:bg-slate-900 text-xs sm:text-sm font-medium text-slate-900 dark:text-slate-100 placeholder:text-slate-400 focus:outline-none transition-all shadow-2xs ${
-                      error || passwordInvalid
+                      passwordInvalid
                         ? 'border-rose-500 focus:border-rose-500 focus:ring-2 focus:ring-rose-500/20'
                         : 'border-slate-200 dark:border-slate-700 focus:border-[#7749BC] focus:ring-1 focus:ring-[#7749BC]'
                     }`}
@@ -200,6 +206,11 @@ export default function LoginPage() {
                     {showPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
                   </button>
                 </div>
+                {passwordInvalid && (
+                  <p className="text-[11px] text-rose-500 dark:text-rose-400 font-medium mt-1">
+                    กรุณากรอกรหัสผ่านที่ถูกต้อง
+                  </p>
+                )}
               </div>
 
               <button

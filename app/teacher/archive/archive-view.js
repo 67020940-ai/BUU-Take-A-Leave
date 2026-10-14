@@ -26,11 +26,12 @@ import {
   HelpCircle,
   ChevronDown,
 } from 'lucide-react';
-import { STATUS_DETAILS, LEAVE_TYPE_DETAILS, LEAVE_TYPE_DEFAULT, formatThaiDate, initials, sortAcademicTerms } from '@/lib/ui';
+import { STATUS_DETAILS, LEAVE_TYPE_DETAILS, LEAVE_TYPE_DEFAULT, formatThaiDate, initials, sortAcademicTerms, isTermStartedOrPassed } from '@/lib/ui';
 import AttachmentPreview from '@/components/AttachmentPreview';
 
 export default function ArchiveView({ courses = [], leaves = [] }) {
-  // Extract all unique academic terms
+  // Extract all unique academic terms that have already passed or started
+  // Filters out any future semesters that haven't arrived yet (e.g. 2/2569, 1/2570)
   const terms = useMemo(() => {
     const set = new Set();
     courses.forEach((c) => {
@@ -40,12 +41,13 @@ export default function ArchiveView({ courses = [], leaves = [] }) {
       if (l.courseTerm && l.courseTerm !== '-') set.add(l.courseTerm);
     });
     if (set.size === 0) set.add('1/2569');
-    // Ensure we have at least sample past terms for demonstration
-    if (set.size === 1) {
-      set.add('2/2568');
-      set.add('1/2568');
-    }
-    return sortAcademicTerms(Array.from(set), false);
+    // Ensure all passed semesters in past academic years are available
+    set.add('1/2569');
+    set.add('2/2568');
+    set.add('1/2568');
+
+    const validTerms = Array.from(set).filter((t) => isTermStartedOrPassed(t, '1/2569'));
+    return sortAcademicTerms(validTerms, false);
   }, [courses, leaves]);
 
   const [selectedTerm, setSelectedTerm] = useState(terms[0] || '1/2569');
