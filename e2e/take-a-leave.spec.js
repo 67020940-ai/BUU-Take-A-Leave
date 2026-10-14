@@ -73,7 +73,7 @@ test.describe('BUU Take A Leave - Student Leave Flow', () => {
     await expect(mobileNav).toBeVisible();
 
     // ตรวจสอบการสลับแท็บผ่าน Mobile Bottom Nav
-    const scheduleNavBtn = mobileNav.getByRole('button', { name: /ตารางเรียน/i });
+    const scheduleNavBtn = mobileNav.locator('a, button').filter({ hasText: /ตารางเรียน/i });
     await scheduleNavBtn.click();
     await expect(page).toHaveURL(/tab=schedule/);
 

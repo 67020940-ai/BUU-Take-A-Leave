@@ -114,7 +114,7 @@ export default function LoginPage() {
               <div className="space-y-1">
                 <label htmlFor="email" className="text-xs font-semibold text-slate-700 dark:text-slate-300 flex items-center justify-between">
                   <span>E-mail</span>
-                  <span className="text-[11px] text-slate-400 font-normal">นิสิต / อาจารย์</span>
+                  <span className="text-[11px] text-slate-400 font-normal">นิสิต / อาจารย์ / ผู้ดูแลระบบ</span>
                 </label>
                 <input
                   id="email"
@@ -220,6 +220,59 @@ export default function LoginPage() {
                 )}
               </button>
             </form>
+
+            {/* Quick Test Accounts */}
+            <div className="mt-4 pt-3.5 border-t border-slate-100 dark:border-slate-800">
+              <div className="flex items-center justify-between mb-2">
+                <span className="text-[11px] font-semibold text-slate-500 dark:text-slate-400">
+                  บัญชีทดสอบระบบ (รหัสผ่าน 1234):
+                </span>
+              </div>
+              <div className="grid grid-cols-3 gap-1.5">
+                <button
+                  type="button"
+                  onClick={() => {
+                    setEmail('66000001@go.buu.ac.th');
+                    setPassword('1234');
+                    setError('');
+                    setEmailInvalid(false);
+                    setPasswordInvalid(false);
+                  }}
+                  className="px-2 py-1.5 rounded-lg bg-slate-100 dark:bg-slate-800 hover:bg-purple-100 dark:hover:bg-purple-950/60 text-slate-700 dark:text-slate-300 hover:text-[#7749BC] dark:hover:text-purple-300 text-[10px] font-medium transition-all text-center cursor-pointer border border-transparent hover:border-purple-200 dark:hover:border-purple-800"
+                  title="คลิกเพื่อกรอกบัญชีนิสิต"
+                >
+                  🎓 นิสิต
+                </button>
+                <button
+                  type="button"
+                  onClick={() => {
+                    setEmail('teacher-teeradech@buu.ac.th');
+                    setPassword('1234');
+                    setError('');
+                    setEmailInvalid(false);
+                    setPasswordInvalid(false);
+                  }}
+                  className="px-2 py-1.5 rounded-lg bg-slate-100 dark:bg-slate-800 hover:bg-purple-100 dark:hover:bg-purple-950/60 text-slate-700 dark:text-slate-300 hover:text-[#7749BC] dark:hover:text-purple-300 text-[10px] font-medium transition-all text-center cursor-pointer border border-transparent hover:border-purple-200 dark:hover:border-purple-800"
+                  title="คลิกเพื่อกรอกบัญชีอาจารย์"
+                >
+                  👨‍🏫 อาจารย์
+                </button>
+                <button
+                  type="button"
+                  onClick={() => {
+                    setEmail('admin@buu.ac.th');
+                    setPassword('1234');
+                    setError('');
+                    setEmailInvalid(false);
+                    setPasswordInvalid(false);
+                  }}
+                  className="px-2 py-1.5 rounded-lg bg-purple-50 dark:bg-purple-950/40 hover:bg-purple-100 dark:hover:bg-purple-900/60 text-[#7749BC] dark:text-purple-300 text-[10px] font-bold transition-all text-center cursor-pointer border border-purple-200/80 dark:border-purple-800"
+                  title="คลิกเพื่อกรอกบัญชีผู้ดูแลระบบ"
+                >
+                  🛡️ แอดมิน
+                </button>
+              </div>
+            </div>
 
             {/* Mobile Feature Highlights */}
             <div className="md:hidden mt-6 pt-4 border-t border-slate-100 dark:border-slate-800">

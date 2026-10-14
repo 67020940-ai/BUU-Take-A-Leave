@@ -30,6 +30,7 @@ export async function POST(request) {
     if (!finalUser && password === '1234') {
       const mockUsers = {
         'admin@buu.ac.th': { id: 'admin-mock', role: 'admin', name: 'ผู้ดูแลระบบ' },
+        'admin@go.buu.ac.th': { id: 'admin-mock', role: 'admin', name: 'ผู้ดูแลระบบ' },
         'teacher-teeradech@buu.ac.th': { id: 'teacher-mock', role: 'teacher', name: 'ดร.ธีรเดช' },
         '66000001@go.buu.ac.th': { id: 'student-mock', role: 'student', name: 'จุฑามาศ แสงทอง' },
       };
