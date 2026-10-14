@@ -1,11 +1,13 @@
 import { redirect } from 'next/navigation';
-import { getCurrentUser } from '@/lib/auth';
+import { getCurrentUser, homePathForRole } from '@/lib/auth';
 import { getTeacherCoursesAndRoster } from '@/lib/teacherData';
 import PrintButton from './print-button';
+import BuuLogo from '@/components/BuuLogo';
 
 export default async function TeacherPrintPage() {
   const user = await getCurrentUser();
-  if (!user || user.role !== 'teacher') redirect('/login');
+  if (!user) redirect('/login');
+  if (user.role !== 'teacher') redirect(homePathForRole(user.role));
 
   const { usingMock, courses, rosterByCourse } = await getTeacherCoursesAndRoster(user.id);
 
@@ -23,9 +25,9 @@ export default async function TeacherPrintPage() {
       )}
 
       <div className="bg-white/80 backdrop-blur-xl rounded-3xl border border-neutral-200/80 p-6 sm:p-8 shadow-xs">
-        <div className="flex items-center gap-2 mb-1">
-          <div className="w-8 h-8 rounded-xl bg-[#7749BC] text-white flex items-center justify-center font-extrabold text-xs">BUU</div>
-          <span className="font-bold text-neutral-900">e-Leave · รายงานสรุปเวลาเรียน</span>
+        <div className="flex items-center gap-2.5 mb-1">
+          <BuuLogo size={32} />
+          <span className="font-bold text-neutral-900">Take A Leave · รายงานสรุปเวลาเรียน</span>
         </div>
         <p className="text-sm text-neutral-600">อาจารย์ผู้สอน: {user.name}</p>
         <p className="text-sm text-neutral-600 mb-6">วันที่ออกรายงาน: {new Date().toLocaleDateString('th-TH')}</p>

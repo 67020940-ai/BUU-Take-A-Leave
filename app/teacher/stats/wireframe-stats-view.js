@@ -23,6 +23,7 @@ import AttachmentPreview from '@/components/AttachmentPreview';
 import ArchiveView from '@/app/teacher/archive/archive-view';
 import MobileBottomNav from '@/components/MobileBottomNav';
 import { Archive } from 'lucide-react';
+import { useSidebarCollapsed } from '@/lib/useSidebarCollapsed';
 
 // Helper to format Thai date
 function formatThaiDate(dateStr) {
@@ -310,6 +311,7 @@ export default function WireframeStatsView({
     return filteredStudents.slice(start, start + pageSize);
   }, [filteredStudents, currentPage]);
 
+  const [isSidebarCollapsed] = useSidebarCollapsed();
   const displayGroup = selectedCourse?.group || '01';
 
   return (
@@ -331,7 +333,7 @@ export default function WireframeStatsView({
       />
 
       {/* 2. Main Content Column */}
-      <div className="flex-1 lg:pl-64 flex flex-col min-w-0 w-full">
+      <div className={`flex-1 ${isSidebarCollapsed ? 'lg:pl-20' : 'lg:pl-64'} flex flex-col min-w-0 w-full transition-all duration-300`}>
         {/* Top Bar with Semester & Search Pill */}
         <TeacherTopBar
           user={user}
@@ -343,7 +345,7 @@ export default function WireframeStatsView({
           onToggleMobileSidebar={() => setMobileSidebarOpen(true)}
         />
 
-        <main className="flex-1 p-4 sm:p-6 lg:p-8 pb-24 md:pb-8 space-y-6 max-w-7xl w-full mx-auto">
+        <main className={`flex-1 p-4 sm:p-6 lg:p-8 pb-24 lg:pb-8 space-y-6 ${isSidebarCollapsed ? 'max-w-none' : 'max-w-7xl'} w-full mx-auto transition-all duration-300`}>
           {activeStatsView === 'archive' ? (
             <div className="space-y-4 sm:space-y-6">
               <div className="bg-white/90 dark:bg-slate-900/90 backdrop-blur-xl p-3.5 sm:p-6 rounded-2xl sm:rounded-3xl border border-neutral-200/80 dark:border-slate-800 shadow-xs">

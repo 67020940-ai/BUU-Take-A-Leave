@@ -335,9 +335,13 @@ export default function AvatarUploadModal({ isOpen, onClose, user, onAvatarUpdat
     <div
       role="dialog"
       aria-modal="true"
+      onClick={onClose}
       className="fixed inset-0 z-[100] flex items-center justify-center p-4 sm:p-6 bg-slate-900/60 backdrop-blur-xs overflow-y-auto animate-in fade-in duration-150"
     >
-      <div className="w-full max-w-md bg-white dark:bg-slate-900 rounded-3xl border border-neutral-200 dark:border-slate-800 shadow-2xl overflow-hidden animate-in zoom-in-95 duration-150 my-auto flex flex-col">
+      <div
+        onClick={(e) => e.stopPropagation()}
+        className="w-full max-w-md bg-white dark:bg-slate-900 rounded-3xl border border-neutral-200 dark:border-slate-800 shadow-2xl overflow-hidden animate-in zoom-in-95 duration-150 my-auto flex flex-col"
+      >
         {/* Modal Header */}
         <div className="shrink-0 px-6 py-5 border-b border-neutral-100 dark:border-slate-800 flex items-center justify-between">
           <div className="flex items-center gap-3">

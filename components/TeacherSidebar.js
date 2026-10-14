@@ -28,6 +28,7 @@ import BuuLogo from '@/components/BuuLogo';
 import SettingsModal from '@/components/SettingsModal';
 import SupportModal from '@/components/SupportModal';
 import { getUserAvatarKey } from '@/lib/ui';
+import { useSidebarCollapsed } from '@/lib/useSidebarCollapsed';
 
 export default function TeacherSidebar({
   user,
@@ -57,7 +58,7 @@ export default function TeacherSidebar({
   const [showSettings, setShowSettings] = useState(false);
   const [showSupport, setShowSupport] = useState(false);
   const [showAccount, setShowAccount] = useState(false);
-  const [collapsed, setCollapsed] = useState(false);
+  const [collapsed, toggleCollapsed] = useSidebarCollapsed();
 
   async function handleLogout() {
     try {
@@ -103,6 +104,15 @@ export default function TeacherSidebar({
     window.addEventListener('buu_avatar_updated', handleAvatarUpdate);
     return () => window.removeEventListener('buu_avatar_updated', handleAvatarUpdate);
   }, [storageKey, user]);
+
+  function handleNavClick(e, tabKey) {
+    if (currentTab === tabKey) {
+      e.preventDefault();
+      if (onCloseMobile) onCloseMobile();
+      return;
+    }
+    if (onCloseMobile) onCloseMobile();
+  }
 
   return (
     <>
@@ -150,7 +160,7 @@ export default function TeacherSidebar({
             <div className={`flex items-center ${collapsed ? 'justify-center mt-0.5' : 'gap-1'}`}>
               <button
                 type="button"
-                onClick={() => setCollapsed(!collapsed)}
+                onClick={toggleCollapsed}
                 className="hidden lg:flex p-1.5 rounded-xl text-neutral-400 hover:text-neutral-700 dark:hover:text-neutral-200 hover:bg-neutral-100 dark:hover:bg-slate-800 transition-colors cursor-pointer"
                 title={collapsed ? 'ขยายเมนู' : 'ย่อเมนู'}
               >
@@ -218,7 +228,7 @@ export default function TeacherSidebar({
                   {/* หน้าหลัก */}
                   <Link
                     href="/teacher"
-                    onClick={onCloseMobile}
+                    onClick={(e) => handleNavClick(e, 'home')}
                     className={`w-full flex items-center justify-between px-3 py-2.5 rounded-2xl text-xs font-semibold transition-all cursor-pointer ${
                       currentTab === 'home'
                         ? 'bg-[#7749BC] text-white shadow-md shadow-purple-900/20'
@@ -235,7 +245,7 @@ export default function TeacherSidebar({
                   {/* คำขอร้องลาเรียน */}
                   <Link
                     href="/teacher/requests"
-                    onClick={onCloseMobile}
+                    onClick={(e) => handleNavClick(e, 'requests')}
                     className={`w-full flex items-center justify-between px-3 py-2.5 rounded-2xl text-xs font-semibold transition-all cursor-pointer ${
                       currentTab === 'requests'
                         ? 'bg-[#7749BC] text-white shadow-md shadow-purple-900/20'
@@ -263,7 +273,7 @@ export default function TeacherSidebar({
                   {/* สถิติการลา */}
                   <Link
                     href="/teacher/stats"
-                    onClick={onCloseMobile}
+                    onClick={(e) => handleNavClick(e, 'stats')}
                     className={`w-full flex items-center justify-between px-3 py-2.5 rounded-2xl text-xs font-semibold transition-all cursor-pointer ${
                       currentTab === 'stats'
                         ? 'bg-[#7749BC] text-white shadow-md shadow-purple-900/20'
@@ -280,7 +290,7 @@ export default function TeacherSidebar({
                   {/* ประวัติการอนุมัติ */}
                   <Link
                     href="/teacher/history"
-                    onClick={onCloseMobile}
+                    onClick={(e) => handleNavClick(e, 'history')}
                     className={`w-full flex items-center justify-between px-3 py-2.5 rounded-2xl text-xs font-semibold transition-all cursor-pointer ${
                       currentTab === 'history'
                         ? 'bg-[#7749BC] text-white shadow-md shadow-purple-900/20'
@@ -297,7 +307,7 @@ export default function TeacherSidebar({
                   {/* ตารางสอน */}
                   <Link
                     href="/teacher/schedule"
-                    onClick={onCloseMobile}
+                    onClick={(e) => handleNavClick(e, 'schedule')}
                     className={`w-full flex items-center justify-between px-3 py-2.5 rounded-2xl text-xs font-semibold transition-all cursor-pointer ${
                       currentTab === 'schedule'
                         ? 'bg-[#7749BC] text-white shadow-md shadow-purple-900/20'
@@ -365,6 +375,11 @@ export default function TeacherSidebar({
                       <div className="mt-1 pt-1 border-t border-neutral-200/60 dark:border-slate-700/60 space-y-1 pl-2">
                         {subjects.map((sub) => {
                           const isSelected = activeStatsView === 'current' && selectedSubjectKey === sub.key;
+                          const codeDigits = String(sub.code || '').replace(/\D/g, '');
+                          const threeDigits = codeDigits.length >= 6
+                            ? codeDigits.slice(3, 6)
+                            : (sub.acronym || 'SUB');
+
                           return (
                             <button
                               key={sub.key}
@@ -373,25 +388,28 @@ export default function TeacherSidebar({
                                 if (onSelectSubject) onSelectSubject(sub.key);
                                 if (onCloseMobile) onCloseMobile();
                               }}
-                              className={`w-full flex items-center justify-between px-2.5 py-1.5 rounded-lg text-xs font-semibold transition-all cursor-pointer text-left ${
+                              className={`w-full flex items-center gap-2 px-2.5 py-1.5 rounded-xl text-xs font-semibold transition-all cursor-pointer text-left ${
                                 isSelected
                                   ? 'bg-[#7749BC] text-white shadow-xs font-bold'
                                   : 'text-neutral-600 dark:text-neutral-400 hover:text-neutral-900 dark:hover:text-neutral-100 hover:bg-neutral-200/60 dark:hover:bg-slate-700/60'
                               }`}
+                              title={`${sub.code} ${sub.name}`}
                             >
-                              <div className="flex items-center gap-2 min-w-0">
-                                <span
-                                  className={`w-8 h-5 rounded-md flex items-center justify-center font-bold text-[10px] ${
-                                    isSelected
-                                      ? 'bg-white/20 text-white'
-                                      : 'bg-purple-100 dark:bg-purple-950 text-[#7749BC] dark:text-purple-300'
-                                  }`}
-                                >
-                                  {sub.acronym}
-                                </span>
-                                <span className="truncate text-[11px]">{sub.shortName || sub.name}</span>
-                              </div>
-                              <span className="text-[10px] opacity-75 font-mono">{sub.code}</span>
+                              <span
+                                className={`w-9 h-5 rounded-md flex items-center justify-center font-bold font-mono text-[11px] shrink-0 ${
+                                  isSelected
+                                    ? 'bg-white/20 text-white'
+                                    : 'bg-purple-100 dark:bg-purple-950 text-[#7749BC] dark:text-purple-300'
+                                }`}
+                              >
+                                {threeDigits}
+                              </span>
+                              <span className="truncate text-[11px] flex-1 min-w-0">
+                                {sub.shortName || sub.name}
+                              </span>
+                              <span className="text-[10px] opacity-75 font-mono shrink-0 ml-auto">
+                                {sub.code}
+                              </span>
                             </button>
                           );
                         })}

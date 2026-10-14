@@ -15,15 +15,36 @@ export function middleware(request) {
       return NextResponse.redirect(loginUrl);
     }
 
-    // Fast check by signed token prefix: format is `${userId}.${sig}`
-    const userId = token.split('.')[0];
-    if (userId === 'student-mock' && (isTeacherRoute || isAdminRoute)) {
+    // Token format: `${userId}:${role}.${sig}` or legacy `${userId}.${sig}`
+    const dotIndex = token.lastIndexOf('.');
+    if (dotIndex === -1) {
+      const loginUrl = new URL('/login', request.url);
+      loginUrl.searchParams.set('callbackUrl', pathname);
+      return NextResponse.redirect(loginUrl);
+    }
+
+    const payload = token.slice(0, dotIndex);
+    let role = 'student';
+    let userId = payload;
+
+    if (payload.includes(':')) {
+      const parts = payload.split(':');
+      userId = parts[0];
+      role = parts[1];
+    } else {
+      if (userId.startsWith('admin') || userId === 'admin-mock') role = 'admin';
+      else if (userId.startsWith('teacher') || userId === 'teacher-mock') role = 'teacher';
+      else role = 'student';
+    }
+
+    // Strict Role-Based Access Control (RBAC)
+    if (role === 'student' && (isTeacherRoute || isAdminRoute)) {
       return NextResponse.redirect(new URL('/student', request.url));
     }
-    if (userId === 'teacher-mock' && (isStudentRoute || isAdminRoute)) {
+    if (role === 'teacher' && (isStudentRoute || isAdminRoute)) {
       return NextResponse.redirect(new URL('/teacher', request.url));
     }
-    if (userId === 'admin-mock' && isStudentRoute) {
+    if (role === 'admin' && isStudentRoute) {
       return NextResponse.redirect(new URL('/admin', request.url));
     }
   }

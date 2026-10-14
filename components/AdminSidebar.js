@@ -21,6 +21,7 @@ import {
 import BuuLogo from '@/components/BuuLogo';
 import SettingsModal from '@/components/SettingsModal';
 import { getUserAvatarKey } from '@/lib/ui';
+import { useSidebarCollapsed } from '@/lib/useSidebarCollapsed';
 
 export default function AdminSidebar({
   user,
@@ -32,7 +33,7 @@ export default function AdminSidebar({
 }) {
   const router = useRouter();
   const [showSettings, setShowSettings] = useState(false);
-  const [collapsed, setCollapsed] = useState(false);
+  const [collapsed, toggleCollapsed] = useSidebarCollapsed();
   const [avatar, setAvatar] = useState(user?.avatar || null);
   const storageKey = getUserAvatarKey(user);
 
@@ -161,7 +162,7 @@ export default function AdminSidebar({
             <div className={`flex items-center ${collapsed ? 'justify-center mt-0.5' : 'gap-1'}`}>
               <button
                 type="button"
-                onClick={() => setCollapsed(!collapsed)}
+                onClick={toggleCollapsed}
                 className="hidden lg:flex p-1.5 rounded-xl text-neutral-400 hover:text-neutral-700 dark:hover:text-neutral-200 hover:bg-neutral-100 dark:hover:bg-slate-800 transition-colors cursor-pointer"
                 title={collapsed ? 'ขยายเมนู' : 'ย่อเมนู'}
               >

@@ -135,7 +135,7 @@ const SCHEDULE_ITEMS = [
   },
 ];
 
-export default function TeacherScheduleGrid({ courses = [], customItems = null, onSelectCourse }) {
+export default function TeacherScheduleGrid({ courses = [], customItems = null, onSelectCourse, hideHeader = false }) {
   const [selectedItem, setSelectedItem] = useState(null);
   const [mobileSelectedDay, setMobileSelectedDay] = useState(() => {
     const dayNum = new Date().getDay();
@@ -147,31 +147,33 @@ export default function TeacherScheduleGrid({ courses = [], customItems = null, 
   return (
     <div className="bg-white/90 dark:bg-slate-900/90 backdrop-blur-xl rounded-3xl border border-neutral-200/80 dark:border-slate-800 shadow-xs overflow-hidden">
       {/* Schedule Header Title */}
-      <div className="p-4 sm:p-5 border-b border-neutral-100 dark:border-slate-800 flex items-center justify-between gap-3 bg-neutral-50/60 dark:bg-slate-900/50">
-        <div className="flex items-center gap-2.5">
-          <div className="w-9 h-9 rounded-2xl bg-purple-100 dark:bg-purple-950 text-[#7749BC] dark:text-purple-300 flex items-center justify-center">
-            <CalendarDays className="w-5 h-5" />
+      {!hideHeader && (
+        <div className="p-4 sm:p-5 border-b border-neutral-100 dark:border-slate-800 flex items-center justify-between gap-3 bg-neutral-50/60 dark:bg-slate-900/50">
+          <div className="flex items-center gap-2.5">
+            <div className="w-9 h-9 rounded-2xl bg-purple-100 dark:bg-purple-950 text-[#7749BC] dark:text-purple-300 flex items-center justify-center">
+              <CalendarDays className="w-5 h-5" />
+            </div>
+            <div>
+              <h3 className="text-sm sm:text-base font-bold text-neutral-900 dark:text-neutral-100">
+                ตารางสอน (Teaching Schedule)
+              </h3>
+              <p className="text-xs text-neutral-500 dark:text-neutral-400">
+                ตารางเรียนและห้องสอนประจำสัปดาห์ ภาคเรียนที่ 1/2569
+              </p>
+            </div>
           </div>
-          <div>
-            <h3 className="text-sm sm:text-base font-bold text-neutral-900 dark:text-neutral-100">
-              ตารางสอน (Teaching Schedule)
-            </h3>
-            <p className="text-xs text-neutral-500 dark:text-neutral-400">
-              ตารางเรียนและห้องสอนประจำสัปดาห์ ภาคเรียนที่ 1/2569
-            </p>
+          <div className="hidden sm:flex flex-wrap items-center gap-3 text-xs text-neutral-500 dark:text-neutral-400">
+            <div className="flex items-center gap-1.5">
+              <span className="w-3 h-3 rounded-md bg-purple-200 dark:bg-purple-900/80 border border-purple-300 dark:border-purple-700" />
+              <span className="text-[11px] font-medium text-neutral-700 dark:text-neutral-300">24527664 (SA)</span>
+            </div>
+            <div className="flex items-center gap-1.5">
+              <span className="w-3 h-3 rounded-md bg-emerald-200 dark:bg-emerald-900/80 border border-emerald-300 dark:border-emerald-700" />
+              <span className="text-[11px] font-medium text-neutral-700 dark:text-neutral-300">24527564 (OSS)</span>
+            </div>
           </div>
         </div>
-        <div className="hidden sm:flex flex-wrap items-center gap-3 text-xs text-neutral-500 dark:text-neutral-400">
-          <div className="flex items-center gap-1.5">
-            <span className="w-3 h-3 rounded-md bg-purple-200 dark:bg-purple-900/80 border border-purple-300 dark:border-purple-700" />
-            <span className="text-[11px] font-medium text-neutral-700 dark:text-neutral-300">24527664 (SA)</span>
-          </div>
-          <div className="flex items-center gap-1.5">
-            <span className="w-3 h-3 rounded-md bg-emerald-200 dark:bg-emerald-900/80 border border-emerald-300 dark:border-emerald-700" />
-            <span className="text-[11px] font-medium text-neutral-700 dark:text-neutral-300">24527564 (OSS)</span>
-          </div>
-        </div>
-      </div>
+      )}
 
       {/* 1. Mobile Day-by-Day View (< md) */}
       <div className="block md:hidden p-3.5 sm:p-4 space-y-4">
@@ -367,8 +369,14 @@ export default function TeacherScheduleGrid({ courses = [], customItems = null, 
 
       {/* Class Detail Modal when clicked */}
       {selectedItem && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-xs animate-in fade-in duration-150">
-          <div className="w-full max-w-sm bg-white dark:bg-slate-900 rounded-3xl border border-neutral-200 dark:border-slate-800 shadow-2xl p-5 space-y-4 animate-in zoom-in-95 duration-150">
+        <div
+          className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-xs animate-in fade-in duration-150"
+          onClick={() => setSelectedItem(null)}
+        >
+          <div
+            className="w-full max-w-sm bg-white dark:bg-slate-900 rounded-3xl border border-neutral-200 dark:border-slate-800 shadow-2xl p-5 space-y-4 animate-in zoom-in-95 duration-150"
+            onClick={(e) => e.stopPropagation()}
+          >
             <div className="flex items-start justify-between">
               <div>
                 <span className={`font-mono text-xs font-bold px-2.5 py-0.5 rounded-md border ${getCourseTheme(selectedItem).badge}`}>

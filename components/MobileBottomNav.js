@@ -93,8 +93,8 @@ export default function MobileBottomNav({
 
   return (
     <nav
-      aria-label="เมนูหลักสำหรับมือถือ"
-      className="md:hidden fixed bottom-0 left-0 right-0 z-40 bg-white/95 dark:bg-slate-900/95 backdrop-blur-xl border-t border-neutral-200/80 dark:border-slate-800 shadow-xl transition-all"
+      aria-label="เมนูหลักสำหรับมือถือและแท็บเล็ต"
+      className="lg:hidden fixed bottom-0 left-0 right-0 z-40 bg-white/95 dark:bg-slate-900/95 backdrop-blur-xl border-t border-neutral-200/80 dark:border-slate-800 shadow-xl transition-all"
       style={{ paddingBottom: 'max(env(safe-area-inset-bottom, 0px), 8px)' }}
     >
       <div className="flex items-center justify-around px-1 pt-1.5 pb-1">
@@ -154,6 +154,10 @@ export default function MobileBottomNav({
               href={item.href}
               prefetch={true}
               onClick={(e) => {
+                if (isActive) {
+                  e.preventDefault();
+                  return;
+                }
                 if (onSelectTab) {
                   e.preventDefault();
                   onSelectTab(item.key);

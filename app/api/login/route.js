@@ -48,7 +48,7 @@ export async function POST(request) {
     }
 
     const res = NextResponse.json({ ok: true, role: finalUser.role });
-    res.cookies.set(SESSION_COOKIE, signSession(finalUser.id), {
+    res.cookies.set(SESSION_COOKIE, signSession(finalUser.id, finalUser.role), {
       httpOnly: true,
       sameSite: 'lax',
       path: '/',

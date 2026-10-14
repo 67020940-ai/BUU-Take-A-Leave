@@ -33,6 +33,7 @@ import StudentHistoryView from './history/history-view';
 import StudentScheduleView from './schedule/schedule-view';
 import { getCoursePrep } from '@/lib/coursePrepData';
 import { sortAcademicTerms } from '@/lib/ui';
+import { useSidebarCollapsed } from '@/lib/useSidebarCollapsed';
 
 export default function StudentHomepageView({
   user,
@@ -48,6 +49,7 @@ export default function StudentHomepageView({
   const [activeTab, setActiveTab] = useState(initialTab || 'home');
   const [mobileSidebarOpen, setMobileSidebarOpen] = useState(false);
   const [searchQuery, setSearchQuery] = useState('');
+  const [isSidebarCollapsed] = useSidebarCollapsed();
   const [targetCourseForLeave, setTargetCourseForLeave] = useState(initialCourseId);
 
   // Sync tab with URL query parameter
@@ -84,6 +86,7 @@ export default function StudentHomepageView({
   function handleSwitchTab(newTab, extraParams = {}) {
     setActiveTab(newTab);
     if (typeof window !== 'undefined') {
+      window.scrollTo({ top: 0, behavior: 'instant' });
       const url = new URL(window.location.href);
       if (newTab === 'home') {
         url.searchParams.delete('tab');
@@ -160,7 +163,7 @@ export default function StudentHomepageView({
       />
 
       {/* 2. Main Content Column */}
-      <div className="flex-1 lg:pl-64 flex flex-col min-w-0 w-full">
+      <div className={`flex-1 ${isSidebarCollapsed ? 'lg:pl-20' : 'lg:pl-64'} flex flex-col min-w-0 w-full transition-all duration-300`}>
         <StudentTopBar
           user={user}
           semester={selectedTerm}
@@ -172,7 +175,7 @@ export default function StudentHomepageView({
           onToggleMobileSidebar={() => setMobileSidebarOpen(true)}
         />
 
-        <main className="flex-1 p-4 sm:p-6 lg:p-8 pb-24 md:pb-8 space-y-6 max-w-7xl w-full mx-auto">
+        <main className={`flex-1 p-4 sm:p-6 lg:p-8 pb-24 lg:pb-8 space-y-6 ${isSidebarCollapsed ? 'max-w-none' : 'max-w-7xl'} w-full mx-auto transition-all duration-300`}>
           {/* ================= SESSION 1: HOME (หน้าหลัก) ================= */}
           {activeTab === 'home' && (
             <div className="space-y-6 animate-in fade-in duration-150">

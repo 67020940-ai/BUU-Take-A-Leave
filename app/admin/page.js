@@ -1,11 +1,12 @@
 import { redirect } from 'next/navigation';
-import { getCurrentUser } from '@/lib/auth';
+import { getCurrentUser, homePathForRole } from '@/lib/auth';
 import { getCourse, getUserById, listAllCourses, listAllLeaves, listAllTickets } from '@/lib/db';
 import AdminDashboard from './admin-dashboard';
 
 export default async function AdminPage() {
   const user = await getCurrentUser();
-  if (!user || user.role !== 'admin') redirect('/login');
+  if (!user) redirect('/login');
+  if (user.role !== 'admin') redirect(homePathForRole(user.role));
 
   const courses = await listAllCourses();
   const rawLeaves = await listAllLeaves();

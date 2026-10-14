@@ -24,6 +24,14 @@
     --color-accent-hover: #653ba6;
   }
 
+  html {
+    -webkit-tap-highlight-color: transparent;
+  }
+
+  button, a, input, select, textarea {
+    touch-action: manipulation;
+  }
+
   body {
     font-family: "Prompt", "Plus Jakarta Sans", system-ui, -apple-system, sans-serif;
     background-color: var(--color-paper);

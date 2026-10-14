@@ -17,6 +17,7 @@ import TeacherSidebar from '@/components/TeacherSidebar';
 import TeacherTopBar from '@/components/TeacherTopBar';
 import TeacherScheduleGrid from '@/components/TeacherScheduleGrid';
 import MobileBottomNav from '@/components/MobileBottomNav';
+import { useSidebarCollapsed } from '@/lib/useSidebarCollapsed';
 
 export default function TeacherDashboard({
   user,
@@ -57,6 +58,8 @@ export default function TeacherDashboard({
     return leaves.filter((l) => l.status === 'ไม่อนุมัติ').length;
   }, [leaves]);
 
+  const [isSidebarCollapsed] = useSidebarCollapsed();
+
   return (
     <div className="min-h-screen bg-slate-50/70 dark:bg-slate-950 flex flex-col lg:flex-row">
       {/* 1. Left Sidebar (mode="menu", activeTab="home") */}
@@ -70,7 +73,7 @@ export default function TeacherDashboard({
       />
 
       {/* 2. Main Content Column */}
-      <div className="flex-1 lg:pl-64 flex flex-col min-w-0 w-full">
+      <div className={`flex-1 ${isSidebarCollapsed ? 'lg:pl-20' : 'lg:pl-64'} flex flex-col min-w-0 w-full transition-all duration-300`}>
         <TeacherTopBar
           user={user}
           semester={selectedTerm}
@@ -81,7 +84,7 @@ export default function TeacherDashboard({
           onToggleMobileSidebar={() => setMobileSidebarOpen(true)}
         />
 
-        <main className="flex-1 p-4 sm:p-6 lg:p-8 pb-24 md:pb-8 space-y-6 max-w-7xl w-full mx-auto">
+        <main className={`flex-1 p-4 sm:p-6 lg:p-8 pb-24 lg:pb-8 space-y-6 ${isSidebarCollapsed ? 'max-w-none' : 'max-w-7xl'} w-full mx-auto transition-all duration-300`}>
           {/* 4 Connected Horizontal Summary Boxes (Matching Student View & Screenshot 3) */}
           <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 sm:gap-4">
             {/* Box 1: คำร้องขอลาทั้งหมด */}

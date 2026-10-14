@@ -25,6 +25,7 @@ import TeacherSidebar from '@/components/TeacherSidebar';
 import TeacherTopBar from '@/components/TeacherTopBar';
 import AttachmentPreview from '@/components/AttachmentPreview';
 import MobileBottomNav from '@/components/MobileBottomNav';
+import { useSidebarCollapsed } from '@/lib/useSidebarCollapsed';
 import {
   STATUS_DETAILS,
   LEAVE_TYPE_DETAILS,
@@ -53,6 +54,7 @@ export default function TeacherHistoryView({
   const [searchQuery, setSearchQuery] = useState('');
   const [detailModal, setDetailModal] = useState({ isOpen: false, leave: null });
   const [reconsiderModal, setReconsiderModal] = useState({ isOpen: false, leave: null, type: 'reconsider', comment: '' });
+  const [submittingId, setSubmittingId] = useState(null);
   const [toast, setToast] = useState(null);
   const [currentPage, setCurrentPage] = useState(1);
   const pageSize = 10;
@@ -139,6 +141,8 @@ export default function TeacherHistoryView({
   }, [filteredLeaves, currentPage, pageSize]);
 
   async function handleAction(leave, targetStatus, comment) {
+    if (submittingId === leave.id) return;
+    setSubmittingId(leave.id);
     const previous = [...leaves];
     setLeaves((prev) =>
       prev.map((l) => (l.id === leave.id ? { ...l, status: targetStatus, teacherComment: comment || l.teacherComment } : l))
@@ -158,8 +162,12 @@ export default function TeacherHistoryView({
       setLeaves(previous);
       setToast({ type: 'error', message: 'เกิดข้อผิดพลาดในการบันทึก' });
       setTimeout(() => setToast(null), 3500);
+    } finally {
+      setSubmittingId(null);
     }
   }
+
+  const [isSidebarCollapsed] = useSidebarCollapsed();
 
   return (
     <div className="min-h-screen bg-slate-50/70 dark:bg-slate-950 flex flex-col lg:flex-row">
@@ -172,7 +180,7 @@ export default function TeacherHistoryView({
         onCloseMobile={() => setMobileSidebarOpen(false)}
       />
 
-      <div className="flex-1 lg:pl-64 flex flex-col min-w-0 w-full">
+      <div className={`flex-1 ${isSidebarCollapsed ? 'lg:pl-20' : 'lg:pl-64'} flex flex-col min-w-0 w-full transition-all duration-300`}>
         <TeacherTopBar
           user={user}
           semester={selectedTerm === 'all' ? '1/2569' : selectedTerm}
@@ -184,7 +192,7 @@ export default function TeacherHistoryView({
           onToggleMobileSidebar={() => setMobileSidebarOpen(true)}
         />
 
-        <main className="flex-1 p-4 sm:p-6 lg:p-8 pb-24 md:pb-8 space-y-6 max-w-7xl w-full mx-auto">
+        <main className={`flex-1 p-4 sm:p-6 lg:p-8 pb-24 lg:pb-8 space-y-6 ${isSidebarCollapsed ? 'max-w-none' : 'max-w-7xl'} w-full mx-auto transition-all duration-300`}>
           {/* Header Banner */}
           <div className="bg-white/90 dark:bg-slate-900/90 backdrop-blur-xl p-5 sm:p-6 rounded-3xl border border-neutral-200/80 dark:border-slate-800 shadow-xs flex flex-col sm:flex-row sm:items-center justify-between gap-4">
             <div className="flex items-center gap-3">
@@ -583,8 +591,14 @@ export default function TeacherHistoryView({
 
       {/* DETAIL MODAL */}
       {detailModal.isOpen && detailModal.leave && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-xs animate-in fade-in duration-150">
-          <div className="w-full max-w-lg bg-white dark:bg-slate-900 rounded-3xl border border-neutral-200 dark:border-slate-800 shadow-2xl p-6 space-y-4 max-h-[90vh] overflow-y-auto animate-in zoom-in-95 duration-150">
+        <div
+          className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-xs animate-in fade-in duration-150"
+          onClick={() => setDetailModal({ isOpen: false, leave: null })}
+        >
+          <div
+            className="w-full max-w-lg bg-white dark:bg-slate-900 rounded-3xl border border-neutral-200 dark:border-slate-800 shadow-2xl p-6 space-y-4 max-h-[90vh] overflow-y-auto animate-in zoom-in-95 duration-150"
+            onClick={(e) => e.stopPropagation()}
+          >
             <div className="flex items-start justify-between gap-3">
               <div>
                 <h3 className="text-base font-bold text-neutral-900 dark:text-neutral-100">
@@ -638,8 +652,14 @@ export default function TeacherHistoryView({
 
       {/* RECONSIDER / REVOKE MODAL */}
       {reconsiderModal.isOpen && reconsiderModal.leave && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-xs animate-in fade-in duration-150">
-          <div className="w-full max-w-md bg-white dark:bg-slate-900 rounded-3xl border border-neutral-200 dark:border-slate-800 shadow-2xl p-6 space-y-4 animate-in zoom-in-95 duration-150">
+        <div
+          className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-xs animate-in fade-in duration-150"
+          onClick={() => setReconsiderModal({ isOpen: false, leave: null, type: 'reconsider', comment: '' })}
+        >
+          <div
+            className="w-full max-w-md bg-white dark:bg-slate-900 rounded-3xl border border-neutral-200 dark:border-slate-800 shadow-2xl p-6 space-y-4 animate-in zoom-in-95 duration-150"
+            onClick={(e) => e.stopPropagation()}
+          >
             <h3 className="text-base font-bold text-neutral-900 dark:text-neutral-100">
               {reconsiderModal.type === 'revoke' ? 'เพิกถอนการอนุมัติ' : 'พิจารณาคำขอลาใหม่'}
             </h3>
@@ -670,16 +690,26 @@ export default function TeacherHistoryView({
               </button>
               <button
                 type="button"
-                onClick={() => {
+                disabled={submittingId === reconsiderModal.leave?.id}
+                onClick={async () => {
                   const targetStatus = reconsiderModal.type === 'revoke' ? 'เพิกถอนการอนุมัติ' : 'อนุมัติ';
-                  handleAction(reconsiderModal.leave, targetStatus, reconsiderModal.comment);
+                  const leaveToAct = reconsiderModal.leave;
+                  const commentToAct = reconsiderModal.comment;
                   setReconsiderModal({ isOpen: false, leave: null, type: 'reconsider', comment: '' });
+                  await handleAction(leaveToAct, targetStatus, commentToAct);
                 }}
-                className={`px-4 py-2 rounded-xl text-white text-xs font-bold ${
+                className={`px-4 py-2 rounded-xl text-white text-xs font-bold transition-opacity disabled:opacity-60 flex items-center gap-1.5 ${
                   reconsiderModal.type === 'revoke' ? 'bg-amber-600 hover:bg-amber-700' : 'bg-[#7749BC] hover:bg-[#683ca8]'
                 }`}
               >
-                ยืนยัน
+                {submittingId === reconsiderModal.leave?.id ? (
+                  <>
+                    <div className="w-3.5 h-3.5 border-2 border-white/30 border-t-white rounded-full animate-spin" />
+                    <span>กำลังบันทึก...</span>
+                  </>
+                ) : (
+                  <span>ยืนยัน</span>
+                )}
               </button>
             </div>
           </div>

@@ -301,8 +301,8 @@ export default function StudentScheduleGrid({
                   <div
                     className={`col-span-1 flex flex-col items-center justify-center rounded-xl p-2 font-bold text-xs ${day.bgHeader}`}
                   >
-                    <span className="tracking-tight text-sm">{day.dayEn.slice(0, 3)}</span>
-                    <span className="text-[11px] opacity-80 font-normal">{day.dayTh.replace('วัน', '')}</span>
+                    <span className="font-bold text-sm tracking-tight">{day.dayTh.replace('วัน', '')}</span>
+                    <span className="text-[11px] opacity-75 font-mono font-medium">{day.dayEn.slice(0, 3)}</span>
                   </div>
 
                   {/* 11 Time Slots */}

@@ -1,5 +1,5 @@
 import { redirect } from 'next/navigation';
-import { getCurrentUser } from '@/lib/auth';
+import { getCurrentUser, homePathForRole } from '@/lib/auth';
 import { getTeacherCoursesAndRoster, getTeacherLeaves } from '@/lib/teacherData';
 import TeacherHistoryView from './teacher-history-view';
 
@@ -10,7 +10,8 @@ export const metadata = {
 
 export default async function TeacherHistoryPage() {
   const user = await getCurrentUser();
-  if (!user || user.role !== 'teacher') redirect('/login');
+  if (!user) redirect('/login');
+  if (user.role !== 'teacher') redirect(homePathForRole(user.role));
 
   const { usingMock, courses, rosterByCourse } = await getTeacherCoursesAndRoster(user.id);
   const leaves = await getTeacherLeaves(user.id, usingMock);

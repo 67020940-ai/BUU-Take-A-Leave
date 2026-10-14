@@ -1,5 +1,4 @@
-import { redirect } from 'next/navigation';
-import { getCurrentUser } from '@/lib/auth';
+import { getCurrentUser, homePathForRole } from '@/lib/auth';
 import { getStudentData } from '@/lib/studentData';
 import StudentHomepageView from './student-homepage-view';
 
@@ -10,7 +9,8 @@ export const metadata = {
 
 export default async function StudentPage({ searchParams }) {
   const user = await getCurrentUser();
-  if (!user || user.role !== 'student') redirect('/login');
+  if (!user) redirect('/login');
+  if (user.role !== 'student') redirect(homePathForRole(user.role));
 
   const { summaries = [], leaves = [], courses = [] } = await getStudentData(user.id);
   const resolvedParams = searchParams ? await searchParams : {};

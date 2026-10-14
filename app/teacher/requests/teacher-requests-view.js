@@ -28,6 +28,7 @@ import TeacherSidebar from '@/components/TeacherSidebar';
 import TeacherTopBar from '@/components/TeacherTopBar';
 import AttachmentPreview from '@/components/AttachmentPreview';
 import MobileBottomNav from '@/components/MobileBottomNav';
+import { useSidebarCollapsed } from '@/lib/useSidebarCollapsed';
 import {
   STATUS_DETAILS,
   LEAVE_TYPE_DETAILS,
@@ -150,6 +151,7 @@ export default function TeacherRequestsView({
   const [currentPage, setCurrentPage] = useState(1);
   const pageSize = 10;
   const [batchModal, setBatchModal] = useState({ isOpen: false, type: 'approve', comment: '', isSubmitting: false });
+  const [submittingId, setSubmittingId] = useState(null);
   const [toast, setToast] = useState(null);
 
   const todayStr = useMemo(() => getTodayStr(), []);
@@ -230,6 +232,8 @@ export default function TeacherRequestsView({
   }
 
   async function handleDecide(leave, status, comment) {
+    if (submittingId === leave.id) return;
+    setSubmittingId(leave.id);
     const previousLeaves = [...leaves];
     setLeaves((prev) =>
       prev.map((l) => (l.id === leave.id ? { ...l, status, teacherComment: comment || null } : l))
@@ -253,12 +257,14 @@ export default function TeacherRequestsView({
       setLeaves(previousLeaves);
       setToast({ type: 'error', message: 'เกิดข้อผิดพลาดในการบันทึก กรุณาลองใหม่อีกครั้ง' });
       setTimeout(() => setToast(null), 3500);
+    } finally {
+      setSubmittingId(null);
     }
   }
 
   async function handleBatchAction(actionType, comment) {
     const ids = Array.from(selectedLeaveIds);
-    if (ids.length === 0) return;
+    if (ids.length === 0 || batchModal.isSubmitting) return;
 
     setBatchModal((prev) => ({ ...prev, isSubmitting: true }));
     const status = actionType === 'approve' ? 'อนุมัติ' : 'ไม่อนุมัติ';
@@ -269,15 +275,13 @@ export default function TeacherRequestsView({
     );
 
     try {
-      await Promise.all(
-        ids.map((id) =>
-          fetch('/api/leaves', {
-            method: 'PATCH',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ id, status, comment: comment || undefined }),
-          })
-        )
-      );
+      const res = await fetch('/api/leaves', {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ ids, status, comment: comment || undefined }),
+      });
+
+      if (!res.ok) throw new Error('Batch update failed');
 
       setSelectedLeaveIds(new Set());
       setBatchModal({ isOpen: false, type: 'approve', comment: '', isSubmitting: false });
@@ -288,9 +292,10 @@ export default function TeacherRequestsView({
       setTimeout(() => setToast(null), 3000);
     } catch {
       setLeaves(previousLeaves);
-      setBatchModal((prev) => ({ ...prev, isSubmitting: false }));
       setToast({ type: 'error', message: 'เกิดข้อผิดพลาดในการทำรายการกลุ่ม' });
       setTimeout(() => setToast(null), 3500);
+    } finally {
+      setBatchModal((prev) => ({ ...prev, isSubmitting: false }));
     }
   }
 
@@ -309,6 +314,8 @@ export default function TeacherRequestsView({
     setSelectedLeaveIds(next);
   }
 
+  const [isSidebarCollapsed] = useSidebarCollapsed();
+
   return (
     <div className="min-h-screen bg-slate-50/70 dark:bg-slate-950 flex flex-col lg:flex-row">
       <TeacherSidebar
@@ -320,7 +327,7 @@ export default function TeacherRequestsView({
         onCloseMobile={() => setMobileSidebarOpen(false)}
       />
 
-      <div className="flex-1 lg:pl-64 flex flex-col min-w-0 w-full">
+      <div className={`flex-1 ${isSidebarCollapsed ? 'lg:pl-20' : 'lg:pl-64'} flex flex-col min-w-0 w-full transition-all duration-300`}>
         <TeacherTopBar
           user={user}
           semester={selectedTerm === 'all' ? '1/2569' : selectedTerm}
@@ -332,7 +339,7 @@ export default function TeacherRequestsView({
           onToggleMobileSidebar={() => setMobileSidebarOpen(true)}
         />
 
-        <main className="flex-1 p-4 sm:p-6 lg:p-8 pb-24 md:pb-8 space-y-6 max-w-7xl w-full mx-auto">
+        <main className={`flex-1 p-4 sm:p-6 lg:p-8 pb-24 lg:pb-8 space-y-6 ${isSidebarCollapsed ? 'max-w-none' : 'max-w-7xl'} w-full mx-auto transition-all duration-300`}>
           {/* Header Banner */}
           <div className="bg-white/90 dark:bg-slate-900/90 backdrop-blur-xl p-5 sm:p-6 rounded-3xl border border-neutral-200/80 dark:border-slate-800 shadow-xs flex flex-col sm:flex-row sm:items-center justify-between gap-4">
             <div className="flex items-center gap-3">
@@ -715,8 +722,14 @@ export default function TeacherRequestsView({
 
       {/* DETAIL MODAL */}
       {detailModal.isOpen && detailModal.leave && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-xs animate-in fade-in duration-150">
-          <div className="w-full max-w-lg bg-white dark:bg-slate-900 rounded-3xl border border-neutral-200 dark:border-slate-800 shadow-2xl p-6 space-y-4 max-h-[90vh] overflow-y-auto animate-in zoom-in-95 duration-150">
+        <div
+          className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-xs animate-in fade-in duration-150"
+          onClick={() => setDetailModal({ isOpen: false, leave: null, comment: '' })}
+        >
+          <div
+            className="w-full max-w-lg bg-white dark:bg-slate-900 rounded-3xl border border-neutral-200 dark:border-slate-800 shadow-2xl p-6 space-y-4 max-h-[90vh] overflow-y-auto animate-in zoom-in-95 duration-150"
+            onClick={(e) => e.stopPropagation()}
+          >
             <div className="flex items-start justify-between gap-3">
               <div>
                 <h3 className="text-base font-bold text-neutral-900 dark:text-neutral-100">
@@ -795,8 +808,14 @@ export default function TeacherRequestsView({
 
       {/* ACTION MODAL (Reject with Comment) */}
       {actionModal.isOpen && actionModal.leave && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-xs animate-in fade-in duration-150">
-          <div className="w-full max-w-md bg-white dark:bg-slate-900 rounded-3xl border border-neutral-200 dark:border-slate-800 shadow-2xl p-6 space-y-4 animate-in zoom-in-95 duration-150">
+        <div
+          className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-xs animate-in fade-in duration-150"
+          onClick={() => setActionModal({ isOpen: false, type: 'approve', leave: null, comment: '' })}
+        >
+          <div
+            className="w-full max-w-md bg-white dark:bg-slate-900 rounded-3xl border border-neutral-200 dark:border-slate-800 shadow-2xl p-6 space-y-4 animate-in zoom-in-95 duration-150"
+            onClick={(e) => e.stopPropagation()}
+          >
             <h3 className="text-base font-bold text-neutral-900 dark:text-neutral-100">
               ยืนยันการไม่อนุมัติคำขอลา
             </h3>
@@ -847,8 +866,14 @@ export default function TeacherRequestsView({
 
       {/* BATCH MODAL */}
       {batchModal.isOpen && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-xs animate-in fade-in duration-150">
-          <div className="w-full max-w-md bg-white dark:bg-slate-900 rounded-3xl border border-neutral-200 dark:border-slate-800 shadow-2xl p-6 space-y-4 animate-in zoom-in-95 duration-150">
+        <div
+          className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-xs animate-in fade-in duration-150"
+          onClick={() => setBatchModal((prev) => ({ ...prev, isOpen: false }))}
+        >
+          <div
+            className="w-full max-w-md bg-white dark:bg-slate-900 rounded-3xl border border-neutral-200 dark:border-slate-800 shadow-2xl p-6 space-y-4 animate-in zoom-in-95 duration-150"
+            onClick={(e) => e.stopPropagation()}
+          >
             <h3 className="text-base font-bold text-neutral-900 dark:text-neutral-100">
               {batchModal.type === 'approve' ? 'ยืนยันการอนุมัติแบบกลุ่ม' : 'ยืนยันการไม่อนุมัติแบบกลุ่ม'}
             </h3>

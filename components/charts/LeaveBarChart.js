@@ -55,11 +55,21 @@ export default function LeaveBarChart({
   const data = {
     labels,
     datasets: datasets.map((ds, dsIndex) => {
-      // In stacked mode, only round the top corners of the top-most visible dataset, or keep corners clean
-      const isStacked = stacked;
       return {
-        borderRadius: isStacked ? (dsIndex === datasets.length - 1 ? { topLeft: 8, topRight: 8 } : 0) : 6,
-        borderSkipped: false,
+        borderRadius: (ctx) => {
+          if (!stacked) {
+            return { topLeft: 6, topRight: 6, bottomLeft: 0, bottomRight: 0 };
+          }
+          const dataIndex = ctx.dataIndex;
+          for (let i = datasets.length - 1; i >= 0; i--) {
+            const val = datasets[i]?.data?.[dataIndex] || 0;
+            if (val > 0) {
+              return i === dsIndex ? { topLeft: 6, topRight: 6, bottomLeft: 0, bottomRight: 0 } : 0;
+            }
+          }
+          return 0;
+        },
+        borderSkipped: 'bottom',
         barThickness: labels.length > 8 ? 28 : 48,
         maxBarThickness: 56,
         ...ds,

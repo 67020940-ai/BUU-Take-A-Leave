@@ -32,7 +32,7 @@ export default function RootLayout({ children }) {
           }}
         />
       </head>
-      <body className="bg-neutral-50 text-neutral-900 antialiased selection:bg-amber-100 selection:text-amber-900">
+      <body className="bg-neutral-50 dark:bg-slate-950 text-neutral-900 dark:text-neutral-100 antialiased selection:bg-amber-100 selection:text-amber-900 transition-colors duration-150">
         {children}
       </body>
     </html>

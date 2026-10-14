@@ -34,7 +34,9 @@ import {
 import AdminSidebar from '@/components/AdminSidebar';
 import AdminTopBar from '@/components/AdminTopBar';
 import MobileBottomNav from '@/components/MobileBottomNav';
+import AttachmentPreview from '@/components/AttachmentPreview';
 import { DAY_LABEL_TH, formatThaiDay, formatThaiDateTime, formatThaiDate } from '@/lib/ui';
+import { useSidebarCollapsed } from '@/lib/useSidebarCollapsed';
 
 export default function AdminDashboard({ user, courses = [], leaves = [], tickets: initialTickets = [] }) {
   const router = useRouter();
@@ -111,6 +113,7 @@ export default function AdminDashboard({ user, courses = [], leaves = [], ticket
   function handleSwitchTab(tabKey) {
     setActiveTab(tabKey);
     if (typeof window !== 'undefined') {
+      window.scrollTo({ top: 0, behavior: 'instant' });
       const url = new URL(window.location.href);
       if (tabKey === 'overview') url.searchParams.delete('tab');
       else url.searchParams.set('tab', tabKey);
@@ -231,6 +234,8 @@ export default function AdminDashboard({ user, courses = [], leaves = [], ticket
     }
   }
 
+  const [isSidebarCollapsed] = useSidebarCollapsed();
+
   return (
     <div className="min-h-screen bg-slate-50/70 dark:bg-slate-950 flex flex-col lg:flex-row font-sans text-neutral-800 dark:text-neutral-100">
       {/* 1. Left Sidebar */}
@@ -244,7 +249,7 @@ export default function AdminDashboard({ user, courses = [], leaves = [], ticket
       />
 
       {/* 2. Main Content Column */}
-      <div className="flex-1 lg:pl-64 flex flex-col min-w-0 w-full">
+      <div className={`flex-1 ${isSidebarCollapsed ? 'lg:pl-20' : 'lg:pl-64'} flex flex-col min-w-0 w-full transition-all duration-300`}>
         <AdminTopBar
           user={user}
           semester={selectedTerm}
@@ -255,7 +260,7 @@ export default function AdminDashboard({ user, courses = [], leaves = [], ticket
           onToggleMobileSidebar={() => setMobileSidebarOpen(true)}
         />
 
-        <main className="flex-1 p-4 sm:p-6 lg:p-8 pb-24 md:pb-8 space-y-6 max-w-7xl w-full mx-auto">
+        <main className={`flex-1 p-4 sm:p-6 lg:p-8 pb-24 lg:pb-8 space-y-6 ${isSidebarCollapsed ? 'max-w-none' : 'max-w-7xl'} w-full mx-auto transition-all duration-300`}>
           {/* ================= SESSION 1: OVERVIEW (ภาพรวมระบบ) ================= */}
           {activeTab === 'overview' && (
             <div className="space-y-6 animate-in fade-in duration-150">
@@ -1198,6 +1203,15 @@ export default function AdminDashboard({ user, courses = [], leaves = [], ticket
                   {selectedLeave.status}
                 </span>
               </div>
+              {selectedLeave.attachment && (
+                <div className="p-3 rounded-2xl bg-slate-50 dark:bg-slate-800/50 border border-slate-200/80 dark:border-slate-700/80 flex items-center justify-between">
+                  <span className="text-neutral-400 font-medium">เอกสารแนบ:</span>
+                  <AttachmentPreview
+                    attachment={selectedLeave.attachment}
+                    label="ดูไฟล์แนบ / ใบรับรองแพทย์"
+                  />
+                </div>
+              )}
             </div>
 
             <div className="pt-2 flex justify-end">

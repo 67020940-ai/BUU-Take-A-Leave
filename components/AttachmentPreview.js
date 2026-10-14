@@ -3,12 +3,26 @@
 import { useState } from 'react';
 import { X, FileText, ExternalLink, Download, Eye } from 'lucide-react';
 
-export default function AttachmentPreview({ src, label = 'ดูไฟล์แนบ', thumbClassName = 'w-6 h-6 rounded-md' }) {
+export default function AttachmentPreview({
+  src,
+  attachment,
+  leaveId,
+  title,
+  label = 'ดูไฟล์แนบ',
+  thumbClassName = 'w-6 h-6 rounded-md',
+}) {
   const [open, setOpen] = useState(false);
 
-  if (!src) return null;
+  const raw = src || attachment;
+  if (!raw) return null;
 
-  const isPdf = typeof src === 'string' && src.toLowerCase().includes('.pdf');
+  const resolvedSrc =
+    typeof raw === 'string' && (raw.startsWith('/') || raw.startsWith('http'))
+      ? raw
+      : `/api/leaves/attachment/${raw}`;
+  const resolvedLabel = label || title || 'ดูไฟล์แนบ';
+
+  const isPdf = typeof resolvedSrc === 'string' && resolvedSrc.toLowerCase().includes('.pdf');
 
   return (
     <>
@@ -16,7 +30,7 @@ export default function AttachmentPreview({ src, label = 'ดูไฟล์แ�
         type="button"
         onClick={() => setOpen(true)}
         className="inline-flex items-center gap-1.5 text-[#7749BC] dark:text-purple-300 hover:text-purple-700 dark:hover:text-purple-200 hover:underline cursor-pointer font-medium text-xs transition-colors"
-        title={label}
+        title={resolvedLabel}
       >
         {isPdf ? (
           <div className={`${thumbClassName} bg-rose-50 dark:bg-rose-950/50 border border-rose-200 dark:border-rose-800 text-rose-600 dark:text-rose-400 flex items-center justify-center shrink-0`}>

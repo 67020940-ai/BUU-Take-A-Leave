@@ -25,6 +25,7 @@ import TeacherSidebar from '@/components/TeacherSidebar';
 import TeacherTopBar from '@/components/TeacherTopBar';
 import TeacherScheduleGrid from '@/components/TeacherScheduleGrid';
 import MobileBottomNav from '@/components/MobileBottomNav';
+import { useSidebarCollapsed } from '@/lib/useSidebarCollapsed';
 
 const SAMPLE_LESSON_PLANS = {
   '24527664': [
@@ -239,7 +240,7 @@ export default function TeacherScheduleView({
   function handleSaveNote() {
     if (!editingWeek) return;
     setLessonPlans((prev) => {
-      const courseLessons = prev[selectedCourseCode] || [];
+      const courseLessons = prev[selectedCourseCode] || prev['24527664'] || [];
       const updated = courseLessons.map((l) =>
         l.week === editingWeek.week ? { ...l, notes: editNotes } : l
       );
@@ -250,6 +251,7 @@ export default function TeacherScheduleView({
     setTimeout(() => setToast(null), 3000);
   }
 
+  const [isSidebarCollapsed] = useSidebarCollapsed();
   const totalPendingCount = useMemo(() => leaves.filter((l) => l.status === 'รออนุมัติ').length, [leaves]);
 
   return (
@@ -263,7 +265,7 @@ export default function TeacherScheduleView({
         onCloseMobile={() => setMobileSidebarOpen(false)}
       />
 
-      <div className="flex-1 lg:pl-64 flex flex-col min-w-0 w-full">
+      <div className={`flex-1 ${isSidebarCollapsed ? 'lg:pl-20' : 'lg:pl-64'} flex flex-col min-w-0 w-full transition-all duration-300`}>
         <TeacherTopBar
           user={user}
           semester="1/2569"
@@ -271,7 +273,7 @@ export default function TeacherScheduleView({
           onToggleMobileSidebar={() => setMobileSidebarOpen(true)}
         />
 
-        <main className="flex-1 p-4 sm:p-6 lg:p-8 pb-24 md:pb-8 space-y-8 max-w-7xl w-full mx-auto">
+        <main className={`flex-1 p-4 sm:p-6 lg:p-8 pb-24 lg:pb-8 space-y-8 ${isSidebarCollapsed ? 'max-w-none' : 'max-w-7xl'} w-full mx-auto transition-all duration-300`}>
           {/* Header Banner */}
           <div className="bg-white/90 dark:bg-slate-900/90 backdrop-blur-xl p-5 sm:p-6 rounded-3xl border border-neutral-200/80 dark:border-slate-800 shadow-xs flex flex-col sm:flex-row sm:items-center justify-between gap-4">
             <div className="flex items-center gap-3">
@@ -291,12 +293,6 @@ export default function TeacherScheduleView({
 
           {/* Section 1: Weekly Timetable Grid */}
           <section className="space-y-3">
-            <div className="flex items-center justify-between">
-              <h2 className="text-sm font-bold text-neutral-800 dark:text-neutral-200 flex items-center gap-2">
-                <Clock className="w-4 h-4 text-[#7749BC]" />
-                <span>ตารางเรียนและห้องสอนประจำสัปดาห์</span>
-              </h2>
-            </div>
             <TeacherScheduleGrid courses={courses} />
           </section>
 

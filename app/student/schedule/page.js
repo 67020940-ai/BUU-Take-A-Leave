@@ -1,9 +1,10 @@
 import { redirect } from 'next/navigation';
-import { getCurrentUser } from '@/lib/auth';
+import { getCurrentUser, homePathForRole } from '@/lib/auth';
 
 export default async function StudentSchedulePage({ searchParams }) {
   const user = await getCurrentUser();
-  if (!user || user.role !== 'student') redirect('/login');
+  if (!user) redirect('/login');
+  if (user.role !== 'student') redirect(homePathForRole(user.role));
 
   const params = searchParams ? await searchParams : {};
   const query = new URLSearchParams(params);
