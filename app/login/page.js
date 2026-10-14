@@ -52,8 +52,8 @@ export default function LoginPage() {
         setPasswordInvalid(true);
         return;
       }
-      router.replace(ROLE_HOME[data.role] || '/');
-      router.refresh();
+      const target = ROLE_HOME[data.role] || '/';
+      window.location.href = target;
     } finally {
       setLoading(false);
     }

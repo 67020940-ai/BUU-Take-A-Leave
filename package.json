@@ -16,6 +16,8 @@
     "seed": "node prisma/seed.js"
   },
   "dependencies": {
+    "@neon/config": "^1.9.1",
+    "@neon/env": "^1.6.2",
     "@prisma/client": "^6.19.3",
     "@tailwindcss/postcss": "^4.3.3",
     "@vercel/blob": "^2.8.0",
