@@ -3,6 +3,9 @@ import { getCurrentUser, homePathForRole } from '@/lib/auth';
 import { getStudentData } from '@/lib/studentData';
 import StudentHomepageView from './student-homepage-view';
 
+export const dynamic = 'force-dynamic';
+export const revalidate = 0;
+
 export const metadata = {
   title: 'ระบบนิสิต | BUU Take A Leave',
   description: 'ระบบยื่นและอนุมัติคำขอลาเรียนออนไลน์ สรุปเวลาเรียน มหาวิทยาลัยบูรพา',

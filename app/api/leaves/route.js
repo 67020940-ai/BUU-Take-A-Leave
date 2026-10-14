@@ -1,3 +1,6 @@
+export const dynamic = 'force-dynamic';
+export const revalidate = 0;
+
 import { NextResponse } from 'next/server';
 import { getCurrentUser } from '@/lib/auth';
 import {
@@ -5,6 +8,7 @@ import {
   cancelLeave,
   getCourse,
   getLeave,
+  getUserById,
   isEnrolled,
   listAllLeaves,
   listLeavesForStudent,
@@ -19,9 +23,26 @@ const LEAVE_PERIODS = ['เต็มคาบเรียน 3 ชั่วโ�
 const DATE_RE = /^\d{4}-\d{2}-\d{2}$/;
 const REASON_LIMIT = 300;
 
-async function withCourse(leave) {
-  const course = await getCourse(leave.courseId);
-  return { ...leave, courseName: course ? `${course.code} ${course.name}` : '-' };
+async function enrichLeave(leave) {
+  if (!leave) return null;
+  const [course, student] = await Promise.all([
+    getCourse(leave.courseId),
+    getUserById(leave.studentId),
+  ]);
+  return {
+    ...leave,
+    courseCode: course?.code || '',
+    courseName: course ? `${course.code} ${course.name}` : '-',
+    courseTitle: course?.name || '',
+    courseTerm: course?.term || '',
+    courseGroup: course?.group || '',
+    section: course?.group || '',
+    teacherName: course?.teacher?.name || course?.teacherName || '',
+    studentName: student?.name || '-',
+    studentCode: student?.studentId || '-',
+    studentEmail: student?.email || '',
+    studentAvatar: student?.avatar || null,
+  };
 }
 
 export async function GET() {
@@ -33,7 +54,8 @@ export async function GET() {
   else if (user.role === 'teacher') leaves = await listLeavesForTeacher(user.id);
   else leaves = await listAllLeaves();
 
-  return NextResponse.json({ leaves: await Promise.all(leaves.map(withCourse)) });
+  const enriched = await Promise.all(leaves.map(enrichLeave));
+  return NextResponse.json({ leaves: enriched.filter(Boolean) });
 }
 
 export async function POST(request) {
@@ -98,7 +120,7 @@ export async function POST(request) {
   } else {
     leave = await addLeave(user.id, leaveData);
   }
-  return NextResponse.json({ leave: await withCourse(leave) }, { status: 201 });
+  return NextResponse.json({ leave: await enrichLeave(leave) }, { status: 201 });
 }
 
 export async function PATCH(request) {
@@ -137,7 +159,7 @@ export async function PATCH(request) {
 
       const updated = await setLeaveStatus(targetId, status, comment);
       if (updated) {
-        updatedLeaves.push(await withCourse(updated));
+        updatedLeaves.push(await enrichLeave(updated));
       }
     }
     return NextResponse.json({ ok: true, count: updatedLeaves.length, leaves: updatedLeaves });
@@ -159,7 +181,7 @@ export async function PATCH(request) {
   }
 
   const leave = await setLeaveStatus(id, status, comment);
-  return NextResponse.json({ leave: await withCourse(leave) });
+  return NextResponse.json({ leave: await enrichLeave(leave) });
 }
 
 export async function DELETE(request) {
@@ -181,5 +203,5 @@ export async function DELETE(request) {
 
   const leave = await cancelLeave(id, user.id);
   if (!leave) return NextResponse.json({ error: 'ยกเลิกไม่สำเร็จ' }, { status: 409 });
-  return NextResponse.json({ leave: await withCourse(leave) });
+  return NextResponse.json({ leave: await enrichLeave(leave) });
 }

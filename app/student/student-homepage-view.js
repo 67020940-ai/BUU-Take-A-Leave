@@ -52,6 +52,40 @@ export default function StudentHomepageView({
   const [isSidebarCollapsed] = useSidebarCollapsed();
   const [targetCourseForLeave, setTargetCourseForLeave] = useState(initialCourseId);
 
+  // Real-time leaves state & periodic live synchronization
+  const [leavesList, setLeavesList] = useState(leaves);
+
+  useEffect(() => {
+    setLeavesList(leaves);
+  }, [leaves]);
+
+  useEffect(() => {
+    let active = true;
+    async function syncLeaves() {
+      try {
+        const res = await fetch('/api/leaves');
+        if (res.ok) {
+          const data = await res.json();
+          if (active && Array.isArray(data.leaves)) {
+            setLeavesList(data.leaves);
+          }
+        }
+      } catch (err) {}
+    }
+
+    const interval = setInterval(syncLeaves, 4000);
+    const handleFocus = () => syncLeaves();
+    window.addEventListener('focus', handleFocus);
+    window.addEventListener('buu:leaves_updated', syncLeaves);
+
+    return () => {
+      active = false;
+      clearInterval(interval);
+      window.removeEventListener('focus', handleFocus);
+      window.removeEventListener('buu:leaves_updated', syncLeaves);
+    };
+  }, []);
+
   // Sync tab with URL query parameter
   useEffect(() => {
     if (typeof window !== 'undefined') {
@@ -108,7 +142,7 @@ export default function StudentHomepageView({
       const term = s.course?.term || s.term;
       if (term) set.add(term);
     });
-    leaves.forEach((l) => {
+    leavesList.forEach((l) => {
       if (l.courseTerm && l.courseTerm !== '-') set.add(l.courseTerm);
     });
     if (set.size === 0) {
@@ -117,7 +151,7 @@ export default function StudentHomepageView({
       set.add('1/2568');
     }
     return sortAcademicTerms(Array.from(set), false);
-  }, [summaries, leaves]);
+  }, [summaries, leavesList]);
 
   const [selectedTerm, setSelectedTerm] = useState('1/2569');
 
@@ -129,12 +163,12 @@ export default function StudentHomepageView({
 
   // Statistics calculation for the 4 overview boxes (Student's own leaves)
   const stats = useMemo(() => {
-    const total = leaves.length;
-    const approved = leaves.filter((l) => l.status === 'อนุมัติ').length;
-    const pending = leaves.filter((l) => l.status === 'รออนุมัติ').length;
-    const rejected = leaves.filter((l) => l.status === 'ไม่อนุมัติ').length;
+    const total = leavesList.length;
+    const approved = leavesList.filter((l) => l.status === 'อนุมัติ').length;
+    const pending = leavesList.filter((l) => l.status === 'รออนุมัติ').length;
+    const rejected = leavesList.filter((l) => l.status === 'ไม่อนุมัติ').length;
     return { total, approved, pending, rejected };
-  }, [leaves]);
+  }, [leavesList]);
 
   // Filter summaries for the selected semester
   const currentSummaries = useMemo(() => {
@@ -480,7 +514,12 @@ export default function StudentHomepageView({
                   initialCourseId={targetCourseForLeave || availableCourses[0]?.id || ''}
                   lockCourse={Boolean(targetCourseForLeave)}
                   resubmitId={resubmitId}
-                  onSuccess={() => handleSwitchTab('history')}
+                  onSuccess={(newLeave) => {
+                    if (newLeave) {
+                      setLeavesList((prev) => [newLeave, ...prev.filter((l) => l.id !== newLeave.id)]);
+                    }
+                    handleSwitchTab('history');
+                  }}
                 />
               </div>
             </div>
@@ -510,7 +549,7 @@ export default function StudentHomepageView({
                 </div>
               </div>
 
-              <StudentStatsView summaries={summaries} leaves={leaves} />
+              <StudentStatsView summaries={summaries} leaves={leavesList} />
             </div>
           )}
 
@@ -538,7 +577,7 @@ export default function StudentHomepageView({
                 </div>
               </div>
 
-              <StudentHistoryView leaves={leaves} summaries={summaries} initialStatus={initialStatus} />
+              <StudentHistoryView leaves={leavesList} summaries={summaries} initialStatus={initialStatus} />
             </div>
           )}
 

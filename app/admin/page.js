@@ -3,6 +3,9 @@ import { getCurrentUser, homePathForRole } from '@/lib/auth';
 import { getCourse, getUserById, listAllCourses, listAllLeaves, listAllTickets } from '@/lib/db';
 import AdminDashboard from './admin-dashboard';
 
+export const dynamic = 'force-dynamic';
+export const revalidate = 0;
+
 export default async function AdminPage() {
   const user = await getCurrentUser();
   if (!user) redirect('/login');

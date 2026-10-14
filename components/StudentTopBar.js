@@ -92,14 +92,26 @@ export default function StudentTopBar({
 
   useEffect(() => {
     let active = true;
-    fetch('/api/notifications')
-      .then((r) => r.json())
-      .then((data) => {
-        if (active && data.notifications) setNotifications(data.notifications);
-      })
-      .catch(() => {});
+    function fetchNotes() {
+      fetch('/api/notifications')
+        .then((r) => r.json())
+        .then((data) => {
+          if (active && data.notifications) setNotifications(data.notifications);
+        })
+        .catch(() => {});
+    }
+
+    fetchNotes();
+    const interval = setInterval(fetchNotes, 4000);
+    const handleFocus = () => fetchNotes();
+    window.addEventListener('focus', handleFocus);
+    window.addEventListener('buu:leaves_updated', fetchNotes);
+
     return () => {
       active = false;
+      clearInterval(interval);
+      window.removeEventListener('focus', handleFocus);
+      window.removeEventListener('buu:leaves_updated', fetchNotes);
     };
   }, []);
 

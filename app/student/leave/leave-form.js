@@ -48,7 +48,7 @@ const LEAVE_TYPES = [
 
 const REASON_LIMIT = 300;
 
-export default function LeaveForm({ courses, initialCourseId, lockCourse, initialValues, resubmitId }) {
+export default function LeaveForm({ courses, initialCourseId, lockCourse, initialValues, resubmitId, onSuccess }) {
   const [isLocked, setIsLocked] = useState(lockCourse);
   const router = useRouter();
 
@@ -227,10 +227,17 @@ export default function LeaveForm({ courses, initialCourseId, lockCourse, initia
       setAttachment(null);
       setTouched({});
       setSuccess('ส่งใบลาเรียบร้อยแล้ว รอการอนุมัติจากอาจารย์ผู้สอน กำลังไปยังหน้าประวัติการลา...');
+      if (typeof window !== 'undefined') {
+        window.dispatchEvent(new CustomEvent('buu:leaves_updated'));
+      }
       setTimeout(() => {
-        router.push('/student/history');
-        router.refresh();
-      }, 1200);
+        if (onSuccess) {
+          onSuccess(data.leave);
+        } else {
+          router.push('/student/history');
+          router.refresh();
+        }
+      }, 600);
     } finally {
       setSaving(false);
     }

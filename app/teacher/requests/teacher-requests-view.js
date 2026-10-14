@@ -76,6 +76,34 @@ export default function TeacherRequestsView({
   const [isTodayOnly, setIsTodayOnly] = useState(false);
   const [searchQuery, setSearchQuery] = useState('');
 
+  // Real-time synchronization for teacher requests
+  useEffect(() => {
+    let active = true;
+    async function syncTeacherLeaves() {
+      try {
+        const res = await fetch('/api/leaves');
+        if (res.ok) {
+          const data = await res.json();
+          if (active && Array.isArray(data.leaves)) {
+            setLeaves(data.leaves);
+          }
+        }
+      } catch (err) {}
+    }
+
+    const interval = setInterval(syncTeacherLeaves, 4000);
+    const handleFocus = () => syncTeacherLeaves();
+    window.addEventListener('focus', handleFocus);
+    window.addEventListener('buu:leaves_updated', syncTeacherLeaves);
+
+    return () => {
+      active = false;
+      clearInterval(interval);
+      window.removeEventListener('focus', handleFocus);
+      window.removeEventListener('buu:leaves_updated', syncTeacherLeaves);
+    };
+  }, []);
+
   // Sync tab & notification auto-open from query param and events
   useEffect(() => {
     function handleParams(searchStr) {
@@ -248,6 +276,10 @@ export default function TeacherRequestsView({
 
       if (!res.ok) throw new Error('Failed to update status');
 
+      if (typeof window !== 'undefined') {
+        window.dispatchEvent(new CustomEvent('buu:leaves_updated'));
+      }
+
       setToast({
         type: 'success',
         message: status === 'อนุมัติ' ? 'อนุมัติคำขอลาเรียบร้อยแล้ว' : 'บันทึกไม่อนุมัติคำขอลาแล้ว',
@@ -282,6 +314,10 @@ export default function TeacherRequestsView({
       });
 
       if (!res.ok) throw new Error('Batch update failed');
+
+      if (typeof window !== 'undefined') {
+        window.dispatchEvent(new CustomEvent('buu:leaves_updated'));
+      }
 
       setSelectedLeaveIds(new Set());
       setBatchModal({ isOpen: false, type: 'approve', comment: '', isSubmitting: false });

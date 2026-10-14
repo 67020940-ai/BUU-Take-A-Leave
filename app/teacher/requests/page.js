@@ -3,6 +3,9 @@ import { getCurrentUser, homePathForRole } from '@/lib/auth';
 import { getTeacherCoursesAndRoster, getTeacherLeaves } from '@/lib/teacherData';
 import TeacherRequestsView from './teacher-requests-view';
 
+export const dynamic = 'force-dynamic';
+export const revalidate = 0;
+
 export const metadata = {
   title: 'คำขอร้องลาเรียน | Take A Leave',
   description: 'ระบบพิจารณาและอนุมัติคำขอลาเรียนของนิสิต มหาวิทยาลัยบูรพา',

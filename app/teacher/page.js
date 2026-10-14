@@ -3,6 +3,9 @@ import { getCurrentUser, homePathForRole } from '@/lib/auth';
 import TeacherDashboard from './teacher-dashboard';
 import { getTeacherCoursesAndRoster, getTeacherLeaves } from '@/lib/teacherData';
 
+export const dynamic = 'force-dynamic';
+export const revalidate = 0;
+
 export const metadata = {
   title: 'ระบบอาจารย์ผู้สอน | Take A Leave',
   description: 'ระบบยื่นและอนุมัติคำขอลาเรียนออนไลน์ มหาวิทยาลัยบูรพา',

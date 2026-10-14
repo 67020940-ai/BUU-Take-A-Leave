@@ -1,7 +1,7 @@
 'use client';
 /* Hallmark · macrostructure: Workbench · theme: BUU Utilitarian · pre-emit critique: P5 H5 E5 S5 R5 V5 */
 
-import { useState, useMemo } from 'react';
+import { useState, useMemo, useEffect } from 'react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import {
@@ -27,10 +27,42 @@ export default function TeacherDashboard({
   usingMock = false,
 }) {
   const router = useRouter();
-  const [leaves] = useState(initialLeaves);
+  const [leaves, setLeaves] = useState(initialLeaves);
   const [mobileSidebarOpen, setMobileSidebarOpen] = useState(false);
   const [selectedTerm, setSelectedTerm] = useState('1/2569');
   const [searchQuery, setSearchQuery] = useState('');
+
+  useEffect(() => {
+    setLeaves(initialLeaves);
+  }, [initialLeaves]);
+
+  // Real-time synchronization
+  useEffect(() => {
+    let active = true;
+    async function syncTeacherLeaves() {
+      try {
+        const res = await fetch('/api/leaves');
+        if (res.ok) {
+          const data = await res.json();
+          if (active && Array.isArray(data.leaves)) {
+            setLeaves(data.leaves);
+          }
+        }
+      } catch (err) {}
+    }
+
+    const interval = setInterval(syncTeacherLeaves, 4000);
+    const handleFocus = () => syncTeacherLeaves();
+    window.addEventListener('focus', handleFocus);
+    window.addEventListener('buu:leaves_updated', syncTeacherLeaves);
+
+    return () => {
+      active = false;
+      clearInterval(interval);
+      window.removeEventListener('focus', handleFocus);
+      window.removeEventListener('buu:leaves_updated', syncTeacherLeaves);
+    };
+  }, []);
 
   // Extract unique academic terms from courses and leaves
   const academicTerms = useMemo(() => {

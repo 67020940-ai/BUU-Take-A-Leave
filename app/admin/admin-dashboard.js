@@ -46,6 +46,40 @@ export default function AdminDashboard({ user, courses = [], leaves = [], ticket
   const [searchQuery, setSearchQuery] = useState('');
   const [selectedTerm, setSelectedTerm] = useState('1/2569');
 
+  // Real-time leaves synchronization
+  const [leavesList, setLeavesList] = useState(leaves);
+
+  useEffect(() => {
+    setLeavesList(leaves);
+  }, [leaves]);
+
+  useEffect(() => {
+    let active = true;
+    async function syncAdminLeaves() {
+      try {
+        const res = await fetch('/api/leaves');
+        if (res.ok) {
+          const data = await res.json();
+          if (active && Array.isArray(data.leaves)) {
+            setLeavesList(data.leaves);
+          }
+        }
+      } catch (err) {}
+    }
+
+    const interval = setInterval(syncAdminLeaves, 4000);
+    const handleFocus = () => syncAdminLeaves();
+    window.addEventListener('focus', handleFocus);
+    window.addEventListener('buu:leaves_updated', syncAdminLeaves);
+
+    return () => {
+      active = false;
+      clearInterval(interval);
+      window.removeEventListener('focus', handleFocus);
+      window.removeEventListener('buu:leaves_updated', syncAdminLeaves);
+    };
+  }, []);
+
   // Ticket management state
   const [ticketFilter, setTicketFilter] = useState('all');
   const [selectedTicket, setSelectedTicket] = useState(null);
@@ -123,9 +157,9 @@ export default function AdminDashboard({ user, courses = [], leaves = [], ticket
 
   // Counts for the 4 Overview Boxes
   const openTicketsCount = tickets.filter((t) => t.status === 'เปิดเรื่อง').length;
-  const approvedLeaves = leaves.filter((l) => l.status === 'อนุมัติ').length;
-  const pendingLeaves = leaves.filter((l) => l.status === 'รออนุมัติ').length;
-  const rejectedLeaves = leaves.filter((l) => l.status === 'ไม่อนุมัติ').length;
+  const approvedLeaves = leavesList.filter((l) => l.status === 'อนุมัติ').length;
+  const pendingLeaves = leavesList.filter((l) => l.status === 'รออนุมัติ').length;
+  const rejectedLeaves = leavesList.filter((l) => l.status === 'ไม่อนุมัติ').length;
 
   // Filtered Tickets
   const filteredTickets = useMemo(() => {
@@ -149,7 +183,7 @@ export default function AdminDashboard({ user, courses = [], leaves = [], ticket
 
   // Filtered Leaves
   const filteredLeaves = useMemo(() => {
-    return leaves.filter((l) => {
+    return leavesList.filter((l) => {
       const matchesStatus = leaveStatusFilter === 'all' || l.status === leaveStatusFilter;
       const q = searchQuery.toLowerCase();
       const matchesSearch =
@@ -160,7 +194,7 @@ export default function AdminDashboard({ user, courses = [], leaves = [], ticket
         (l.reason && l.reason.toLowerCase().includes(q));
       return matchesStatus && matchesSearch;
     });
-  }, [leaves, leaveStatusFilter, searchQuery]);
+  }, [leavesList, leaveStatusFilter, searchQuery]);
 
   const totalLeavePages = Math.max(1, Math.ceil(filteredLeaves.length / LEAVE_PAGE_SIZE));
   const paginatedLeaves = useMemo(() => {
@@ -190,7 +224,7 @@ export default function AdminDashboard({ user, courses = [], leaves = [], ticket
 
   // Recent Activity Feed
   const recentActivities = useMemo(() => {
-    const leaveEvents = leaves.map((l) => {
+    const leaveEvents = leavesList.map((l) => {
       let text = '';
       if (l.status === 'อนุมัติ') text = `คำร้องขอลาของ ${l.studentName} วิชา "${l.courseName}" ได้รับการอนุมัติ`;
       else if (l.status === 'ไม่อนุมัติ') text = `คำร้องขอลาของ ${l.studentName} วิชา "${l.courseName}" ไม่อนุมัติ`;
@@ -210,7 +244,7 @@ export default function AdminDashboard({ user, courses = [], leaves = [], ticket
     return [...leaveEvents, ...ticketEvents]
       .sort((a, b) => new Date(b.time) - new Date(a.time))
       .slice(0, 15);
-  }, [leaves, tickets]);
+  }, [leavesList, tickets]);
 
   // Handle reply to support ticket
   async function handleSendReply() {
@@ -281,7 +315,7 @@ export default function AdminDashboard({ user, courses = [], leaves = [], ticket
                   </div>
                   <div className="flex items-baseline justify-between">
                     <span className="text-2xl sm:text-3xl font-black font-mono text-neutral-900 dark:text-neutral-100">
-                      {leaves.length}
+                      {leavesList.length}
                     </span>
                     <span className="text-[11px] text-neutral-400 group-hover:text-[#7749BC] transition-colors">
                       รายการ

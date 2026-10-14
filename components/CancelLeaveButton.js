@@ -4,7 +4,7 @@ import { useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { XCircle, Loader2 } from 'lucide-react';
 
-export default function CancelLeaveButton({ leaveId }) {
+export default function CancelLeaveButton({ leaveId, onCancelled }) {
   const router = useRouter();
   const [confirming, setConfirming] = useState(false);
   const [loading, setLoading] = useState(false);
@@ -25,6 +25,10 @@ export default function CancelLeaveButton({ leaveId }) {
         setConfirming(false);
         return;
       }
+      if (typeof window !== 'undefined') {
+        window.dispatchEvent(new CustomEvent('buu:leaves_updated', { detail: { cancelledId: leaveId } }));
+      }
+      if (onCancelled) onCancelled(leaveId);
       router.refresh();
     } finally {
       setLoading(false);
