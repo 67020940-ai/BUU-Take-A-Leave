@@ -39,7 +39,8 @@ export async function POST(request) {
       } else if (cleanEmail.startsWith('teacher-')) {
         finalUser = { id: 'teacher-mock', role: 'teacher', name: 'อาจารย์ผู้สอน' };
       } else if (/^\d{8}@go\.buu\.ac\.th$/.test(cleanEmail)) {
-        finalUser = { id: 'student-mock', role: 'student', name: 'นิสิตมหาวิทยาลัยบูรพา' };
+        const studentCode = cleanEmail.replace('@go.buu.ac.th', '');
+        finalUser = { id: `student-${studentCode}`, role: 'student', name: `นิสิต (${studentCode})` };
       }
     }
 
