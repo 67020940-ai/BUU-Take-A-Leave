@@ -1,3 +1,4 @@
+import { redirect } from 'next/navigation';
 import { getCurrentUser, homePathForRole } from '@/lib/auth';
 import { getStudentData } from '@/lib/studentData';
 import StudentHomepageView from './student-homepage-view';

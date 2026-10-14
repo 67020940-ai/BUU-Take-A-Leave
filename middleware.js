@@ -2,7 +2,8 @@ import { NextResponse } from 'next/server';
 
 export function middleware(request) {
   const { pathname } = request.nextUrl;
-  const token = request.cookies.get('session')?.value;
+  const rawToken = request.cookies.get('session')?.value;
+  const token = rawToken ? decodeURIComponent(rawToken) : null;
 
   const isStudentRoute = pathname.startsWith('/student');
   const isTeacherRoute = pathname.startsWith('/teacher');
