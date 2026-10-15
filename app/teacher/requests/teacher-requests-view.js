@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useMemo, useEffect } from 'react';
+import { useState, useMemo, useEffect, useRef } from 'react';
 import Link from 'next/link';
 import {
   ClipboardCheck,
@@ -104,72 +104,72 @@ export default function TeacherRequestsView({
     };
   }, []);
 
-  // Sync tab & notification auto-open from query param and events
+  const hasAutoOpenedRef = useRef(false);
+
+  // Sync tab & search query from URL once on mount
   useEffect(() => {
-    function handleParams(searchStr) {
-      if (!searchStr) return;
-      const sp = new URLSearchParams(searchStr);
-      if (sp.get('tab') === 'all') setActiveTab('all');
-      else if (sp.get('tab') === 'pending') setActiveTab('รออนุมัติ');
+    if (typeof window === 'undefined') return;
+    const sp = new URLSearchParams(window.location.search);
+    if (sp.get('tab') === 'all') setActiveTab('all');
+    else if (sp.get('tab') === 'pending') setActiveTab('รออนุมัติ');
 
-      const searchQueryParam = sp.get('search') || sp.get('student') || '';
-      const leaveIdParam = sp.get('id') || sp.get('leaveId') || '';
-      const shouldAutoOpen = sp.get('autoOpen') === '1' || !!leaveIdParam || !!searchQueryParam;
+    const searchQueryParam = sp.get('search') || sp.get('student') || '';
+    if (searchQueryParam) {
+      setSearchQuery(searchQueryParam);
+    }
+  }, []);
 
-      if (searchQueryParam) {
-        setSearchQuery(searchQueryParam);
+  // One-time auto-open only when deep-linking with a specific leave id
+  useEffect(() => {
+    if (hasAutoOpenedRef.current) return;
+    if (typeof window === 'undefined') return;
+    if (!leaves || leaves.length === 0) return;
+
+    const sp = new URLSearchParams(window.location.search);
+    const leaveIdParam = sp.get('id') || sp.get('leaveId');
+    const autoOpen = sp.get('autoOpen') === '1';
+
+    if (leaveIdParam || autoOpen) {
+      const found = leaves.find((l) => leaveIdParam && String(l.id) === String(leaveIdParam));
+      if (found) {
+        hasAutoOpenedRef.current = true;
+        setActiveTab('all');
+        setDetailModal({ isOpen: true, leave: found, comment: '' });
       }
+    }
+  }, [leaves]);
 
-      if (shouldAutoOpen && leaves.length > 0) {
-        const found = leaves.find((l) => {
-          if (leaveIdParam && String(l.id) === String(leaveIdParam)) return true;
-          if (searchQueryParam) {
-            const q = searchQueryParam.toLowerCase().trim();
-            const matchName = (l.studentName || '').toLowerCase().includes(q);
-            const matchCode = (l.studentCode || '').includes(q);
-            return matchName || matchCode;
-          }
-          return false;
-        });
+  // Notification event listener
+  useEffect(() => {
+    if (typeof window === 'undefined') return;
 
-        if (found) {
-          setActiveTab('all');
-          setDetailModal({ isOpen: true, leave: found, comment: '' });
-        }
+    function handleNotificationEvent(e) {
+      const n = e.detail?.notification;
+      if (!n) return;
+      const msg = n.message || n.title || '';
+      const match = msg.match(/^(.+?)\s+ยื่นคำร้องลา\s+"([^"]+)"(?:\s*\(([^)]+)\))?/);
+      const studentName = match ? match[1].trim() : '';
+      const courseName = match ? match[2].trim() : '';
+
+      const found = leaves.find((l) => {
+        if (studentName && (l.studentName || '').includes(studentName)) return true;
+        if (courseName && (l.courseName || '').includes(courseName)) return true;
+        return false;
+      });
+
+      if (found) {
+        setActiveTab('all');
+        if (studentName) setSearchQuery(studentName);
+        setDetailModal({ isOpen: true, leave: found, comment: '' });
+      } else if (studentName) {
+        setSearchQuery(studentName);
       }
     }
 
-    if (typeof window !== 'undefined') {
-      handleParams(window.location.search);
-
-      function handleNotificationEvent(e) {
-        const n = e.detail?.notification;
-        if (!n) return;
-        const msg = n.message || n.title || '';
-        const match = msg.match(/^(.+?)\s+ยื่นคำร้องลา\s+"([^"]+)"(?:\s*\(([^)]+)\))?/);
-        const studentName = match ? match[1].trim() : '';
-        const courseName = match ? match[2].trim() : '';
-
-        const found = leaves.find((l) => {
-          if (studentName && (l.studentName || '').includes(studentName)) return true;
-          if (courseName && (l.courseName || '').includes(courseName)) return true;
-          return false;
-        });
-
-        if (found) {
-          setActiveTab('all');
-          if (studentName) setSearchQuery(studentName);
-          setDetailModal({ isOpen: true, leave: found, comment: '' });
-        } else if (studentName) {
-          setSearchQuery(studentName);
-        }
-      }
-
-      window.addEventListener('buu:open-notification', handleNotificationEvent);
-      return () => {
-        window.removeEventListener('buu:open-notification', handleNotificationEvent);
-      };
-    }
+    window.addEventListener('buu:open-notification', handleNotificationEvent);
+    return () => {
+      window.removeEventListener('buu:open-notification', handleNotificationEvent);
+    };
   }, [leaves]);
 
   // Modals
