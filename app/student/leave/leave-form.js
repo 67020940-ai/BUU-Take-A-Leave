@@ -87,17 +87,25 @@ export default function LeaveForm({ courses, initialCourseId, lockCourse, initia
     e.target.value = '';
     if (!file) return;
     setUploadError('');
+    // ไฟล์ใหญ่เกินกำหนด: แจ้งเตือนแต่ไม่ขวางการยื่นใบลา (ส่งใบลาโดยไม่แนบไฟล์ได้)
+    if (file.size > 5 * 1024 * 1024) {
+      setUploadError('ไฟล์ใหญ่เกินไป (จำกัดไม่เกิน 5MB) — คุณยังส่งใบลาโดยไม่แนบไฟล์ได้');
+      return;
+    }
     setUploading(true);
     try {
       const formData = new FormData();
       formData.append('file', file);
       const res = await fetch('/api/leaves/attachment', { method: 'POST', body: formData });
-      const data = await res.json();
+      const data = await res.json().catch(() => ({}));
       if (!res.ok) {
-        setUploadError(data.error || 'อัปโหลดไฟล์ไม่สำเร็จ');
+        setUploadError((data.error || 'อัปโหลดไฟล์ไม่สำเร็จ') + ' — คุณยังส่งใบลาโดยไม่แนบไฟล์ได้');
         return;
       }
       setAttachment(data);
+    } catch (err) {
+      console.error('Attachment upload failed:', err);
+      setUploadError('อัปโหลดไฟล์ไม่สำเร็จ (เครือข่ายขัดข้อง) — คุณยังส่งใบลาโดยไม่แนบไฟล์ได้');
     } finally {
       setUploading(false);
     }
@@ -210,9 +218,9 @@ export default function LeaveForm({ courses, initialCourseId, lockCourse, initia
           resubmitId: resubmitId || undefined,
         }),
       });
-      const data = await res.json();
+      const data = await res.json().catch(() => ({}));
       if (!res.ok) {
-        setError(data.error || 'บันทึกไม่สำเร็จ');
+        setError(data.error || `บันทึกไม่สำเร็จ (รหัสข้อผิดพลาด ${res.status}) กรุณาลองใหม่อีกครั้ง`);
         return;
       }
       setForm({
@@ -238,6 +246,9 @@ export default function LeaveForm({ courses, initialCourseId, lockCourse, initia
           router.refresh();
         }
       }, 600);
+    } catch (err) {
+      console.error('Leave submission failed:', err);
+      setError('ไม่สามารถเชื่อมต่อเซิร์ฟเวอร์ได้ กรุณาตรวจสอบอินเทอร์เน็ตแล้วลองใหม่อีกครั้ง');
     } finally {
       setSaving(false);
     }

@@ -131,17 +131,7 @@ export async function POST(request) {
     });
 
     if (!course) {
-      course = await prisma.course.create({
-        data: {
-          id: courseParam,
-          code: courseParam,
-          name: `รายวิชา ${courseParam}`,
-          term: '1/2569',
-          totalSessions: 15,
-          teacherId: user.id || null,
-          teacherName: user.name || null,
-        },
-      });
+      return NextResponse.json({ error: 'ไม่พบรายวิชาที่ระบุ' }, { status: 400 });
     }
 
     // Upload to Vercel Blob or local disk

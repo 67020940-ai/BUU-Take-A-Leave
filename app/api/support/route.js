@@ -12,7 +12,13 @@ export async function GET() {
 export async function POST(request) {
   const user = await getCurrentUser();
   if (!user) return NextResponse.json({ error: 'ยังไม่ได้เข้าสู่ระบบ' }, { status: 401 });
-  const { subject, message } = await request.json();
+  let payload;
+  try {
+    payload = await request.json();
+  } catch {
+    return NextResponse.json({ error: 'ข้อมูลที่ส่งมาไม่ถูกต้อง' }, { status: 400 });
+  }
+  const { subject, message } = payload;
   if (
     typeof subject !== 'string' ||
     typeof message !== 'string' ||
@@ -24,6 +30,9 @@ export async function POST(request) {
     return NextResponse.json({ error: 'กรอกหัวข้อและรายละเอียดให้ถูกต้อง' }, { status: 400 });
   }
   const ticket = await addTicket(user.id, subject, message);
+  if (!ticket) {
+    return NextResponse.json({ error: 'บันทึกเรื่องแจ้งปัญหาไม่สำเร็จ กรุณาลองใหม่อีกครั้ง' }, { status: 500 });
+  }
   return NextResponse.json({ ticket }, { status: 201 });
 }
 

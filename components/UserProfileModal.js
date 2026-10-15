@@ -65,6 +65,7 @@ export default function UserProfileModal({
   const [successMessage, setSuccessMessage] = useState('');
   const [isDragging, setIsDragging] = useState(false);
   const fileInputRef = useRef(null);
+  const editedFieldsRef = useRef(new Set());
 
   const storageKey = getUserAvatarKey(user);
   const isStudent = user?.role === 'student';
@@ -79,6 +80,7 @@ export default function UserProfileModal({
   useEffect(() => {
     if (!isOpen) return;
 
+    editedFieldsRef.current.clear();
     setErrorMessage('');
     setSuccessMessage('');
     setSelectedFile(null);
@@ -122,19 +124,21 @@ export default function UserProfileModal({
         if (data?.user) {
           const u = data.user;
           const uParts = (u.name || '').trim().split(' ');
-          setFormData((prev) => ({
-            ...prev,
-            firstName: u.firstName || uParts[0] || prev.firstName,
-            lastName: u.lastName || uParts.slice(1).join(' ') || prev.lastName,
-            phone: u.phone || prev.phone,
-            studentId: u.studentId || prev.studentId,
-            personnelId: u.personnelId || prev.personnelId,
-            faculty: u.faculty || prev.faculty,
-            department: u.department || u.major || prev.department,
-            academicYear: u.academicYear || prev.academicYear,
-            advisorName: u.advisorName || prev.advisorName,
-            bio: u.bio || prev.bio,
-          }));
+          setFormData((prev) => {
+            const next = { ...prev };
+            const edited = editedFieldsRef.current;
+            if (!edited.has('firstName')) next.firstName = u.firstName || uParts[0] || prev.firstName;
+            if (!edited.has('lastName')) next.lastName = u.lastName || uParts.slice(1).join(' ') || prev.lastName;
+            if (!edited.has('phone')) next.phone = u.phone || prev.phone;
+            if (!edited.has('studentId')) next.studentId = u.studentId || prev.studentId;
+            if (!edited.has('personnelId')) next.personnelId = u.personnelId || prev.personnelId;
+            if (!edited.has('faculty')) next.faculty = u.faculty || prev.faculty;
+            if (!edited.has('department')) next.department = u.department || u.major || prev.department;
+            if (!edited.has('academicYear')) next.academicYear = u.academicYear || prev.academicYear;
+            if (!edited.has('advisorName')) next.advisorName = u.advisorName || prev.advisorName;
+            if (!edited.has('bio')) next.bio = u.bio || prev.bio;
+            return next;
+          });
           if (u.avatar) {
             setCurrentAvatar(u.avatar);
             try {
@@ -150,6 +154,7 @@ export default function UserProfileModal({
 
   function handleInputChange(e) {
     const { name, value } = e.target;
+    editedFieldsRef.current.add(name);
     setFormData((prev) => ({ ...prev, [name]: value }));
   }
 

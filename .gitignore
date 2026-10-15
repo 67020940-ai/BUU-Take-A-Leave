@@ -14,3 +14,8 @@ prisma/*.bak*
 /playwright-report/
 .superpowers/
 /backups/
+public/uploads/leave-attachments/*
+!public/uploads/leave-attachments/.gitkeep
+public/uploads/avatars/*
+!public/uploads/avatars/.gitkeep
+public/uploads/materials/*

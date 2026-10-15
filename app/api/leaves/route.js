@@ -6,6 +6,7 @@ import { getCurrentUser } from '@/lib/auth';
 import {
   addLeave,
   cancelLeave,
+  findCourseStrict,
   getCourse,
   getLeave,
   getUserById,
@@ -13,6 +14,7 @@ import {
   listAllLeaves,
   listLeavesForStudent,
   listLeavesForTeacher,
+  resolveStudentDbUser,
   resubmitLeave,
   setLeaveStatus,
 } from '@/lib/db';
@@ -63,7 +65,12 @@ export async function POST(request) {
   if (!user) return NextResponse.json({ error: 'ยังไม่ได้เข้าสู่ระบบ' }, { status: 401 });
   if (user.role !== 'student') return NextResponse.json({ error: 'เฉพาะนิสิตเท่านั้นที่ยื่นคำร้องลาได้' }, { status: 403 });
 
-  const body = await request.json();
+  let body;
+  try {
+    body = await request.json();
+  } catch {
+    return NextResponse.json({ error: 'ข้อมูลที่ส่งมาไม่ถูกต้อง' }, { status: 400 });
+  }
   if (!body.courseId || !body.type || !body.period || !body.startDate || !body.endDate || !body.reason) {
     return NextResponse.json({ error: 'กรอกข้อมูลให้ครบทุกช่อง' }, { status: 400 });
   }
@@ -80,8 +87,13 @@ export async function POST(request) {
     return NextResponse.json({ error: 'เหตุผลไม่ถูกต้อง' }, { status: 400 });
   }
 
-  if (!(await getCourse(body.courseId))) {
-    return NextResponse.json({ error: 'ไม่พบรายวิชาที่เลือก' }, { status: 400 });
+  try {
+    if (!(await findCourseStrict(body.courseId))) {
+      return NextResponse.json({ error: 'ไม่พบรายวิชาที่เลือก' }, { status: 400 });
+    }
+  } catch (courseErr) {
+    console.error('Course lookup error:', courseErr);
+    return NextResponse.json({ error: 'เชื่อมต่อฐานข้อมูลไม่สำเร็จ กรุณาลองใหม่อีกครั้ง' }, { status: 503 });
   }
   if (!(await isEnrolled(user.id, body.courseId))) {
     return NextResponse.json({ error: 'คุณไม่ได้ลงทะเบียนรายวิชานี้' }, { status: 403 });
