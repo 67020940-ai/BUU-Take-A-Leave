@@ -26,8 +26,12 @@ export default function AttachmentPreview({
   const [downloading, setDownloading] = useState(false);
   const [imgError, setImgError] = useState(false);
 
-  const raw = src || url || attachment;
+  let raw = src || url || attachment;
   if (!raw) return null;
+
+  if (typeof raw === 'string' && raw.startsWith('/api/leaves/attachment/http')) {
+    raw = raw.replace('/api/leaves/attachment/', '');
+  }
 
   const resolvedSrc =
     typeof raw === 'string' &&
@@ -38,6 +42,7 @@ export default function AttachmentPreview({
       raw.startsWith('data:'))
       ? raw
       : `/api/leaves/attachment/${raw}`;
+
 
   const resolvedLabel = label || title || 'ดูไฟล์แนบ';
   const fileName =

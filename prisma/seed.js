@@ -2445,6 +2445,10 @@ async function main() {
           studentId,
           faculty: 'คณะวิทยาการสารสนเทศ',
           major: 'ภาควิชาสารสนเทศศึกษา',
+          department: 'ภาควิชาสารสนเทศศึกษา',
+          academicYear: `ชั้นปีที่ ${2569 - 2500 - cohort + 1}`,
+          advisorName: cohort === 66 ? 'ผศ.วรรณประภา เอี่ยมฤทธิ์' : 'ดร.ธีรเดช มานะกุล',
+          phone: `08${cohort}${String(i).padStart(6, '0')}`,
         },
       });
       studentByCode[studentId] = student;
@@ -2458,6 +2462,35 @@ async function main() {
       });
     }
   }
+
+  // 4.1 เพิ่มบัญชีนิสิต 67020940 (ณภัทร สุขสมบูรณ์) สำหรับทดสอบระบบ
+  const studentNaphat = await prisma.user.create({
+    data: {
+      email: '67020940@go.buu.ac.th',
+      password,
+      name: 'ณภัทร สุขสมบูรณ์',
+      firstName: 'ณภัทร',
+      lastName: 'สุขสมบูรณ์',
+      role: 'student',
+      studentId: '67020940',
+      faculty: 'คณะวิทยาการสารสนเทศ',
+      major: 'ภาควิชาสารสนเทศศึกษา',
+      department: 'ภาควิชาสารสนเทศศึกษา',
+      academicYear: 'ชั้นปีที่ 2',
+      advisorName: 'ดร.ธีรเดช มานะกุล',
+      phone: '0812345678',
+      bio: 'นิสิตชั้นปีที่ 2 คณะวิทยาการสารสนเทศ มหาวิทยาลัยบูรพา สนใจด้าน Full-Stack Development และ AI',
+    },
+  });
+  studentByCode['67020940'] = studentNaphat;
+  students.push(studentNaphat);
+  studentRows.push({
+    name: studentNaphat.name,
+    studentId: studentNaphat.studentId,
+    cohort: 'รุ่น 67',
+    email: studentNaphat.email,
+    password: PASSWORD_PLAIN,
+  });
 
   // 5. ลงทะเบียนเรียน
   const enrollmentsToCreate = [];
@@ -2476,8 +2509,171 @@ async function main() {
       }
     }
   }
+
+  // ลงทะเบียนรายวิชาให้นิสิต 67020940
+  const naphatCourseKeys = [
+    '24527364#1/2569#01',
+    '24531464#1/2569#01',
+    '24537264#1/2569#01',
+    '24543164#1/2569#01',
+    '24514169#1/2569#01',
+    '24515169#1/2569#02',
+  ];
+  for (const cKey of naphatCourseKeys) {
+    const course = courseByKey[cKey];
+    if (course) {
+      const pair = `${studentNaphat.id}_${course.id}`;
+      if (!seenEnroll.has(pair)) {
+        seenEnroll.add(pair);
+        enrollmentsToCreate.push({
+          studentId: studentNaphat.id,
+          courseId: course.id,
+        });
+      }
+    }
+  }
+
   if (enrollmentsToCreate.length > 0) {
     await prisma.enrollment.createMany({ data: enrollmentsToCreate });
+  }
+
+  // 5.1 สร้างข้อมูลคำร้องขอลาจำลอง (Mock Leave Requests) ครบทุกสถานะและประเภท
+  const juthamat = studentByCode['66000001'];
+  const naphat = studentByCode['67020940'];
+  const kittisak = studentByCode['66000002'];
+  const chonthicha = studentByCode['66000003'];
+
+  // หาวิชาหลักสำหรับผูกใบลา
+  const courseList = Object.values(courseByKey);
+  const course1 = courseByKey['24527364#1/2569#01'] || courseList[0];
+  const course2 = courseByKey['24531464#1/2569#01'] || courseList[1];
+  const course3 = courseByKey['24537264#1/2569#01'] || courseList[2];
+  const course4 = courseByKey['24514169#1/2569#01'] || courseList[3];
+
+  const mockLeaves = [
+    // 1. ใบลาของ จุฑามาศ - ลาป่วย (รออนุมัติ) มีรูปภาพแนบ
+    {
+      studentId: juthamat.id,
+      courseId: course1.id,
+      type: 'ลาป่วย',
+      period: 'เต็มคาบเรียน 3 ชั่วโมง',
+      startDate: '2026-10-16',
+      endDate: '2026-10-17',
+      reason: 'มีไข้สูง 38.5 องศา ปวดศีรษะและมีอาการไอ แพทย์ตรวจแล้ววินิจฉัยให้พักผ่อนเป็นเวลา 2 วัน',
+      attachment: 'sample-medical-cert.png',
+      status: 'รออนุมัติ',
+      teacherComment: null,
+    },
+    // 2. ใบลาของ จุฑามาศ - ลากิจส่วนตัว (อนุมัติแล้ว) มีเอกสารแนบ
+    {
+      studentId: juthamat.id,
+      courseId: course2.id,
+      type: 'ลากิจส่วนตัว',
+      period: 'เต็มคาบเรียน 3 ชั่วโมง',
+      startDate: '2026-10-02',
+      endDate: '2026-10-02',
+      reason: 'ต้องเดินทางไปติดต่อราชการทำบัตรประชาชนและเอกสารสำคัญที่ภูมิลำเนาต่างจังหวัด',
+      attachment: 'activity-permission-letter.png',
+      status: 'อนุมัติ',
+      teacherComment: 'รับทราบ อนุญาตให้ลาได้และอย่าลืมศึกษาเอกสารประกอบการสอนย้อนหลัง',
+    },
+    // 3. ใบลาของ จุฑามาศ - ลาป่วย (ไม่อนุมัติ) ไม่มีไฟล์แนบ
+    {
+      studentId: juthamat.id,
+      courseId: course3.id,
+      type: 'ลาป่วย',
+      period: 'เต็มคาบเรียน 3 ชั่วโมง',
+      startDate: '2026-09-20',
+      endDate: '2026-09-20',
+      reason: 'ปวดท้องกะทันหัน ไม่สามารถเดินทางมาเรียนได้',
+      attachment: null,
+      status: 'ไม่อนุมัติ',
+      teacherComment: 'กรุณาแนบใบรับรองแพทย์จากสถานพยาบาลประกอบการพิจารณา เนื่องจากขาดเรียนเกินโควต้าที่กำหนด',
+    },
+    // 4. ใบลาของ ณภัทร (67020940) - ลากิจกรรม (รออนุมัติ) มีรูปแนบ
+    {
+      studentId: naphat.id,
+      courseId: course1.id,
+      type: 'ลากิจกรรม',
+      period: 'เต็มคาบเรียน 3 ชั่วโมง',
+      startDate: '2026-10-20',
+      endDate: '2026-10-21',
+      reason: 'เข้าร่วมการแข่งขันนำเสนอโครงงานนวัตกรรมดิจิทัลระดับอุดมศึกษา ในนามตัวแทนคณะวิทยาการสารสนเทศ',
+      attachment: 'sample-activity-cert.png',
+      status: 'รออนุมัติ',
+      teacherComment: null,
+    },
+    // 5. ใบลาของ ณภัทร (67020940) - ลาป่วย (อนุมัติแล้ว) แนบไฟล์ PDF
+    {
+      studentId: naphat.id,
+      courseId: course4.id,
+      type: 'ลาป่วย',
+      period: 'เต็มคาบเรียน 3 ชั่วโมง',
+      startDate: '2026-09-15',
+      endDate: '2026-09-16',
+      reason: 'ประสบอุบัติเหตุทางรถจักรยานยนต์ มีแผลฟกช้ำและแพทย์สั่งให้ล้างแผลที่โรงพยาบาลมหาวิทยาลัยบูรพา',
+      attachment: 'sample-medical-certificate.pdf',
+      status: 'อนุมัติ',
+      teacherComment: 'อนุมัติครับ ขอให้หายไวๆ และระมัดระวังในการเดินทาง',
+    },
+    // 6. ใบลาของ กิตติศักดิ์ - ลาป่วย (รออนุมัติ)
+    {
+      studentId: kittisak.id,
+      courseId: course1.id,
+      type: 'ลาป่วย',
+      period: 'เต็มคาบเรียน 3 ชั่วโมง',
+      startDate: '2026-10-18',
+      endDate: '2026-10-19',
+      reason: 'อาหารเป็นพิษ คลื่นไส้ อาเจียน ต้องนอนพักสังเกตอาการที่โรงพยาบาล',
+      attachment: 'medical-cert-sample.png',
+      status: 'รออนุมัติ',
+      teacherComment: null,
+    },
+    // 7. ใบลาของ ชลธิชา - ลากิจส่วนตัว (อนุมัติแล้ว)
+    {
+      studentId: chonthicha.id,
+      courseId: course2.id,
+      type: 'ลากิจส่วนตัว',
+      period: 'เต็มคาบเรียน 3 ชั่วโมง',
+      startDate: '2026-09-08',
+      endDate: '2026-09-09',
+      reason: 'เข้าร่วมพิธีพระราชทานเพลิงศพญาติสนิทที่ต่างจังหวัด',
+      attachment: null,
+      status: 'อนุมัติ',
+      teacherComment: 'อนุมัติ ขอแสดงความเสียใจกับครอบครัวด้วยครับ',
+    },
+    // 8. ใบลาของ ชลธิชา - ลากิจกรรม (ไม่อนุมัติ)
+    {
+      studentId: chonthicha.id,
+      courseId: course3.id,
+      type: 'ลากิจกรรม',
+      period: 'เต็มคาบเรียน 3 ชั่วโมง',
+      startDate: '2026-08-25',
+      endDate: '2026-08-25',
+      reason: 'ไปร่วมกิจกรรมสัมมนานอกสถานที่ของชมรม',
+      attachment: null,
+      status: 'ไม่อนุมัติ',
+      teacherComment: 'ไม่อนุมัติ เนื่องจากไม่มีหนังสือขออนุญาตเข้าร่วมกิจกรรมที่ลงนามโดยอาจารย์ที่ปรึกษาโครงการ',
+    },
+  ];
+
+  for (const l of mockLeaves) {
+    const createdLeave = await prisma.leaveRequest.create({ data: l });
+
+    // ถ้าเป็นสถานะ 'รออนุมัติ' ให้ส่ง Notification ไปยังอาจารย์ผู้สอน
+    if (l.status === 'รออนุมัติ') {
+      const targetCourse = courseList.find((c) => c.id === l.courseId);
+      const studentObj = students.find((s) => s.id === l.studentId);
+      if (targetCourse?.teacherId) {
+        await prisma.notification.create({
+          data: {
+            userId: targetCourse.teacherId,
+            message: `${studentObj?.name || 'นิสิต'} ยื่นคำร้องขอ${l.type} รายวิชา "${targetCourse.name}" (${l.period})`,
+            link: '/teacher/requests',
+          },
+        });
+      }
+    }
   }
 
   // 6. user-credentials.xlsx
@@ -2522,8 +2718,10 @@ async function main() {
   console.log('Seed completed successfully!');
   console.log(`- แอดมิน: 1 คน, อาจารย์: ${TEACHERS.length} ท่าน, นิสิต: ${students.length} คน`);
   console.log(`- รายวิชา: ${COURSES.length} กลุ่มเรียน, การลงทะเบียน: ${enrollmentsToCreate.length} รายการ`);
+  console.log(`- คำร้องขอลาจำลอง: ${mockLeaves.length} รายการ (รออนุมัติ, อนุมัติ, ไม่อนุมัติ ครบถ้วน)`);
   console.log(`- รหัสผ่านทุกบัญชี: ${PASSWORD_PLAIN}`);
 }
+
 
 main()
   .catch((e) => {

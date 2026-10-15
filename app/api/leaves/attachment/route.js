@@ -45,8 +45,11 @@ export async function POST(request) {
     return NextResponse.json({ error: 'รองรับเฉพาะไฟล์รูปภาพ (JPG, PNG, GIF, WEBP) และเอกสาร PDF' }, { status: 400 });
   }
 
-  const filename = `${user.id}_${crypto.randomBytes(16).toString('hex')}.${ext}`;
-  await saveAttachment(filename, buffer, ATTACHMENT_MIME[ext]);
+  const safeUserId = String(user.studentId || user.id || 'student').replace(/[^a-zA-Z0-9_\-]/g, '_');
+  const filename = `${safeUserId}_${crypto.randomBytes(16).toString('hex')}.${ext}`;
+  const saveResult = await saveAttachment(filename, buffer, ATTACHMENT_MIME[ext]);
 
-  return NextResponse.json({ filename, url: `/api/leaves/attachment/${filename}` });
+  const fileUrl = saveResult?.url || `/api/leaves/attachment/${filename}`;
+  return NextResponse.json({ filename, url: fileUrl });
 }
+

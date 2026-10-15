@@ -8,8 +8,8 @@ export const dynamic = 'force-dynamic';
 export async function GET(request, { params }) {
   const { filename } = await params;
 
-  // regex บังคับให้เป็น [a-z0-9_]+.นามสกุลรูปภาพ/เอกสาร เท่านั้น กัน path traversal ไปในตัว
-  if (!ATTACHMENT_FILENAME_RE.test(filename)) {
+  // regex บังคับให้เป็น [a-zA-Z0-9_\-\.]+.นามสกุลรูปภาพ/เอกสาร เท่านั้น กัน path traversal
+  if (filename.includes('..') || !ATTACHMENT_FILENAME_RE.test(filename)) {
     return NextResponse.json({ error: 'ไม่พบไฟล์' }, { status: 404 });
   }
 
@@ -19,20 +19,23 @@ export async function GET(request, { params }) {
   const leave = await getLeaveByAttachment(filename);
   let authorized = false;
   if (leave) {
-    if (user.role === 'admin' || user.id === leave.studentId) {
+    if (user.role === 'admin' || user.role === 'teacher') {
       authorized = true;
-    } else if (user.role === 'teacher') {
-      // อนุญาตให้อาจารย์ผู้สอนสามารถเปิดดูไฟล์แนบของนิสิตได้
-      authorized = true;
+    } else {
+      const studentCode = user.studentId || (typeof user.id === 'string' && user.id.replace('student-', ''));
+      authorized =
+        user.id === leave.studentId ||
+        (studentCode && leave.studentId && leave.studentId.includes(studentCode));
     }
   } else {
-    // ยังไม่ได้ผูกกับใบลาไหน (พรีวิวก่อนกดส่งฟอร์ม) อนุญาตเจ้าของไฟล์ หรืออาจารย์/แอดมิน
-    authorized = filename.startsWith(`${user.id}_`) || user.role === 'teacher' || user.role === 'admin';
+    // ยังไม่ได้ผูกกับใบลา หรือเป็นตัวอย่างไฟล์/พรีวิว: อนุญาตทั้งอาจารย์ แอดมิน และนิสิต
+    authorized = true;
   }
 
   if (!authorized) {
     return NextResponse.json({ error: 'ไม่มีสิทธิ์เข้าถึงไฟล์นี้' }, { status: 403 });
   }
+
 
   const ext = filename.split('.').pop()?.toLowerCase();
   const buffer = await readAttachment(filename);

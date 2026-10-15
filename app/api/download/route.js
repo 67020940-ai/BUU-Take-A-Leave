@@ -45,7 +45,23 @@ export async function GET(request) {
         const urlObj = new URL(targetUrl);
         downloadName = path.basename(urlObj.pathname) || 'attachment';
       }
+    } else {
+      // 3. Local path or direct filename
+      const cleanFilename = targetUrl.split('/').pop()?.split('?')[0];
+      if (cleanFilename) {
+        buffer = await readAttachment(cleanFilename);
+        if (!customName) downloadName = cleanFilename;
+      }
     }
+
+    if (!buffer) {
+      const cleanFilename = targetUrl.split('/').pop()?.split('?')[0];
+      if (cleanFilename) {
+        buffer = await readAttachment(cleanFilename);
+        if (!customName) downloadName = cleanFilename;
+      }
+    }
+
 
     if (!buffer) {
       return NextResponse.json({ error: 'ไม่พบข้อมูลไฟล์' }, { status: 404 });

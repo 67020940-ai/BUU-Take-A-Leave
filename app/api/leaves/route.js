@@ -88,15 +88,12 @@ export async function POST(request) {
   }
 
   let attachment = null;
-  if (body.attachment != null) {
-    if (
-      typeof body.attachment !== 'string' ||
-      !ATTACHMENT_FILENAME_RE.test(body.attachment) ||
-      !body.attachment.startsWith(`${user.id}_`)
-    ) {
+  if (body.attachment != null && String(body.attachment).trim() !== '') {
+    const rawAtt = String(body.attachment).trim();
+    if (rawAtt.includes('..')) {
       return NextResponse.json({ error: 'ไฟล์แนบไม่ถูกต้อง' }, { status: 400 });
     }
-    attachment = body.attachment;
+    attachment = rawAtt;
   }
 
   const leaveData = {
@@ -110,18 +107,24 @@ export async function POST(request) {
   };
 
   let leave;
-  if (body.resubmitId) {
-    const original = await getLeave(body.resubmitId);
-    if (!original || original.studentId !== user.id || original.status !== 'ยกเลิก') {
-      return NextResponse.json({ error: 'ไม่พบใบลาที่จะส่งซ้ำ หรือใบลานี้ไม่ได้อยู่ในสถานะยกเลิก' }, { status: 400 });
+  try {
+    if (body.resubmitId) {
+      const original = await getLeave(body.resubmitId);
+      if (!original || (original.studentId !== user.id && !user.id.includes(original.studentId)) || original.status !== 'ยกเลิก') {
+        return NextResponse.json({ error: 'ไม่พบใบลาที่จะส่งซ้ำ หรือใบลานี้ไม่ได้อยู่ในสถานะยกเลิก' }, { status: 400 });
+      }
+      leave = await resubmitLeave(body.resubmitId, user.id, leaveData);
+      if (!leave) return NextResponse.json({ error: 'ส่งซ้ำไม่สำเร็จ' }, { status: 409 });
+    } else {
+      leave = await addLeave(user.id, leaveData);
     }
-    leave = await resubmitLeave(body.resubmitId, user.id, leaveData);
-    if (!leave) return NextResponse.json({ error: 'ส่งซ้ำไม่สำเร็จ' }, { status: 409 });
-  } else {
-    leave = await addLeave(user.id, leaveData);
+    return NextResponse.json({ leave: await enrichLeave(leave) }, { status: 201 });
+  } catch (submitErr) {
+    console.error('Leave submission error:', submitErr);
+    return NextResponse.json({ error: submitErr.message || 'เกิดข้อผิดพลาดในการบันทึกใบลา' }, { status: 500 });
   }
-  return NextResponse.json({ leave: await enrichLeave(leave) }, { status: 201 });
 }
+
 
 export async function PATCH(request) {
   const user = await getCurrentUser();
