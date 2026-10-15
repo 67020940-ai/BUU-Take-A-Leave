@@ -116,8 +116,9 @@ export async function POST(request) {
       leave = await resubmitLeave(body.resubmitId, user.id, leaveData);
       if (!leave) return NextResponse.json({ error: 'ส่งซ้ำไม่สำเร็จ' }, { status: 409 });
     } else {
-      leave = await addLeave(user.id, leaveData);
+      leave = await addLeave(user, leaveData);
     }
+
     return NextResponse.json({ leave: await enrichLeave(leave) }, { status: 201 });
   } catch (submitErr) {
     console.error('Leave submission error:', submitErr);
