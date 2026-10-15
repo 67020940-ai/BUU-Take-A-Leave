@@ -214,7 +214,7 @@ export default function LeaveForm({ courses, initialCourseId, lockCourse, initia
           startDate: form.startDate,
           endDate: form.endDate,
           reason: finalReason,
-          attachment: attachment?.filename || null,
+          attachment: attachment?.url || attachment?.filename || null,
           resubmitId: resubmitId || undefined,
         }),
       });

@@ -29,8 +29,13 @@ export default function AttachmentPreview({
   let raw = src || url || attachment;
   if (!raw) return null;
 
-  if (typeof raw === 'string' && raw.startsWith('/api/leaves/attachment/http')) {
-    raw = raw.replace('/api/leaves/attachment/', '');
+  if (typeof raw === 'string') {
+    if (raw.startsWith('/api/leaves/attachment/')) {
+      const remainder = raw.slice('/api/leaves/attachment/'.length);
+      if (remainder.startsWith('http') || remainder.startsWith('data:') || remainder.startsWith('blob:')) {
+        raw = remainder;
+      }
+    }
   }
 
   const resolvedSrc =
@@ -47,13 +52,16 @@ export default function AttachmentPreview({
   const resolvedLabel = label || title || 'ดูไฟล์แนบ';
   const fileName =
     typeof raw === 'string'
-      ? raw.split('/').pop()?.split('?')[0] || 'attachment'
+      ? raw.startsWith('data:')
+        ? 'หลักฐานประกอบการลา'
+        : raw.split('/').pop()?.split('?')[0] || 'attachment'
       : 'attachment';
 
   const isPdf =
     typeof resolvedSrc === 'string' &&
     (resolvedSrc.toLowerCase().includes('.pdf') ||
-      resolvedSrc.toLowerCase().endsWith('.pdf'));
+      resolvedSrc.toLowerCase().endsWith('.pdf') ||
+      resolvedSrc.startsWith('data:application/pdf'));
 
   // Close modal on Escape key
   useEffect(() => {
@@ -65,13 +73,24 @@ export default function AttachmentPreview({
     return () => window.removeEventListener('keydown', handleKeyDown);
   }, [open]);
 
-  // Robust download handler for cross-origin blob & local attachments
+  // Robust download handler for cross-origin blob, data URLs & local attachments
   const handleDownload = async (e) => {
     e?.preventDefault?.();
     e?.stopPropagation?.();
     setDownloading(true);
 
     try {
+      // 0. Data URL direct download
+      if (typeof resolvedSrc === 'string' && resolvedSrc.startsWith('data:')) {
+        const a = document.createElement('a');
+        a.href = resolvedSrc;
+        a.download = isPdf ? 'leave-attachment.pdf' : 'leave-attachment.png';
+        document.body.appendChild(a);
+        a.click();
+        document.body.removeChild(a);
+        return;
+      }
+
       // 1. First attempt: fetch blob directly in browser
       const res = await fetch(resolvedSrc);
       if (!res.ok) throw new Error('Direct fetch failed');
@@ -227,11 +246,22 @@ export default function AttachmentPreview({
                     title="PDF Preview"
                   />
                 </div>
+              ) : imgError ? (
+                <div className="flex flex-col items-center justify-center text-center p-8 max-w-md bg-neutral-900 border border-neutral-800 rounded-2xl shadow-xl">
+                  <div className="w-12 h-12 rounded-full bg-amber-500/10 text-amber-400 flex items-center justify-center mb-3">
+                    <FileText className="w-6 h-6" />
+                  </div>
+                  <h4 className="text-white font-semibold text-sm mb-1">ไม่สามารถแสดงตัวอย่างรูปภาพได้</h4>
+                  <p className="text-neutral-400 text-xs leading-relaxed">
+                    ไฟล์แนบของคำร้องนี้ถูกส่งขึ้นมาก่อนหน้าในเซิร์ฟเวอร์แบบชั่วคราว หรือไฟล์หมดอายุ กรุณาติดต่อผู้ยื่นคำร้องให้อัปโหลดใหม่อีกครั้ง
+                  </p>
+                </div>
               ) : (
                 <div className="w-full h-full flex items-center justify-center p-2">
                   <img
                     src={resolvedSrc}
                     alt={alt}
+                    onError={() => setImgError(true)}
                     className="max-w-full max-h-full object-contain rounded-xl shadow-2xl transition-transform"
                   />
                 </div>
