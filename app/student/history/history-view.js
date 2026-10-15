@@ -167,13 +167,10 @@ export default function StudentHistoryView({ leaves: initialLeaves = [], summari
 
       return true;
     }).sort((a, b) => {
-      const dateA = new Date(a.startDate || a.createdAt || 0).getTime();
-      const dateB = new Date(b.startDate || b.createdAt || 0).getTime();
-      if (dateB !== dateA) return dateB - dateA;
-      const timeA = new Date(a.createdAt || 0).getTime();
-      const timeB = new Date(b.createdAt || 0).getTime();
+      const timeA = new Date(a.createdAt || a.startDate || 0).getTime();
+      const timeB = new Date(b.createdAt || b.startDate || 0).getTime();
       if (timeB !== timeA) return timeB - timeA;
-      return String(b.id).localeCompare(String(a.id), undefined, { numeric: true });
+      return Number(b.id || 0) - Number(a.id || 0);
     });
   }, [leaves, selectedTerm, selectedStatus, selectedType, searchQuery, historyTimeFilter, summaries]);
 

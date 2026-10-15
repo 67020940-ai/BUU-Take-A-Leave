@@ -101,6 +101,11 @@ export default function StudentDashboard({ summaries = [], leaves: initialLeaves
       }
 
       return true;
+    }).sort((a, b) => {
+      const timeA = new Date(a.createdAt || a.startDate || 0).getTime();
+      const timeB = new Date(b.createdAt || b.startDate || 0).getTime();
+      if (timeB !== timeA) return timeB - timeA;
+      return Number(b.id || 0) - Number(a.id || 0);
     });
   }, [leaves, selectedTerm, selectedStatus, selectedType, searchQuery, summaries]);
 
