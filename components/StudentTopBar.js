@@ -289,7 +289,7 @@ export default function StudentTopBar({
                             : 'bg-purple-50/80 dark:bg-purple-950/40 border-purple-200 dark:border-purple-800 text-neutral-900 dark:text-neutral-100 font-semibold'
                         }`}
                       >
-                        <p className="text-xs">{n.message || n.title}</p>
+                        <p className="text-xs">{(n.message || n.title || '').replace(/ถูกไม่อนุมัติแล้ว/g, 'ไม่ถูกอนุมัติ')}</p>
                         <span className="text-[10px] text-neutral-400 mt-1 block">
                           {new Date(n.createdAt).toLocaleDateString('th-TH')}
                         </span>

@@ -5,6 +5,7 @@ import { NextResponse } from 'next/server';
 import { getCurrentUser } from '@/lib/auth';
 import {
   addLeave,
+  addNotification,
   cancelLeave,
   findCourseStrict,
   getCourse,
@@ -186,7 +187,17 @@ export async function PATCH(request) {
 
       const updated = await setLeaveStatus(targetId, status, comment);
       if (updated) {
-        updatedLeaves.push(await enrichLeave(updated));
+        const enriched = await enrichLeave(updated);
+        updatedLeaves.push(enriched);
+        try {
+          const targetCourse = await getCourse(existing.courseId);
+          const cName = targetCourse?.name || enriched.courseTitle || enriched.courseName || '';
+          const notifMsg =
+            status === 'ไม่อนุมัติ'
+              ? `คำร้องลา "${cName}" (${existing.type || 'การลา'}) ไม่ถูกอนุมัติ${comment ? ` — หมายเหตุ: ${comment}` : ''}`
+              : `คำร้องลา "${cName}" (${existing.type || 'การลา'}) ได้รับการอนุมัติแล้ว`;
+          await addNotification(existing.studentId, notifMsg, '/student?tab=history');
+        } catch {}
       }
     }
     return NextResponse.json({ ok: true, count: updatedLeaves.length, leaves: updatedLeaves });
@@ -200,16 +211,30 @@ export async function PATCH(request) {
   const existing = await getLeave(id);
   if (!existing) return NextResponse.json({ error: 'ไม่พบคำร้อง' }, { status: 404 });
 
+  let targetCourse = null;
   if (user.role === 'teacher') {
-    const course = await getCourse(existing.courseId);
-    const canManage = await teacherCanManageCourse(user, course);
+    targetCourse = await getCourse(existing.courseId);
+    const canManage = await teacherCanManageCourse(user, targetCourse);
     if (!canManage) {
       return NextResponse.json({ error: 'ไม่มีสิทธิ์อนุมัติคำร้องนี้' }, { status: 403 });
     }
+  } else {
+    targetCourse = await getCourse(existing.courseId);
   }
 
   const leave = await setLeaveStatus(id, status, comment);
-  return NextResponse.json({ leave: await enrichLeave(leave) });
+  const enriched = await enrichLeave(leave);
+
+  try {
+    const cName = targetCourse?.name || enriched.courseTitle || enriched.courseName || '';
+    const notifMsg =
+      status === 'ไม่อนุมัติ'
+        ? `คำร้องลา "${cName}" (${existing.type || 'การลา'}) ไม่ถูกอนุมัติ${comment ? ` — หมายเหตุ: ${comment}` : ''}`
+        : `คำร้องลา "${cName}" (${existing.type || 'การลา'}) ได้รับการอนุมัติแล้ว`;
+    await addNotification(existing.studentId, notifMsg, '/student?tab=history');
+  } catch {}
+
+  return NextResponse.json({ leave: enriched });
 }
 
 export async function DELETE(request) {

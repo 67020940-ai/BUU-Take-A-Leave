@@ -319,7 +319,7 @@ export default function StudentSidebar({
       </aside>
 
       {/* Settings Modal */}
-      <SettingsModal isOpen={showSettings} onClose={() => setShowSettings(false)} />
+      <SettingsModal isOpen={showSettings} onClose={() => setShowSettings(false)} user={user} />
 
       {/* Support Modal */}
       <SupportModal isOpen={showSupport} onClose={() => setShowSupport(false)} />

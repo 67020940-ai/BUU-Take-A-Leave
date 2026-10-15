@@ -235,7 +235,9 @@ export default function Header({ user, semester = '1/2569' }) {
                               </div>
                             </div>
                             <div className="flex-1 min-w-0">
-                              <p className="text-xs text-neutral-700 dark:text-neutral-300 leading-relaxed">{n.message}</p>
+                              <p className="text-xs text-neutral-700 dark:text-neutral-300 leading-relaxed">
+                                {(n.message || '').replace(/ถูกไม่อนุมัติแล้ว/g, 'ไม่ถูกอนุมัติ')}
+                              </p>
                               <span className="text-[10px] text-neutral-400">{formatThaiDate(n.createdAt)}</span>
                             </div>
                             {n.link && <ChevronRight className="w-3.5 h-3.5 text-neutral-300 dark:text-neutral-600 shrink-0 mt-1" />}

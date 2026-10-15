@@ -3,12 +3,40 @@
 import { useState, useEffect } from 'react';
 import { X, Moon, Sun, Bell, Volume2, Save, Check, ChevronDown } from 'lucide-react';
 
-export default function SettingsModal({ isOpen, onClose }) {
+export default function SettingsModal({ isOpen, onClose, user }) {
   const [emailNotify, setEmailNotify] = useState(true);
   const [lineNotify, setLineNotify] = useState(false);
   const [soundEnabled, setSoundEnabled] = useState(true);
   const [defaultSemester, setDefaultSemester] = useState('1/2569');
   const [saved, setSaved] = useState(false);
+  const [currentUser, setCurrentUser] = useState(user || null);
+
+  useEffect(() => {
+    if (user) {
+      setCurrentUser(user);
+      return;
+    }
+    try {
+      const stored = localStorage.getItem('buu_user');
+      if (stored) {
+        setCurrentUser(JSON.parse(stored));
+      } else {
+        fetch('/api/profile')
+          .then((r) => (r.ok ? r.json() : null))
+          .then((d) => {
+            if (d?.user) setCurrentUser(d.user);
+          })
+          .catch(() => {});
+      }
+    } catch {}
+  }, [user, isOpen]);
+
+  const isYear1 = Boolean(
+    currentUser?.role === 'student' &&
+    (String(currentUser?.studentId || currentUser?.studentCode || '').startsWith('69') ||
+     currentUser?.academicYear === 'ชั้นปีที่ 1' ||
+     String(currentUser?.email || '').startsWith('69'))
+  );
 
   useEffect(() => {
     try {
@@ -21,7 +49,10 @@ export default function SettingsModal({ isOpen, onClose }) {
         if (parsed.defaultSemester) setDefaultSemester(parsed.defaultSemester);
       }
     } catch {}
-  }, [isOpen]);
+    if (isYear1) {
+      setDefaultSemester('1/2569');
+    }
+  }, [isOpen, isYear1]);
 
   if (!isOpen) return null;
 
@@ -71,14 +102,26 @@ export default function SettingsModal({ isOpen, onClose }) {
               <select
                 value={defaultSemester}
                 onChange={(e) => setDefaultSemester(e.target.value)}
-                className="w-full px-3.5 py-2.5 rounded-xl border border-neutral-300 dark:border-slate-700 bg-white dark:bg-slate-800 text-xs font-semibold text-neutral-900 dark:text-neutral-100 focus:outline-none focus:border-[#7749BC] appearance-none pr-10 cursor-pointer shadow-xs"
+                disabled={isYear1}
+                className={`w-full px-3.5 py-2.5 rounded-xl border border-neutral-300 dark:border-slate-700 bg-white dark:bg-slate-800 text-xs font-semibold text-neutral-900 dark:text-neutral-100 focus:outline-none focus:border-[#7749BC] appearance-none pr-10 shadow-xs ${
+                  isYear1 ? 'cursor-not-allowed opacity-90' : 'cursor-pointer'
+                }`}
               >
                 <option value="1/2569">ภาคเรียนที่ 1/2569 (ปัจจุบัน)</option>
-                <option value="2/2568">ภาคเรียนที่ 2/2568</option>
-                <option value="1/2568">ภาคเรียนที่ 1/2568</option>
+                {!isYear1 && (
+                  <>
+                    <option value="2/2568">ภาคเรียนที่ 2/2568</option>
+                    <option value="1/2568">ภาคเรียนที่ 1/2568</option>
+                  </>
+                )}
               </select>
               <ChevronDown className="w-4 h-4 text-neutral-400 absolute right-3.5 top-1/2 -translate-y-1/2 pointer-events-none" />
             </div>
+            {isYear1 && (
+              <p className="text-[11px] text-neutral-400 mt-1">
+                * นิสิตชั้นปีที่ 1 มีเฉพาะภาคเรียนปัจจุบันเนื่องจากเข้าศึกษาในปี 2569
+              </p>
+            )}
           </div>
 
           {/* Notifications */}

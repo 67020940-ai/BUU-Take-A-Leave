@@ -58,6 +58,21 @@ async function handleProfileUpdate(request) {
   try {
     const body = await request.json();
 
+    let derivedAcademicYear = body.academicYear?.trim?.() ?? body.academicYear;
+    if (sessionUser.role === 'student') {
+      const sId = body.studentId || sessionUser.studentId || sessionUser.email || '';
+      const match = String(sId).trim().match(/^(\d{2})/);
+      if (match) {
+        const entryYear = parseInt(match[1], 10);
+        const diff = 69 - entryYear + 1; // 2569
+        if (diff <= 1) derivedAcademicYear = 'ชั้นปีที่ 1';
+        else if (diff === 2) derivedAcademicYear = 'ชั้นปีที่ 2';
+        else if (diff === 3) derivedAcademicYear = 'ชั้นปีที่ 3';
+        else if (diff === 4) derivedAcademicYear = 'ชั้นปีที่ 4';
+        else derivedAcademicYear = 'ชั้นปีที่ 5+';
+      }
+    }
+
     const allowedFields = {
       firstName: body.firstName?.trim?.() ?? body.firstName,
       lastName: body.lastName?.trim?.() ?? body.lastName,
@@ -67,7 +82,7 @@ async function handleProfileUpdate(request) {
       faculty: body.faculty?.trim?.() ?? body.faculty,
       department: body.department?.trim?.() ?? body.department,
       major: body.major?.trim?.() ?? body.major,
-      academicYear: body.academicYear?.trim?.() ?? body.academicYear,
+      academicYear: derivedAcademicYear,
       advisorName: body.advisorName?.trim?.() ?? body.advisorName,
       bio: body.bio?.trim?.() ?? body.bio,
       avatar: body.avatar,

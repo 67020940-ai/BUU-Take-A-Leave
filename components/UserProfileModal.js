@@ -28,6 +28,19 @@ const MAX_FILE_SIZE = 5 * 1024 * 1024; // 5MB
 const ALLOWED_EXTS = ['jpg', 'jpeg', 'png', 'webp'];
 const ALLOWED_MIME = ['image/jpeg', 'image/png', 'image/webp'];
 
+export function calculateAcademicYearFromStudentId(studentId) {
+  if (!studentId) return 'ชั้นปีที่ 1';
+  const match = String(studentId).trim().match(/^(\d{2})/);
+  if (!match) return 'ชั้นปีที่ 1';
+  const entryYear = parseInt(match[1], 10);
+  const diff = 69 - entryYear + 1; // 2569
+  if (diff <= 1) return 'ชั้นปีที่ 1';
+  if (diff === 2) return 'ชั้นปีที่ 2';
+  if (diff === 3) return 'ชั้นปีที่ 3';
+  if (diff === 4) return 'ชั้นปีที่ 4';
+  return 'ชั้นปีที่ 5+';
+}
+
 export default function UserProfileModal({
   isOpen,
   onClose,
@@ -71,6 +84,10 @@ export default function UserProfileModal({
   const isStudent = user?.role === 'student';
   const isTeacher = user?.role === 'teacher';
   const isAdmin = user?.role === 'admin';
+
+  const studentYearCalculated = useMemo(() => {
+    return calculateAcademicYearFromStudentId(formData.studentId || user?.studentId || user?.email);
+  }, [formData.studentId, user]);
 
   useEffect(() => {
     setMounted(true);
@@ -298,6 +315,7 @@ export default function UserProfileModal({
 
       const payload = {
         ...formData,
+        academicYear: isStudent ? studentYearCalculated : formData.academicYear,
         avatar: avatarToSave,
       };
 
@@ -568,22 +586,20 @@ export default function UserProfileModal({
 
                   {isStudent ? (
                     <div>
-                      <label className="block text-xs font-bold text-neutral-700 dark:text-neutral-300 mb-1">
-                        ชั้นปีการศึกษา
-                      </label>
-                      <select
-                        name="academicYear"
-                        value={formData.academicYear}
-                        onChange={handleInputChange}
-                        className="w-full px-3.5 py-2.5 rounded-xl border border-neutral-300 dark:border-slate-700 bg-white dark:bg-slate-800 text-xs font-medium text-neutral-900 dark:text-neutral-100 focus:outline-none focus:border-[#7749BC] shadow-xs cursor-pointer"
-                      >
-                        <option value="ชั้นปีที่ 1">ชั้นปีที่ 1 (Freshman)</option>
-                        <option value="ชั้นปีที่ 2">ชั้นปีที่ 2 (Sophomore)</option>
-                        <option value="ชั้นปีที่ 3">ชั้นปีที่ 3 (Junior)</option>
-                        <option value="ชั้นปีที่ 4">ชั้นปีที่ 4 (Senior)</option>
-                        <option value="ชั้นปีที่ 5+">ชั้นปีที่ 5 ขึ้นไป</option>
-                        <option value="บัณฑิตศึกษา">บัณฑิตศึกษา (ป.โท / ป.เอก)</option>
-                      </select>
+                      <div className="flex items-center justify-between mb-1">
+                        <label className="block text-xs font-bold text-neutral-700 dark:text-neutral-300">
+                          ชั้นปีการศึกษา
+                        </label>
+                        <span className="text-[10px] text-neutral-400 dark:text-neutral-500 font-normal">
+                          (คำนวณจากรหัสนิสิตอัตโนมัติ)
+                        </span>
+                      </div>
+                      <div className="w-full px-3.5 py-2.5 rounded-xl border border-neutral-200 dark:border-slate-800 bg-neutral-100/80 dark:bg-slate-800/60 text-xs font-semibold text-neutral-700 dark:text-neutral-300 flex items-center justify-between shadow-2xs select-none">
+                        <span>{studentYearCalculated}</span>
+                        <span className="px-2 py-0.5 rounded-md bg-purple-100 dark:bg-purple-950 text-[#7749BC] dark:text-purple-300 text-[10px] font-bold">
+                          อัตโนมัติ
+                        </span>
+                      </div>
                     </div>
                   ) : (
                     <div>

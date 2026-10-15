@@ -88,7 +88,7 @@ export default function TeacherHistoryView({
 
   // History leaves (items that have been acted upon, or all)
   const historyLeaves = useMemo(() => {
-    return leaves.filter((l) => l.status !== 'รออนุมัติ');
+    return leaves.filter((l) => l.status !== 'รออนุมัติ' && l.status !== 'ยกเลิก');
   }, [leaves]);
 
   const approvedCount = useMemo(() => leaves.filter((l) => l.status === 'อนุมัติ').length, [leaves]);

@@ -67,7 +67,7 @@ export default function NotificationDetailModal({ isOpen, onClose, notification,
         <div className="p-6 space-y-4 text-xs text-neutral-700 dark:text-neutral-300">
           <div className="p-4 rounded-2xl bg-purple-50/70 dark:bg-purple-950/30 border border-purple-200/80 dark:border-purple-800/80 space-y-2">
             <p className="text-xs sm:text-sm font-semibold text-neutral-900 dark:text-neutral-100 leading-relaxed">
-              {notification.message || notification.title}
+              {(notification.message || notification.title || '').replace(/ถูกไม่อนุมัติแล้ว/g, 'ไม่ถูกอนุมัติ')}
             </p>
             {formattedDate && (
               <div className="flex items-center gap-1.5 text-[11px] text-neutral-500 dark:text-neutral-400 pt-1">

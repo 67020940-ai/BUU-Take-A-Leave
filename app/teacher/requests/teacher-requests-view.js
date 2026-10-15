@@ -203,6 +203,7 @@ export default function TeacherRequestsView({
   const filteredLeaves = useMemo(() => {
     return leaves.filter((leave) => {
       if (activeTab === 'รออนุมัติ' && leave.status !== 'รออนุมัติ') return false;
+      if (activeTab === 'all' && leave.status === 'ยกเลิก') return false;
 
       if (selectedTerm !== 'all') {
         const c = courses.find((course) => course.id === leave.courseId);
@@ -443,7 +444,7 @@ export default function TeacherRequestsView({
                     : 'bg-white dark:bg-slate-800 text-neutral-700 dark:text-neutral-300 hover:bg-neutral-100 border border-neutral-200/80 dark:border-slate-700'
                 }`}
               >
-                <span>คำร้องทั้งหมด ({leaves.length})</span>
+                <span>คำร้องทั้งหมด ({leaves.filter((l) => l.status !== 'ยกเลิก').length})</span>
               </button>
             </div>
 
@@ -675,19 +676,25 @@ export default function TeacherRequestsView({
                             </span>
                           </div>
 
-                          <div className="flex items-center gap-2 pt-0.5">
-                            <p className="text-xs text-neutral-500 dark:text-neutral-400 line-clamp-1 flex-1">
-                              <strong>เหตุผล:</strong> {leave.reason || '-'}
-                            </p>
-                            {leave.attachment && (
-                              <AttachmentPreview
-                                attachment={leave.attachment}
-                                leaveId={leave.id}
-                                label="ดูหลักฐาน"
-                                thumbClassName="w-5 h-5 rounded-md"
-                              />
-                            )}
-                          </div>
+                          <p className="text-xs text-neutral-500 dark:text-neutral-400 line-clamp-1 pt-0.5">
+                            <strong>เหตุผล:</strong> {leave.reason || '-'}
+                          </p>
+
+                          {leave.attachment && (
+                            <div className="pt-1.5 flex items-center">
+                              <div className="inline-flex items-center gap-2 px-2.5 py-1 rounded-xl bg-purple-50/80 dark:bg-purple-950/40 border border-purple-200/80 dark:border-purple-800/80 hover:bg-purple-100/80 transition-colors shadow-2xs">
+                                <span className="text-[11px] font-medium text-neutral-500 dark:text-neutral-400">
+                                  เอกสารแนบ:
+                                </span>
+                                <AttachmentPreview
+                                  attachment={leave.attachment}
+                                  leaveId={leave.id}
+                                  label="ดูหลักฐาน"
+                                  thumbClassName="w-5 h-5 rounded-md"
+                                />
+                              </div>
+                            </div>
+                          )}
                         </div>
                       </div>
 

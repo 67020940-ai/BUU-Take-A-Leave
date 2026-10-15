@@ -184,7 +184,7 @@ export default function AdminDashboard({ user, courses = [], leaves = [], ticket
   // Filtered Leaves
   const filteredLeaves = useMemo(() => {
     return leavesList.filter((l) => {
-      const matchesStatus = leaveStatusFilter === 'all' || l.status === leaveStatusFilter;
+      const matchesStatus = leaveStatusFilter === 'all' ? l.status !== 'ยกเลิก' : l.status === leaveStatusFilter;
       const q = searchQuery.toLowerCase();
       const matchesSearch =
         !q ||
@@ -890,15 +890,28 @@ export default function AdminDashboard({ user, courses = [], leaves = [], ticket
                       </div>
 
                       <span
-                        className={`px-2.5 py-0.5 rounded-full font-bold text-[10px] shrink-0 ${
+                        className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full font-bold text-[10px] whitespace-nowrap shrink-0 border ${
                           l.status === 'อนุมัติ'
-                            ? 'bg-emerald-100 text-emerald-700 dark:bg-emerald-950 dark:text-emerald-300'
+                            ? 'bg-emerald-50 text-emerald-700 border-emerald-200 dark:bg-emerald-950/40 dark:text-emerald-300 dark:border-emerald-800'
                             : l.status === 'รออนุมัติ'
-                            ? 'bg-amber-100 text-amber-700 dark:bg-amber-950 dark:text-amber-300'
-                            : 'bg-rose-100 text-rose-700 dark:bg-rose-950 dark:text-rose-300'
+                            ? 'bg-amber-50 text-amber-700 border-amber-200 dark:bg-amber-950/40 dark:text-amber-300 dark:border-amber-800'
+                            : l.status === 'ยกเลิก'
+                            ? 'bg-neutral-100 text-neutral-600 border-neutral-200 dark:bg-slate-800 dark:text-neutral-400 dark:border-slate-700'
+                            : 'bg-rose-50 text-rose-700 border-rose-200 dark:bg-rose-950/40 dark:text-rose-300 dark:border-rose-800'
                         }`}
                       >
-                        {l.status}
+                        <span
+                          className={`w-1.5 h-1.5 rounded-full shrink-0 ${
+                            l.status === 'อนุมัติ'
+                              ? 'bg-emerald-500'
+                              : l.status === 'รออนุมัติ'
+                              ? 'bg-amber-500'
+                              : l.status === 'ยกเลิก'
+                              ? 'bg-neutral-400'
+                              : 'bg-rose-500'
+                          }`}
+                        />
+                        <span className="whitespace-nowrap">{l.status === 'อนุมัติ' ? 'อนุมัติแล้ว' : l.status}</span>
                       </span>
                     </div>
 
@@ -933,7 +946,7 @@ export default function AdminDashboard({ user, courses = [], leaves = [], ticket
                       <th className="pb-3">ประเภท</th>
                       <th className="pb-3">วันที่ลา</th>
                       <th className="pb-3">เหตุผล</th>
-                      <th className="pb-3">สถานะ</th>
+                      <th className="pb-3 min-w-[110px] whitespace-nowrap">สถานะ</th>
                       <th className="pb-3 text-right">รายละเอียด</th>
                     </tr>
                   </thead>
@@ -959,15 +972,28 @@ export default function AdminDashboard({ user, courses = [], leaves = [], ticket
                         </td>
                         <td className="py-3">
                           <span
-                            className={`px-2.5 py-0.5 rounded-full font-bold text-[10px] ${
+                            className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full font-bold text-[11px] whitespace-nowrap shrink-0 border ${
                               l.status === 'อนุมัติ'
-                                ? 'bg-emerald-100 text-emerald-700 dark:bg-emerald-950 dark:text-emerald-300'
+                                ? 'bg-emerald-50 text-emerald-700 border-emerald-200 dark:bg-emerald-950/40 dark:text-emerald-300 dark:border-emerald-800'
                                 : l.status === 'รออนุมัติ'
-                                ? 'bg-amber-100 text-amber-700 dark:bg-amber-950 dark:text-amber-300'
-                                : 'bg-rose-100 text-rose-700 dark:bg-rose-950 dark:text-rose-300'
+                                ? 'bg-amber-50 text-amber-700 border-amber-200 dark:bg-amber-950/40 dark:text-amber-300 dark:border-amber-800'
+                                : l.status === 'ยกเลิก'
+                                ? 'bg-neutral-100 text-neutral-600 border-neutral-200 dark:bg-slate-800 dark:text-neutral-400 dark:border-slate-700'
+                                : 'bg-rose-50 text-rose-700 border-rose-200 dark:bg-rose-950/40 dark:text-rose-300 dark:border-rose-800'
                             }`}
                           >
-                            {l.status}
+                            <span
+                              className={`w-1.5 h-1.5 rounded-full shrink-0 ${
+                                l.status === 'อนุมัติ'
+                                  ? 'bg-emerald-500'
+                                  : l.status === 'รออนุมัติ'
+                                  ? 'bg-amber-500'
+                                  : l.status === 'ยกเลิก'
+                                  ? 'bg-neutral-400'
+                                  : 'bg-rose-500'
+                              }`}
+                            />
+                            <span className="whitespace-nowrap">{l.status === 'อนุมัติ' ? 'อนุมัติแล้ว' : l.status}</span>
                           </span>
                         </td>
                         <td className="py-3 text-right">

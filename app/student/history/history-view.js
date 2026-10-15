@@ -130,7 +130,11 @@ export default function StudentHistoryView({ leaves: initialLeaves = [], summari
       }
 
       // 2. Status filter
-      if (selectedStatus !== 'all' && l.status !== selectedStatus) return false;
+      if (selectedStatus === 'all') {
+        if (l.status === 'ยกเลิก') return false;
+      } else if (l.status !== selectedStatus) {
+        return false;
+      }
 
       // 3. Type filter
       if (selectedType !== 'all') {
@@ -201,7 +205,7 @@ export default function StudentHistoryView({ leaves: initialLeaves = [], summari
           title="คลิกเพื่อแสดงคำขอทั้งหมด"
         >
           <p className="text-[11px] font-semibold text-neutral-500 dark:text-neutral-400">คำร้องขอลาทั้งหมด</p>
-          <p className="text-xl font-bold text-neutral-900 dark:text-neutral-100 mt-0.5">: {leaves.length} รายการ</p>
+          <p className="text-xl font-bold text-neutral-900 dark:text-neutral-100 mt-0.5">: {leaves.filter((l) => l.status !== 'ยกเลิก').length} รายการ</p>
         </button>
 
         {/* Box 2: อนุมัติแล้ว */}
