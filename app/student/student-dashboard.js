@@ -29,7 +29,7 @@ import {
   ChevronDown,
   Search,
 } from 'lucide-react';
-import { STATUS_DETAILS, LEAVE_TYPE_DETAILS, LEAVE_TYPE_DEFAULT, DAY_LABEL_TH, formatThaiDay, formatThaiDate, formatThaiDateTime, sortAcademicTerms } from '@/lib/ui';
+import { STATUS_DETAILS, LEAVE_TYPE_DETAILS, LEAVE_TYPE_DEFAULT, DAY_LABEL_TH, formatThaiDay, formatThaiDate, formatThaiDateTime, sortAcademicTerms, formatTeacherFullName } from '@/lib/ui';
 import AttachmentPreview from '@/components/AttachmentPreview';
 import CancelLeaveButton from '@/components/CancelLeaveButton';
 
@@ -459,7 +459,8 @@ export default function StudentDashboard({ summaries = [], leaves: initialLeaves
         ) : (
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
             {filteredSummaries.map((s) => {
-              const teacherName = s.course?.teacher?.name || s.course?.teacherName || null;
+              const rawTeacher = s.course?.teacher?.name || s.course?.teacherName || null;
+              const teacherName = rawTeacher ? formatTeacherFullName(rawTeacher) : null;
               const dayTime = s.course?.day ? `${formatThaiDay(s.course.day)} ${s.course.time || ''} น.` : null;
               const room = s.course?.room || null;
               const hasInfoBox = dayTime || room || teacherName;
@@ -719,7 +720,7 @@ export default function StudentDashboard({ summaries = [], leaves: initialLeaves
                 {detailModal.leave.teacherName && (
                   <div className="flex justify-between">
                     <span className="text-neutral-500 dark:text-neutral-400">อาจารย์ผู้สอน:</span>
-                    <span className="font-semibold text-[#7749BC] dark:text-purple-300">{detailModal.leave.teacherName}</span>
+                    <span className="font-semibold text-[#7749BC] dark:text-purple-300">{formatTeacherFullName(detailModal.leave.teacherName)}</span>
                   </div>
                 )}
               </div>

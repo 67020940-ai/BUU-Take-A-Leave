@@ -20,6 +20,9 @@ import {
   HelpCircle,
   X,
   Check,
+  ArrowUpDown,
+  ArrowUp,
+  ArrowDown,
 } from 'lucide-react';
 import TeacherSidebar from '@/components/TeacherSidebar';
 import TeacherTopBar from '@/components/TeacherTopBar';
@@ -58,6 +61,18 @@ export default function TeacherHistoryView({
   const [toast, setToast] = useState(null);
   const [currentPage, setCurrentPage] = useState(1);
   const pageSize = 10;
+  const [sortField, setSortField] = useState('date'); // 'date' | 'student' | 'course' | 'type' | 'status'
+  const [sortOrder, setSortOrder] = useState('desc'); // 'desc' (ล่าสุดลงไป) | 'asc'
+
+  function handleSort(field) {
+    if (sortField === field) {
+      setSortOrder((prev) => (prev === 'desc' ? 'asc' : 'desc'));
+    } else {
+      setSortField(field);
+      setSortOrder('desc');
+    }
+    setCurrentPage(1);
+  }
 
   // Sync status filter from query param
   useEffect(() => {
@@ -126,12 +141,30 @@ export default function TeacherHistoryView({
 
       return true;
     }).sort((a, b) => {
-      const timeA = new Date(a.approvedAt || a.createdAt || a.startDate || 0).getTime();
-      const timeB = new Date(b.approvedAt || b.createdAt || b.startDate || 0).getTime();
-      if (timeB !== timeA) return timeB - timeA;
-      return String(b.id).localeCompare(String(a.id), undefined, { numeric: true });
+      let comparison = 0;
+      if (sortField === 'date') {
+        const timeA = new Date(a.startDate || a.createdAt || a.approvedAt || 0).getTime();
+        const timeB = new Date(b.startDate || b.createdAt || b.approvedAt || 0).getTime();
+        comparison = timeA - timeB;
+      } else if (sortField === 'student') {
+        comparison = (a.studentName || '').localeCompare(b.studentName || '', 'th');
+      } else if (sortField === 'course') {
+        comparison = (a.courseCode || '').localeCompare(b.courseCode || '');
+      } else if (sortField === 'type') {
+        comparison = (a.type || '').localeCompare(b.type || '', 'th');
+      } else if (sortField === 'status') {
+        comparison = (a.status || '').localeCompare(b.status || '', 'th');
+      }
+
+      if (comparison === 0) {
+        const timeA = new Date(a.approvedAt || a.createdAt || a.startDate || 0).getTime();
+        const timeB = new Date(b.approvedAt || b.createdAt || b.startDate || 0).getTime();
+        comparison = timeA - timeB;
+      }
+
+      return sortOrder === 'desc' ? -comparison : comparison;
     });
-  }, [historyLeaves, statusFilter, selectedTerm, selectedCourseId, searchQuery, courses]);
+  }, [historyLeaves, statusFilter, selectedTerm, selectedCourseId, searchQuery, courses, sortField, sortOrder]);
 
   // Pagination
   const totalPages = Math.ceil(filteredLeaves.length / pageSize) || 1;
@@ -333,6 +366,44 @@ export default function TeacherHistoryView({
             <>
               {/* 1. Mobile Card List (< md) */}
               <div className="block md:hidden space-y-3">
+                {/* Mobile Sort Controls */}
+                <div className="flex items-center justify-between px-1 pb-1">
+                  <span className="text-[11px] font-semibold text-neutral-500">เรียงตาม:</span>
+                  <div className="flex items-center gap-1.5">
+                    <button
+                      type="button"
+                      onClick={() => handleSort('date')}
+                      className={`inline-flex items-center gap-1 px-2.5 py-1 rounded-xl text-[11px] font-bold border transition-colors ${
+                        sortField === 'date'
+                          ? 'bg-purple-100 dark:bg-purple-950/70 text-[#7749BC] dark:text-purple-300 border-purple-300 dark:border-purple-700'
+                          : 'bg-white dark:bg-slate-800 text-neutral-600 dark:text-neutral-400 border-neutral-200 dark:border-slate-700'
+                      }`}
+                    >
+                      <span>วันที่ลา</span>
+                      {sortField === 'date' ? (
+                        sortOrder === 'asc' ? <ArrowUp className="w-3 h-3" /> : <ArrowDown className="w-3 h-3" />
+                      ) : (
+                        <ArrowUpDown className="w-3 h-3 opacity-60" />
+                      )}
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => handleSort('student')}
+                      className={`inline-flex items-center gap-1 px-2.5 py-1 rounded-xl text-[11px] font-bold border transition-colors ${
+                        sortField === 'student'
+                          ? 'bg-purple-100 dark:bg-purple-950/70 text-[#7749BC] dark:text-purple-300 border-purple-300 dark:border-purple-700'
+                          : 'bg-white dark:bg-slate-800 text-neutral-600 dark:text-neutral-400 border-neutral-200 dark:border-slate-700'
+                      }`}
+                    >
+                      <span>นิสิต</span>
+                      {sortField === 'student' ? (
+                        sortOrder === 'asc' ? <ArrowUp className="w-3 h-3" /> : <ArrowDown className="w-3 h-3" />
+                      ) : (
+                        <ArrowUpDown className="w-3 h-3 opacity-60" />
+                      )}
+                    </button>
+                  </div>
+                </div>
                 {paginatedLeaves.map((leave) => {
                   const statusInfo = STATUS_DETAILS[leave.status] || STATUS_DETAILS['อนุมัติ'];
                   const typeBadge = LEAVE_TYPE_DETAILS[leave.type] || LEAVE_TYPE_DEFAULT;
@@ -455,13 +526,93 @@ export default function TeacherHistoryView({
               <div className="hidden md:block bg-white/90 dark:bg-slate-900/90 backdrop-blur-xl rounded-3xl border border-neutral-200/80 dark:border-slate-800 shadow-xs overflow-hidden">
                 <div className="overflow-x-auto">
                   <table className="w-full text-left text-xs">
-                    <thead className="bg-neutral-50/80 dark:bg-slate-800/80 text-neutral-700 dark:text-neutral-300 font-bold border-b border-neutral-200/80 dark:border-slate-700">
+                    <thead className="bg-neutral-50/80 dark:bg-slate-800/80 text-neutral-700 dark:text-neutral-300 font-bold border-b border-neutral-200/80 dark:border-slate-700 select-none">
                       <tr>
-                        <th className="p-3.5 pl-5">นิสิต</th>
-                        <th className="p-3.5">รายวิชา</th>
-                        <th className="p-3.5">ประเภทการลา</th>
-                        <th className="p-3.5">วันที่ลา</th>
-                        <th className="p-3.5">สถานะ</th>
+                        <th className="p-3.5 pl-5">
+                          <button
+                            type="button"
+                            onClick={() => handleSort('student')}
+                            className="inline-flex items-center gap-1.5 hover:text-[#7749BC] dark:hover:text-purple-300 transition-colors cursor-pointer group font-bold"
+                            title="คลิกเพื่อเรียงตามชื่อนิสิต"
+                          >
+                            <span>นิสิต</span>
+                            <span className="p-0.5 rounded hover:bg-neutral-200/60 dark:hover:bg-slate-700">
+                              {sortField === 'student' ? (
+                                sortOrder === 'asc' ? <ArrowUp className="w-3.5 h-3.5 text-[#7749BC] dark:text-purple-300" /> : <ArrowDown className="w-3.5 h-3.5 text-[#7749BC] dark:text-purple-300" />
+                              ) : (
+                                <ArrowUpDown className="w-3 h-3 text-neutral-400 group-hover:text-neutral-600 dark:text-slate-500" />
+                              )}
+                            </span>
+                          </button>
+                        </th>
+                        <th className="p-3.5">
+                          <button
+                            type="button"
+                            onClick={() => handleSort('course')}
+                            className="inline-flex items-center gap-1.5 hover:text-[#7749BC] dark:hover:text-purple-300 transition-colors cursor-pointer group font-bold"
+                            title="คลิกเพื่อเรียงตามรหัสวิชา"
+                          >
+                            <span>รายวิชา</span>
+                            <span className="p-0.5 rounded hover:bg-neutral-200/60 dark:hover:bg-slate-700">
+                              {sortField === 'course' ? (
+                                sortOrder === 'asc' ? <ArrowUp className="w-3.5 h-3.5 text-[#7749BC] dark:text-purple-300" /> : <ArrowDown className="w-3.5 h-3.5 text-[#7749BC] dark:text-purple-300" />
+                              ) : (
+                                <ArrowUpDown className="w-3 h-3 text-neutral-400 group-hover:text-neutral-600 dark:text-slate-500" />
+                              )}
+                            </span>
+                          </button>
+                        </th>
+                        <th className="p-3.5">
+                          <button
+                            type="button"
+                            onClick={() => handleSort('type')}
+                            className="inline-flex items-center gap-1.5 hover:text-[#7749BC] dark:hover:text-purple-300 transition-colors cursor-pointer group font-bold"
+                            title="คลิกเพื่อเรียงตามประเภทการลา"
+                          >
+                            <span>ประเภทการลา</span>
+                            <span className="p-0.5 rounded hover:bg-neutral-200/60 dark:hover:bg-slate-700">
+                              {sortField === 'type' ? (
+                                sortOrder === 'asc' ? <ArrowUp className="w-3.5 h-3.5 text-[#7749BC] dark:text-purple-300" /> : <ArrowDown className="w-3.5 h-3.5 text-[#7749BC] dark:text-purple-300" />
+                              ) : (
+                                <ArrowUpDown className="w-3 h-3 text-neutral-400 group-hover:text-neutral-600 dark:text-slate-500" />
+                              )}
+                            </span>
+                          </button>
+                        </th>
+                        <th className="p-3.5">
+                          <button
+                            type="button"
+                            onClick={() => handleSort('date')}
+                            className="inline-flex items-center gap-1.5 hover:text-[#7749BC] dark:hover:text-purple-300 transition-colors cursor-pointer group font-bold"
+                            title="คลิกเพื่อเรียงตามวันที่ลา (ล่าสุด/ก่อนหน้า)"
+                          >
+                            <span>วันที่ลา</span>
+                            <span className="p-0.5 rounded hover:bg-neutral-200/60 dark:hover:bg-slate-700">
+                              {sortField === 'date' ? (
+                                sortOrder === 'asc' ? <ArrowUp className="w-3.5 h-3.5 text-[#7749BC] dark:text-purple-300" /> : <ArrowDown className="w-3.5 h-3.5 text-[#7749BC] dark:text-purple-300" />
+                              ) : (
+                                <ArrowUpDown className="w-3 h-3 text-neutral-400 group-hover:text-neutral-600 dark:text-slate-500" />
+                              )}
+                            </span>
+                          </button>
+                        </th>
+                        <th className="p-3.5">
+                          <button
+                            type="button"
+                            onClick={() => handleSort('status')}
+                            className="inline-flex items-center gap-1.5 hover:text-[#7749BC] dark:hover:text-purple-300 transition-colors cursor-pointer group font-bold"
+                            title="คลิกเพื่อเรียงตามสถานะ"
+                          >
+                            <span>สถานะ</span>
+                            <span className="p-0.5 rounded hover:bg-neutral-200/60 dark:hover:bg-slate-700">
+                              {sortField === 'status' ? (
+                                sortOrder === 'asc' ? <ArrowUp className="w-3.5 h-3.5 text-[#7749BC] dark:text-purple-300" /> : <ArrowDown className="w-3.5 h-3.5 text-[#7749BC] dark:text-purple-300" />
+                              ) : (
+                                <ArrowUpDown className="w-3 h-3 text-neutral-400 group-hover:text-neutral-600 dark:text-slate-500" />
+                              )}
+                            </span>
+                          </button>
+                        </th>
                         <th className="p-3.5">ข้อคิดเห็นอาจารย์</th>
                         <th className="p-3.5 pr-5 text-right">การกระทำ</th>
                       </tr>

@@ -22,7 +22,7 @@ import {
   ArrowLeft,
   Filter,
 } from 'lucide-react';
-import { STATUS_DETAILS, LEAVE_TYPE_DETAILS, LEAVE_TYPE_DEFAULT, formatThaiDate, formatThaiDateTime, sortAcademicTerms } from '@/lib/ui';
+import { STATUS_DETAILS, LEAVE_TYPE_DETAILS, LEAVE_TYPE_DEFAULT, formatThaiDate, formatThaiDateTime, sortAcademicTerms, formatTeacherFullName } from '@/lib/ui';
 import AttachmentPreview from '@/components/AttachmentPreview';
 import CancelLeaveButton from '@/components/CancelLeaveButton';
 
@@ -556,7 +556,7 @@ export default function StudentHistoryView({ leaves: initialLeaves = [], summari
                 {detailModal.leave.teacherName && (
                   <div className="flex justify-between">
                     <span className="text-neutral-500 dark:text-neutral-400">อาจารย์ผู้สอน:</span>
-                    <span className="font-semibold text-[#7749BC] dark:text-purple-300">{detailModal.leave.teacherName}</span>
+                    <span className="font-semibold text-[#7749BC] dark:text-purple-300">{formatTeacherFullName(detailModal.leave.teacherName)}</span>
                   </div>
                 )}
               </div>

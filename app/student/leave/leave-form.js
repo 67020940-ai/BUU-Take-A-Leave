@@ -23,7 +23,7 @@ import {
   HelpCircle,
 } from 'lucide-react';
 import AttachmentPreview from '@/components/AttachmentPreview';
-import { DAY_LABEL_TH, formatThaiDay } from '@/lib/ui';
+import { DAY_LABEL_TH, formatThaiDay, formatTeacherFullName } from '@/lib/ui';
 
 const inputCls =
   'w-full px-3.5 py-2.5 rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900 text-sm font-medium text-slate-900 dark:text-slate-100 placeholder:text-slate-400 focus:outline-none focus:border-[#7749BC] focus:ring-1 focus:ring-[#7749BC] transition-all shadow-2xs';
@@ -328,7 +328,7 @@ export default function LeaveForm({ courses, initialCourseId, lockCourse, initia
                 </div>
                 <p className="text-xs text-neutral-500 dark:text-neutral-400 font-normal">
                   กลุ่ม {currentCourse.group || '01'} • ห้อง {currentCourse.room || '-'} • ผู้สอน:{' '}
-                  {currentCourse.teacherName || currentCourse.teacher?.name || '-'}
+                  {formatTeacherFullName(currentCourse.teacherName || currentCourse.teacher?.name)}
                 </p>
               </div>
             )}
