@@ -2356,6 +2356,7 @@ async function main() {
   // ล้างข้อมูลเดิมทั้งหมด
   await prisma.notification.deleteMany();
   await prisma.leaveRequest.deleteMany();
+  await prisma.teachingMaterial.deleteMany();
   await prisma.ticket.deleteMany();
   await prisma.enrollment.deleteMany();
   await prisma.course.deleteMany();
@@ -2368,6 +2369,7 @@ async function main() {
       password,
       name: 'ผู้ดูแลระบบ',
       role: 'admin',
+      personnelId: 'ADM001',
       faculty: 'คณะวิทยาการสารสนเทศ',
       major: 'ภาควิชาสารสนเทศศึกษา',
     },
@@ -2376,13 +2378,16 @@ async function main() {
 
   // 2. อาจารย์
   const teacherByName = {};
-  for (const t of TEACHERS) {
+  for (let idx = 0; idx < TEACHERS.length; idx++) {
+    const t = TEACHERS[idx];
+    const personnelId = `T${String(idx + 1).padStart(4, '0')}`;
     const user = await prisma.user.create({
       data: {
         email: t.email,
         password,
         name: t.name,
         role: 'teacher',
+        personnelId,
         faculty: t.faculty || 'คณะวิทยาการสารสนเทศ',
         major: t.major || 'ภาควิชาสารสนเทศศึกษา',
       },
@@ -2673,6 +2678,60 @@ async function main() {
           },
         });
       }
+    }
+  }
+
+  // 5.1 สื่อการสอนจำลอง (Teaching Materials)
+  const mockMaterials = [
+    {
+      courseId: course1.id,
+      week: 1,
+      title: 'เอกสารประกอบการสอน สัปดาห์ที่ 1: แนะนำรายวิชาและการอ่านสารสนเทศ',
+      description: 'ภาพรวมวัตถุประสงค์การเรียนรู้ เกณฑ์การวัดและประเมินผล และการวิเคราะห์สารสนเทศเบื้องต้น',
+      fileUrl: '/uploads/materials/week01-overview.pdf',
+      fileName: 'week01-overview.pdf',
+      fileType: 'pdf',
+      fileSize: 2457600,
+      uploadedById: course1.teacherId || admin.id,
+    },
+    {
+      courseId: course1.id,
+      week: 2,
+      title: 'สไลด์บรรยาย สัปดาห์ที่ 2: เทคนิคการสังเคราะห์สารสนเทศวิชาชีพ',
+      description: 'เทคนิคการจับประเด็นและการสังเคราะห์สารสนเทศจากงานวิจัย',
+      fileUrl: '/uploads/materials/week02-synthesis.pptx',
+      fileName: 'week02-synthesis.pptx',
+      fileType: 'pptx',
+      fileSize: 5242880,
+      uploadedById: course1.teacherId || admin.id,
+    },
+    {
+      courseId: course2.id,
+      week: 1,
+      title: 'คู่มือการจัดการเอกสารดิจิทัลและมาตรฐาน ISO 15489',
+      description: 'มาตรฐานการจัดการเอกสารสากลและการประยุกต์ใช้ในองค์กรยุคใหม่',
+      fileUrl: '/uploads/materials/iso15489-guide.pdf',
+      fileName: 'iso15489-guide.pdf',
+      fileType: 'pdf',
+      fileSize: 3145728,
+      uploadedById: course2.teacherId || admin.id,
+    },
+    {
+      courseId: course4.id,
+      week: 1,
+      title: 'สไลด์บทนำ: การสื่อสารข้อมูลและโครงข่ายคอมพิวเตอร์',
+      description: 'แบบจำลอง OSI 7 Layers และโปรโตคอล TCP/IP สำหรับสารสนเทศ',
+      fileUrl: '/uploads/materials/network-intro.pdf',
+      fileName: 'network-intro.pdf',
+      fileType: 'pdf',
+      fileSize: 4194304,
+      uploadedById: course4.teacherId || admin.id,
+    },
+  ];
+
+  for (const mat of mockMaterials) {
+    if (mat.courseId && mat.uploadedById) {
+      await prisma.teachingMaterial.create({ data: mat });
     }
   }
 
