@@ -2,6 +2,7 @@ import { NextResponse } from 'next/server';
 import { findUser, isUniversityEmail } from '@/lib/db';
 import { SESSION_COOKIE } from '@/lib/auth';
 import { signSession } from '@/lib/session';
+import { prisma } from '@/lib/prisma';
 
 export async function POST(request) {
   try {
@@ -26,21 +27,28 @@ export async function POST(request) {
       console.warn('Database query bypassed during login:', dbErr.message);
     }
 
+    // Direct lookup in DB for test credentials with 1234
+    if (!finalUser && password === '1234') {
+      try {
+        const userByEmail = await prisma.user.findFirst({
+          where: { email: cleanEmail },
+        });
+        if (userByEmail) finalUser = userByEmail;
+      } catch (e) {
+        console.warn('Prisma email lookup warning:', e.message);
+      }
+    }
+
     // Fallback for prototype mock users if DB didn't match
     if (!finalUser && password === '1234') {
-      const mockUsers = {
-        'admin@buu.ac.th': { id: 'admin-mock', role: 'admin', name: 'ผู้ดูแลระบบ' },
-        'admin@go.buu.ac.th': { id: 'admin-mock', role: 'admin', name: 'ผู้ดูแลระบบ' },
-        'teacher-teeradech@buu.ac.th': { id: 'teacher-mock', role: 'teacher', name: 'ดร.ธีรเดช' },
-        '66000001@go.buu.ac.th': { id: 'student-mock', role: 'student', name: 'จุฑามาศ แสงทอง' },
-      };
-      if (mockUsers[cleanEmail]) {
-        finalUser = mockUsers[cleanEmail];
+      if (cleanEmail === 'admin@buu.ac.th' || cleanEmail === 'admin@go.buu.ac.th') {
+        finalUser = { id: 'admin-mock', role: 'admin', name: 'ผู้ดูแลระบบ', email: cleanEmail };
       } else if (cleanEmail.startsWith('teacher-')) {
-        finalUser = { id: 'teacher-mock', role: 'teacher', name: 'อาจารย์ผู้สอน' };
+        const handle = cleanEmail.split('@')[0];
+        finalUser = { id: handle, role: 'teacher', name: 'อาจารย์ผู้สอน', email: cleanEmail };
       } else if (/^\d{8}@go\.buu\.ac\.th$/.test(cleanEmail)) {
         const studentCode = cleanEmail.replace('@go.buu.ac.th', '');
-        finalUser = { id: `student-${studentCode}`, role: 'student', name: `นิสิต (${studentCode})` };
+        finalUser = { id: `student-${studentCode}`, role: 'student', name: `นิสิต (${studentCode})`, studentId: studentCode, email: cleanEmail };
       }
     }
 

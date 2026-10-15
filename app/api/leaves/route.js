@@ -31,17 +31,17 @@ async function enrichLeave(leave) {
   ]);
   return {
     ...leave,
-    courseCode: course?.code || '',
-    courseName: course ? `${course.code} ${course.name}` : '-',
-    courseTitle: course?.name || '',
-    courseTerm: course?.term || '',
-    courseGroup: course?.group || '',
-    section: course?.group || '',
-    teacherName: course?.teacher?.name || course?.teacherName || '',
-    studentName: student?.name || '-',
-    studentCode: student?.studentId || '-',
-    studentEmail: student?.email || '',
-    studentAvatar: student?.avatar || null,
+    courseCode: course?.code || leave.courseCode || '',
+    courseName: course ? `${course.code} ${course.name}` : (leave.courseName || '-'),
+    courseTitle: course?.name || leave.courseTitle || '',
+    courseTerm: course?.term || leave.courseTerm || '',
+    courseGroup: course?.group || leave.courseGroup || leave.section || '',
+    section: course?.group || leave.section || leave.courseGroup || '',
+    teacherName: course?.teacher?.name || course?.teacherName || leave.teacherName || '',
+    studentName: student?.name || leave.studentName || '-',
+    studentCode: student?.studentId || leave.studentCode || '-',
+    studentEmail: student?.email || leave.studentEmail || '',
+    studentAvatar: student?.avatar || leave.studentAvatar || null,
   };
 }
 
