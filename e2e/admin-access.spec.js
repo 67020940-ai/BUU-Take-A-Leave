@@ -18,6 +18,7 @@ test.describe('BUU Take A Leave - Admin Access Flow', () => {
     await page.getByRole('button', { name: /เข้าสู่ระบบ/i }).click();
 
     // 4. ตรวจสอบว่าเปลี่ยนเส้นทางไปยังหน้า /admin สำเร็จ
+    await page.waitForURL(/\/admin/, { timeout: 15000 });
     await expect(page).toHaveURL(/\/admin/);
 
     // 5. ตรวจสอบว่าไม่แสดงข้อความ error ของ Next.js error boundary

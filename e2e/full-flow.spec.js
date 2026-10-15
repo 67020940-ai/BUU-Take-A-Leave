@@ -18,6 +18,7 @@ test.describe.configure({ mode: 'serial' });
 
 let original;
 let teacherEmail;
+let submittedCourseId;
 
 async function login(page, email) {
   await page.goto('/login');
@@ -82,9 +83,12 @@ test('1. student submits leave with attachment and sees it in history', async ({
   await page.waitForURL(/tab=history/, { timeout: 15000 });
   await expect(page.getByText(REASON).first()).toBeVisible();
 
-  const row = await prisma.leaveRequest.findFirst({ where: { reason: REASON } });
+  const row = await prisma.leaveRequest.findFirst({ where: { reason: REASON }, include: { course: { include: { teacher: true } } } });
   expect(row?.status).toBe('รออนุมัติ');
   expect(row?.attachment).toBeTruthy();
+  submittedCourseId = row?.courseId;
+  teacherEmail = row?.course?.teacher?.email || 'teacher-chatchapon@buu.ac.th';
+  console.log("Submitted leave course:", row?.course?.code, "Teacher email:", teacherEmail);
 });
 
 test('2. attachment: preview opens, new-tab link and download work', async ({ page, context }) => {
@@ -135,7 +139,9 @@ test('4. teacher approves the leave and uploads/deletes teaching material', asyn
   expect(teacherEmail).toBeTruthy();
   await login(page, teacherEmail);
   await page.goto('/teacher/requests');
-  const card = page.locator('div.rounded-3xl').filter({ hasText: REASON }).first();
+  const reasonElem = page.getByText(REASON).first();
+  await expect(reasonElem).toBeVisible({ timeout: 20000 });
+  const card = page.locator('div').filter({ has: reasonElem }).filter({ has: page.getByRole('button', { name: 'อนุมัติ', exact: true }) }).last();
   const patch = page.waitForResponse((r) => r.url().endsWith('/api/leaves') && r.request().method() === 'PATCH');
   await card.getByRole('button', { name: 'อนุมัติ', exact: true }).click();
   const res = await patch;
