@@ -26,6 +26,7 @@ import TeacherTopBar from '@/components/TeacherTopBar';
 import TeacherScheduleGrid from '@/components/TeacherScheduleGrid';
 import MobileBottomNav from '@/components/MobileBottomNav';
 import { useSidebarCollapsed } from '@/lib/useSidebarCollapsed';
+import TeachingMaterialsSection from '@/components/TeachingMaterialsSection';
 
 const SAMPLE_LESSON_PLANS = {
   '24527664': [
@@ -331,6 +332,16 @@ export default function TeacherScheduleView({
               </div>
             </div>
 
+            {/* Real Teaching Materials Uploader & Cloud Library */}
+            <div className="p-5 sm:p-6 rounded-3xl bg-white/90 dark:bg-slate-900/90 border border-neutral-200/80 dark:border-slate-800 shadow-xs">
+              <TeachingMaterialsSection
+                courseId={selectedCourseCode}
+                courseCode={activeCourse.code}
+                courseName={activeCourse.name}
+                isTeacher={true}
+              />
+            </div>
+
             {/* Current Week Highlight Card */}
             {currentLesson && (
               <div className="p-5 sm:p-6 rounded-3xl bg-gradient-to-br from-purple-500/10 via-purple-600/5 to-transparent border-2 border-purple-300/80 dark:border-purple-800/80 backdrop-blur-xl shadow-xs space-y-4">
@@ -374,25 +385,13 @@ export default function TeacherScheduleView({
                 {/* Materials & Prep Notes Row */}
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4 pt-2">
                   <div className="p-4 rounded-2xl bg-white/80 dark:bg-slate-900/80 border border-purple-100 dark:border-slate-800 space-y-2">
-                    <p className="text-xs font-bold text-neutral-800 dark:text-neutral-200 flex items-center gap-1.5">
-                      <FileText className="w-4 h-4 text-[#7749BC]" />
-                      <span>สื่อและเอกสารประกอบการสอน ({currentLesson.materials.length} ไฟล์)</span>
-                    </p>
-                    <div className="space-y-1.5">
-                      {currentLesson.materials.map((m, idx) => (
-                        <div
-                          key={idx}
-                          className="flex items-center justify-between p-2 rounded-xl bg-neutral-50 dark:bg-slate-800/60 border border-neutral-200/60 dark:border-slate-700/60 text-xs"
-                        >
-                          <span className="font-mono text-neutral-800 dark:text-neutral-200 truncate max-w-[220px]">
-                            {m.name}
-                          </span>
-                          <span className="text-[11px] text-neutral-400 font-mono shrink-0">
-                            {m.size}
-                          </span>
-                        </div>
-                      ))}
-                    </div>
+                    <TeachingMaterialsSection
+                      courseId={selectedCourseCode}
+                      courseCode={activeCourse.code}
+                      courseName={activeCourse.name}
+                      targetWeek={currentLesson.week}
+                      isTeacher={true}
+                    />
                   </div>
 
                   <div className="p-4 rounded-2xl bg-white/80 dark:bg-slate-900/80 border border-purple-100 dark:border-slate-800 space-y-2">

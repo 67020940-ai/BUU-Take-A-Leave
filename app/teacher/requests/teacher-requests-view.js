@@ -675,9 +675,19 @@ export default function TeacherRequestsView({
                             </span>
                           </div>
 
-                          <p className="text-xs text-neutral-500 dark:text-neutral-400 line-clamp-1">
-                            <strong>เหตุผล:</strong> {leave.reason || '-'}
-                          </p>
+                          <div className="flex items-center gap-2 pt-0.5">
+                            <p className="text-xs text-neutral-500 dark:text-neutral-400 line-clamp-1 flex-1">
+                              <strong>เหตุผล:</strong> {leave.reason || '-'}
+                            </p>
+                            {leave.attachment && (
+                              <AttachmentPreview
+                                attachment={leave.attachment}
+                                leaveId={leave.id}
+                                label="ดูหลักฐาน"
+                                thumbClassName="w-5 h-5 rounded-md"
+                              />
+                            )}
+                          </div>
                         </div>
                       </div>
 
@@ -797,11 +807,19 @@ export default function TeacherRequestsView({
               <p className="text-xs font-bold text-neutral-800 dark:text-neutral-200 mb-2">
                 เอกสารแนบ / ใบรับรองแพทย์
               </p>
-              <AttachmentPreview
-                attachment={detailModal.leave.attachment}
-                leaveId={detailModal.leave.id}
-                title="หลักฐานประกอบการลา"
-              />
+              {detailModal.leave.attachment ? (
+                <div className="p-3 rounded-2xl bg-neutral-50 dark:bg-slate-800/80 border border-neutral-200/80 dark:border-slate-700">
+                  <AttachmentPreview
+                    attachment={detailModal.leave.attachment}
+                    leaveId={detailModal.leave.id}
+                    title="หลักฐานประกอบการลา"
+                    label="คลิกเปิดดูภาพขนาดเต็ม / ดาวน์โหลดไฟล์"
+                    thumbClassName="w-10 h-10 rounded-xl"
+                  />
+                </div>
+              ) : (
+                <p className="text-xs text-neutral-400 italic">ไม่มีเอกสารหลักฐานแนบ</p>
+              )}
             </div>
 
             <div className="pt-2 flex justify-end gap-2">

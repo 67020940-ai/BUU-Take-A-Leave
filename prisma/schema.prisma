@@ -9,23 +9,31 @@ datasource db {
 }
 
 model User {
-  id        String   @id @default(cuid())
-  email     String   @unique
-  password  String
-  name      String
-  role      String
-  studentId String?
-  faculty   String?
-  major     String?
-  avatar    String?
-  phone     String?
-  createdAt DateTime @default(now())
+  id           String   @id @default(cuid())
+  email        String   @unique
+  password     String
+  name         String
+  role         String
+  studentId    String?
+  personnelId  String?
+  firstName    String?
+  lastName     String?
+  faculty      String?
+  major        String?
+  department   String?
+  academicYear String?
+  advisorName  String?
+  bio          String?
+  avatar       String?
+  phone        String?
+  createdAt    DateTime @default(now())
 
   enrollments   Enrollment[]
-  leaves        LeaveRequest[] @relation("StudentLeaves")
-  taughtCourses Course[]       @relation("TeacherCourses")
+  leaves        LeaveRequest[]     @relation("StudentLeaves")
+  taughtCourses Course[]           @relation("TeacherCourses")
   notifications Notification[]
   tickets       Ticket[]
+  materials     TeachingMaterial[] @relation("UserMaterials")
 }
 
 model Course {
@@ -42,9 +50,10 @@ model Course {
   room          String?
   createdAt     DateTime @default(now())
 
-  teacher     User?          @relation("TeacherCourses", fields: [teacherId], references: [id])
+  teacher     User?              @relation("TeacherCourses", fields: [teacherId], references: [id])
   enrollments Enrollment[]
   leaves      LeaveRequest[]
+  materials   TeachingMaterial[]
 
   @@unique([code, term, group])
 }
@@ -61,18 +70,18 @@ model Enrollment {
 }
 
 model LeaveRequest {
-  id         Int      @id @default(autoincrement())
-  studentId  String
-  courseId   String
-  type       String
-  period     String
-  startDate  String
-  endDate    String
-  reason     String
-  attachment String?
-  status     String   @default("รออนุมัติ")
+  id             Int      @id @default(autoincrement())
+  studentId      String
+  courseId       String
+  type           String
+  period         String
+  startDate      String
+  endDate        String
+  reason         String
+  attachment     String?
+  status         String   @default("รออนุมัติ")
   teacherComment String?
-  createdAt  DateTime @default(now())
+  createdAt      DateTime @default(now())
 
   student User   @relation("StudentLeaves", fields: [studentId], references: [id])
   course  Course @relation(fields: [courseId], references: [id])
@@ -100,4 +109,22 @@ model Ticket {
   createdAt DateTime @default(now())
 
   user User @relation(fields: [userId], references: [id])
+}
+
+model TeachingMaterial {
+  id           String   @id @default(cuid())
+  courseId     String
+  week         Int?
+  title        String
+  description  String?
+  fileUrl      String
+  fileName     String
+  fileType     String?
+  fileSize     Int?
+  uploadedById String
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+
+  course     Course @relation(fields: [courseId], references: [id], onDelete: Cascade)
+  uploadedBy User   @relation("UserMaterials", fields: [uploadedById], references: [id])
 }

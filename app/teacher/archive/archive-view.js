@@ -821,11 +821,13 @@ export default function ArchiveView({ courses = [], leaves = [] }) {
                 {/* Evidence attachment */}
                 <div className="space-y-1">
                   <span className="font-semibold text-neutral-700 dark:text-neutral-300">เอกสารหลักฐานแนบ:</span>
-                  {previewLeave.attachmentUrl ? (
-                    <div className="rounded-xl border border-neutral-200 dark:border-slate-700 overflow-hidden">
+                  {(previewLeave.attachment || previewLeave.attachmentUrl) ? (
+                    <div className="p-3 rounded-2xl bg-neutral-50 dark:bg-slate-800/80 border border-neutral-200/80 dark:border-slate-700">
                       <AttachmentPreview
-                        url={previewLeave.attachmentUrl}
+                        attachment={previewLeave.attachment || previewLeave.attachmentUrl}
                         alt={`หลักฐานการลา ${previewLeave.studentName}`}
+                        label="คลิกเปิดดูภาพขนาดเต็ม / ดาวน์โหลดไฟล์"
+                        thumbClassName="w-10 h-10 rounded-xl"
                       />
                     </div>
                   ) : (

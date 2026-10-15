@@ -16,6 +16,7 @@ import {
   TrendingUp,
 } from 'lucide-react';
 import { DAY_LABEL_TH, formatThaiDay, formatTeacherFullName } from '@/lib/ui';
+import TeachingMaterialsSection from '@/components/TeachingMaterialsSection';
 
 export default function StudentScheduleView({ summaries = [] }) {
   // Extract unique academic terms
@@ -225,6 +226,16 @@ export default function StudentScheduleView({ summaries = [] }) {
                           style={{ width: `${Math.min(100, Math.max(0, rate))}%` }}
                         />
                       </div>
+                    </div>
+
+                    {/* Course Teaching Materials */}
+                    <div className="pt-3 border-t border-neutral-100 dark:border-slate-800">
+                      <TeachingMaterialsSection
+                        courseId={course.id}
+                        courseCode={course.code}
+                        courseName={course.name}
+                        isTeacher={false}
+                      />
                     </div>
                   </div>
 

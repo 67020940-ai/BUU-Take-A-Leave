@@ -21,6 +21,7 @@ import TeacherScheduleGrid from '@/components/TeacherScheduleGrid';
 import MobileBottomNav from '@/components/MobileBottomNav';
 import { useSidebarCollapsed } from '@/lib/useSidebarCollapsed';
 import { STATUS_DETAILS } from '@/lib/ui';
+import AttachmentPreview from '@/components/AttachmentPreview';
 
 export default function TeacherDashboard({
   user,
@@ -268,9 +269,19 @@ export default function TeacherDashboard({
                             <p className="text-[11px] text-neutral-500 truncate mt-0.5">
                               {leave.courseName || leave.courseCode} • {leave.type}
                             </p>
-                            <p className="text-[11px] text-neutral-400 truncate">
-                              เหตุผล: {leave.reason}
-                            </p>
+                            <div className="flex items-center gap-2 mt-1">
+                              <p className="text-[11px] text-neutral-400 truncate flex-1">
+                                เหตุผล: {leave.reason}
+                              </p>
+                              {leave.attachment && (
+                                <AttachmentPreview
+                                  attachment={leave.attachment}
+                                  leaveId={leave.id}
+                                  label="หลักฐาน"
+                                  thumbClassName="w-4 h-4 rounded"
+                                />
+                              )}
+                            </div>
                           </div>
                           <div className="flex flex-col items-end gap-1 shrink-0">
                             <span className={`px-2 py-0.5 rounded-full text-[10px] font-bold border ${status.badge}`}>
