@@ -18,7 +18,7 @@ export async function GET(request) {
 
   const timestamp = new Date().toISOString().replace(/[:.]/g, '-');
 
-  // แบบที่ 1: ดาวน์โหลด Raw SQLite Database File
+  // แบบที่ 1: ดาวน์โหลด Raw SQLite Database File (หากมีอยู่ในระบบ)
   if (type === 'sqlite') {
     try {
       const dbPath = path.join(process.cwd(), 'prisma', 'dev.db');
@@ -31,10 +31,7 @@ export async function GET(request) {
         },
       });
     } catch (err) {
-      return NextResponse.json(
-        { error: 'ไม่สามารถอ่านไฟล์ SQLite database ได้: ' + err.message },
-        { status: 500 }
-      );
+      console.warn('SQLite file not present on server, falling back to full JSON database snapshot:', err.message);
     }
   }
 

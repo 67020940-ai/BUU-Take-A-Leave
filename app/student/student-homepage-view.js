@@ -416,8 +416,11 @@ export default function StudentHomepageView({
                   <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3.5">
                     {currentSummaries.map((s, idx) => {
                       const c = s.course || s;
-                      const percent = s.percent !== undefined ? s.percent : 100;
+                      const percent = s.percentage !== undefined ? s.percentage : (s.percent !== undefined ? s.percent : 100);
                       const isRisk = percent < 80;
+                      const total = s.totalSessions !== undefined ? s.totalSessions : (s.total !== undefined ? s.total : 15);
+                      const leavesCount = s.approvedLeaves !== undefined ? s.approvedLeaves : (s.leaves !== undefined ? s.leaves : 0);
+                      const attended = s.attended !== undefined ? s.attended : Math.max(total - leavesCount, 0);
 
                       return (
                         <div
@@ -470,9 +473,9 @@ export default function StudentHomepageView({
                             </div>
                             <div className="flex items-center justify-between text-[11px] text-neutral-500 dark:text-neutral-400 pt-0.5 font-medium">
                               <span>
-                                เข้าเรียน {s.attended || 15}/{s.total || 15} คาบ
+                                เข้าเรียน {attended}/{total} คาบ
                               </span>
-                              <span>ลา {s.leaves || 0} ครั้ง</span>
+                              <span>ลา {leavesCount} ครั้ง</span>
                             </div>
                           </div>
                         </div>

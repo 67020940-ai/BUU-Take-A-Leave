@@ -147,6 +147,18 @@ export async function PATCH(request) {
     return NextResponse.json({ error: 'หมายเหตุไม่ถูกต้อง' }, { status: 400 });
   }
 
+  // Helper to check if teacher can manage course
+  async function teacherCanManageCourse(tUser, targetCourse) {
+    if (!targetCourse || !targetCourse.teacherId) return true;
+    if (tUser.id && (tUser.id.includes('-mock') || tUser.id === 'teacher-mock')) return true;
+    const allowed = [tUser.id];
+    if (tUser.email) allowed.push(tUser.email);
+    const dbUser = await getUserById(tUser.id);
+    if (dbUser?.id) allowed.push(dbUser.id);
+    if (dbUser?.email) allowed.push(dbUser.email);
+    return allowed.includes(targetCourse.teacherId);
+  }
+
   // Handle batch processing
   if (Array.isArray(ids) && ids.length > 0) {
     const updatedLeaves = [];
@@ -156,9 +168,8 @@ export async function PATCH(request) {
 
       if (user.role === 'teacher') {
         const course = await getCourse(existing.courseId);
-        if (course && course.teacherId && course.teacherId !== user.id && !user.id.includes('-mock')) {
-          continue;
-        }
+        const canManage = await teacherCanManageCourse(user, course);
+        if (!canManage) continue;
       }
 
       const updated = await setLeaveStatus(targetId, status, comment);
@@ -179,7 +190,8 @@ export async function PATCH(request) {
 
   if (user.role === 'teacher') {
     const course = await getCourse(existing.courseId);
-    if (course && course.teacherId && course.teacherId !== user.id && !user.id.includes('-mock')) {
+    const canManage = await teacherCanManageCourse(user, course);
+    if (!canManage) {
       return NextResponse.json({ error: 'ไม่มีสิทธิ์อนุมัติคำร้องนี้' }, { status: 403 });
     }
   }
@@ -198,7 +210,14 @@ export async function DELETE(request) {
 
   const existing = await getLeave(id);
   if (!existing) return NextResponse.json({ error: 'ไม่พบคำร้อง' }, { status: 404 });
-  if (existing.studentId !== user.id) {
+
+  const studentDb = await resolveStudentDbUser(user.id);
+  const allowedStudentIds = [user.id];
+  if (studentDb?.id) allowedStudentIds.push(studentDb.id);
+  if (user.studentId) allowedStudentIds.push(user.studentId, `student-${user.studentId}`);
+  if (studentDb?.studentId) allowedStudentIds.push(studentDb.studentId, `student-${studentDb.studentId}`);
+
+  if (!allowedStudentIds.includes(existing.studentId)) {
     return NextResponse.json({ error: 'ไม่มีสิทธิ์ยกเลิกคำร้องนี้' }, { status: 403 });
   }
   if (existing.status !== 'รออนุมัติ') {
