@@ -156,10 +156,13 @@ export default function StudentSidebar({
               <BuuLogo size={collapsed ? 32 : 36} className="shrink-0 group-hover:scale-105 transition-transform" />
               {!collapsed && (
                 <div className="flex flex-col min-w-0">
-                  <span className="font-extrabold text-neutral-900 dark:text-neutral-100 tracking-tight text-base leading-none group-hover:text-[#7749BC] dark:group-hover:text-purple-300 transition-colors truncate">
+                  <span className="text-[10px] text-neutral-400 dark:text-neutral-500 font-medium truncate leading-tight">
+                    ระบบลาเรียนออนไลน์
+                  </span>
+                  <span className="font-extrabold text-neutral-900 dark:text-neutral-100 tracking-tight text-base leading-snug group-hover:text-[#7749BC] dark:group-hover:text-purple-300 transition-colors truncate">
                     Take A Leave
                   </span>
-                  <span className="text-[10px] text-neutral-400 dark:text-neutral-500 mt-1 font-medium truncate">
+                  <span className="text-[10px] text-[#7749BC] dark:text-purple-300 font-semibold truncate leading-tight">
                     นิสิตมหาวิทยาลัยบูรพา
                   </span>
                 </div>
