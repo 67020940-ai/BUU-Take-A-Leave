@@ -24,8 +24,9 @@ import {
   ShieldCheck,
   Award,
   X,
+  BookOpen,
 } from 'lucide-react';
-import { sortAcademicTerms, isTermStartedOrPassed } from '@/lib/ui';
+import { sortAcademicTerms, isTermStartedOrPassed, formatTeacherFullName } from '@/lib/ui';
 import { formatLeaveClassTime, calculateLeaveStats } from '@/lib/leave-stats';
 
 export default function StudentStatsView({ summaries = [], leaves = [] }) {
@@ -144,6 +145,11 @@ export default function StudentStatsView({ summaries = [], leaves = [] }) {
       return matchType && matchTerm;
     });
   }, [selectedCategoryModal, leaves, summaries, selectedTerm]);
+
+  const currentSummaries = useMemo(() => {
+    if (selectedTerm === 'all') return summaries;
+    return summaries.filter((s) => (s.course?.term || s.term) === selectedTerm);
+  }, [summaries, selectedTerm]);
 
   return (
     <div className="space-y-6">
@@ -362,6 +368,138 @@ export default function StudentStatsView({ summaries = [], leaves = [] }) {
           })}
         </div>
       </div>
+
+      {/* 4. Per-Course Attendance & Quota Statistics (ตามฐานข้อมูลระบบ) */}
+      <div>
+        <div className="flex items-center justify-between mb-3">
+          <div>
+            <h2 className="text-xs font-bold text-[#7749BC] dark:text-purple-300 uppercase tracking-wider flex items-center gap-1.5">
+              <BookOpen className="w-3.5 h-3.5" />
+              <span>สถิติเวลาเรียนและโควตารายวิชา (Course Attendance & Quotas)</span>
+            </h2>
+            <p className="text-[11px] text-neutral-500 dark:text-neutral-400 mt-0.5">
+              {selectedTerm === 'all'
+                ? `แสดงรายวิชาทั้งหมดจากฐานข้อมูล (${currentSummaries.length} วิชา)`
+                : `แสดงรายวิชาในภาคเรียนที่ ${selectedTerm} (${currentSummaries.length} วิชา)`}
+            </p>
+          </div>
+        </div>
+
+        {currentSummaries.length === 0 ? (
+          <div className="p-8 text-center rounded-3xl border border-neutral-200/80 dark:border-slate-800 bg-white/80 dark:bg-slate-900/80 text-xs text-neutral-400">
+            ไม่พบข้อมูลรายวิชาในภาคการศึกษาที่เลือก
+          </div>
+        ) : (
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3.5">
+            {currentSummaries.map((s, idx) => {
+              const c = s.course || s;
+              const percent = s.percentage !== undefined ? s.percentage : (s.percent !== undefined ? s.percent : 100);
+              const isRisk = percent < 80;
+              const total = s.totalSessions !== undefined ? s.totalSessions : (s.total !== undefined ? s.total : 15);
+              const leavesCount = s.approvedLeaves !== undefined ? s.approvedLeaves : (s.leaves !== undefined ? s.leaves : 0);
+              const attended = s.attended !== undefined ? s.attended : Math.max(total - leavesCount, 0);
+              const quotaLimit = s.quotaLimit || Math.max(1, Math.floor(total * 0.2)) || 3;
+              const remainingQuota = Math.max(0, quotaLimit - leavesCount);
+
+              return (
+                <div
+                  key={c.id || idx}
+                  className="p-4 rounded-2xl border border-slate-200/90 dark:border-slate-700/80 bg-white/90 dark:bg-slate-900/90 hover:bg-white dark:hover:bg-slate-800 transition-all shadow-2xs hover:shadow-md flex flex-col justify-between space-y-3"
+                >
+                  <div>
+                    <div className="flex items-center justify-between gap-1">
+                      <span className="font-mono text-xs font-bold text-[#7749BC] dark:text-purple-300">
+                        {c.code}
+                      </span>
+                      <div className="flex items-center gap-1.5">
+                        {c.term && (
+                          <span className="text-[10px] font-medium px-2 py-0.5 rounded-md bg-neutral-100 dark:bg-slate-800 text-neutral-600 dark:text-neutral-400">
+                            {c.term}
+                          </span>
+                        )}
+                        <span className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-purple-100/90 dark:bg-purple-950 text-[#7749BC] dark:text-purple-300 border border-purple-200/50 dark:border-purple-800/50">
+                          กลุ่ม {c.group || '1'}
+                        </span>
+                      </div>
+                    </div>
+                    <h4
+                      className="font-bold text-sm text-neutral-900 dark:text-white mt-1.5 truncate"
+                      title={c.name}
+                    >
+                      {c.name}
+                    </h4>
+                    <p className="text-xs text-neutral-500 dark:text-neutral-400 truncate mt-0.5">
+                      {formatTeacherFullName(c.teacherName || c.teacher?.name)}
+                    </p>
+                  </div>
+
+                  <div className="space-y-2 pt-2 border-t border-slate-200/70 dark:border-slate-700/70">
+                    <div className="flex items-center justify-between text-xs">
+                      <span className="text-neutral-500 dark:text-neutral-400 font-medium">
+                        เวลาเรียนสะสม
+                      </span>
+                      <span
+                        className={`font-mono font-black text-sm ${
+                          isRisk
+                            ? 'text-rose-600 dark:text-rose-400'
+                            : 'text-emerald-600 dark:text-emerald-400'
+                        }`}
+                      >
+                        {percent}%
+                      </span>
+                    </div>
+
+                    {/* Progress Bar */}
+                    <div className="w-full h-2 bg-neutral-200 dark:bg-slate-700/90 rounded-full overflow-hidden">
+                      <div
+                        className={`h-full rounded-full transition-all duration-300 ${
+                          isRisk ? 'bg-rose-500' : 'bg-emerald-500'
+                        }`}
+                        style={{ width: `${Math.min(100, percent)}%` }}
+                      />
+                    </div>
+
+                    <div className="flex items-center justify-between text-[11px] text-neutral-500 dark:text-neutral-400 pt-0.5 font-medium">
+                      <span>เข้าเรียน {attended}/{total} คาบ</span>
+                      <span>ลา {leavesCount}/{quotaLimit} ครั้ง</span>
+                    </div>
+
+                    <div className="pt-2 flex items-center justify-between gap-1.5 border-t border-slate-200/50 dark:border-slate-700/50">
+                      <span
+                        className={`text-[10px] font-bold px-2 py-0.5 rounded-full border inline-flex items-center gap-1 ${
+                          leavesCount > quotaLimit
+                            ? 'bg-rose-50 text-rose-700 dark:bg-rose-950/60 dark:text-rose-300 border-rose-200/60 dark:border-rose-800/60'
+                            : remainingQuota === 0
+                            ? 'bg-orange-50 text-orange-700 dark:bg-orange-950/60 dark:text-orange-300 border-orange-200/60 dark:border-orange-800/60'
+                            : remainingQuota === 1
+                            ? 'bg-amber-50 text-amber-700 dark:bg-amber-950/60 dark:text-amber-300 border-amber-200/60 dark:border-amber-800/60'
+                            : 'bg-emerald-50 text-emerald-700 dark:bg-emerald-950/60 dark:text-emerald-300 border-emerald-200/60 dark:border-emerald-800/60'
+                        }`}
+                      >
+                        {leavesCount > quotaLimit
+                          ? '🚨 เกินโควตา'
+                          : remainingQuota === 0
+                          ? '⛔ โควตาเต็ม'
+                          : remainingQuota === 1
+                          ? '⚠️ เหลือ 1 ครั้ง'
+                          : `เหลือโควตา ${remainingQuota} ครั้ง`}
+                      </span>
+
+                      <Link
+                        href={`/student/leave?code=${c.code}&courseId=${c.id}`}
+                        className="text-[11px] font-bold text-[#7749BC] dark:text-purple-300 hover:underline flex items-center gap-0.5 min-h-[32px] cursor-pointer"
+                      >
+                        <span>ยื่นลาวิชานี้ &rarr;</span>
+                      </Link>
+                    </div>
+                  </div>
+                </div>
+              );
+            })}
+          </div>
+        )}
+      </div>
+
 
       {/* Category Breakdown Drill-down Modal */}
       {selectedCategoryModal && (
