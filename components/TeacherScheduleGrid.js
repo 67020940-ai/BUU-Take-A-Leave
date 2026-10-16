@@ -1,7 +1,8 @@
 'use client';
 
 import { useState, useMemo } from 'react';
-import { CalendarDays, Clock, MapPin, Users, BookOpen, Info, ExternalLink } from 'lucide-react';
+import Link from 'next/link';
+import { CalendarDays, Clock, MapPin, Users, BookOpen, Info, ExternalLink, X } from 'lucide-react';
 import { formatThaiDay } from '@/lib/ui';
 import { normalizeDayKey } from '@/lib/leave-stats';
 
@@ -609,6 +610,14 @@ export default function TeacherScheduleGrid({ courses = [], customItems = null, 
                   {selectedItem.name}
                 </h4>
               </div>
+              <button
+                type="button"
+                onClick={() => setSelectedItem(null)}
+                className="p-1.5 rounded-xl text-neutral-400 hover:text-neutral-700 dark:hover:text-neutral-200 hover:bg-neutral-100 dark:hover:bg-slate-800 transition-colors cursor-pointer"
+                title="ปิดหน้าต่าง"
+              >
+                <X className="w-5 h-5" />
+              </button>
             </div>
 
             <div className="p-3.5 rounded-2xl bg-neutral-50 dark:bg-slate-800/60 border border-neutral-200/60 dark:border-slate-700/60 space-y-2 text-xs">
@@ -629,11 +638,18 @@ export default function TeacherScheduleGrid({ courses = [], customItems = null, 
               </div>
             </div>
 
-            <div className="pt-2 flex justify-end">
+            <div className="space-y-2 pt-1">
+              <Link
+                href={`/teacher/requests?courseId=${selectedItem.id || selectedItem.code}`}
+                className="w-full py-2.5 px-3 rounded-2xl bg-[#7749BC] hover:bg-[#653ba6] text-white text-xs font-bold flex items-center justify-center gap-2 shadow-xs transition-colors cursor-pointer"
+              >
+                <ExternalLink className="w-3.5 h-3.5" />
+                <span>ดูคำขอลาเรียนของวิชานี้</span>
+              </Link>
               <button
                 type="button"
                 onClick={() => setSelectedItem(null)}
-                className="px-4 py-2 rounded-xl bg-neutral-100 hover:bg-neutral-200 dark:bg-slate-800 text-xs font-semibold text-neutral-700 dark:text-neutral-200 cursor-pointer"
+                className="w-full py-2 rounded-xl bg-neutral-100 hover:bg-neutral-200 dark:bg-slate-800 text-xs font-semibold text-neutral-700 dark:text-neutral-200 cursor-pointer"
               >
                 ปิดหน้าต่าง
               </button>

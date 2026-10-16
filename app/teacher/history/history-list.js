@@ -52,6 +52,27 @@ export default function HistoryList({ leaves: initialLeaves }) {
     } finally {
       setReverting(false);
     }
+  // คำนวณลำดับครั้งที่ลาของนิสิตคนนี้ในวิชานี้
+  function getStudentLeaveInfo(leave) {
+    if (!leave) return { order: 1, isOverQuota: false };
+    const matchingLeaves = leaves.filter((l) => {
+      const matchStudent =
+        (l.studentCode && l.studentCode === leave.studentCode) ||
+        (l.studentId && l.studentId === leave.studentId);
+      const matchCourse =
+        (l.courseId && l.courseId === leave.courseId) ||
+        (l.courseCode && l.courseCode === leave.courseCode);
+      return matchStudent && matchCourse;
+    });
+
+    const sorted = [...matchingLeaves].sort(
+      (a, b) => new Date(a.createdAt || a.startDate || 0) - new Date(b.createdAt || b.startDate || 0)
+    );
+    const idx = sorted.findIndex((l) => l.id === leave.id);
+    const order = idx !== -1 ? idx + 1 : Math.max(1, matchingLeaves.length);
+    const isOverQuota = order > 3;
+
+    return { order, isOverQuota };
   }
 
   const filtered = leaves.filter((l) => {
@@ -129,6 +150,7 @@ export default function HistoryList({ leaves: initialLeaves }) {
           filtered.map((leave) => {
             const status = STATUS_DETAILS[leave.status];
             const typeCls = LEAVE_TYPE_DETAILS[leave.type] || LEAVE_TYPE_DEFAULT;
+            const leaveInfo = getStudentLeaveInfo(leave);
             return (
               <div key={leave.id} className="p-4 sm:p-5 space-y-2">
                 <div className="flex items-start justify-between gap-3">
@@ -154,6 +176,19 @@ export default function HistoryList({ leaves: initialLeaves }) {
                     {leave.courseCode} {leave.courseName}
                   </span>
                   <span className={`px-2 py-0.5 rounded-lg font-medium border ${typeCls}`}>{leave.type}</span>
+                  <span
+                    className={`text-[10px] font-bold px-2 py-0.5 rounded-full border ${
+                      leaveInfo.isOverQuota
+                        ? 'bg-rose-100 text-rose-800 dark:bg-rose-950 dark:text-rose-200 border-rose-300 dark:border-rose-800 font-semibold'
+                        : leaveInfo.order === 3
+                        ? 'bg-amber-100 text-amber-800 dark:bg-amber-950 dark:text-amber-300 border-amber-300 dark:border-amber-800 font-semibold'
+                        : 'bg-purple-50 text-[#7749BC] dark:bg-purple-950 dark:text-purple-300 border-purple-200 dark:border-purple-800'
+                    }`}
+                  >
+                    {leaveInfo.isOverQuota
+                      ? `⚠️ เกินโควตา 20% (ครั้งที่ ${leaveInfo.order})`
+                      : `ครั้งที่ ${leaveInfo.order} / 3`}
+                  </span>
                   <span className="flex items-center gap-1">
                     <Calendar className="w-3 h-3 text-[#7749BC] dark:text-purple-400" />
                     <span>

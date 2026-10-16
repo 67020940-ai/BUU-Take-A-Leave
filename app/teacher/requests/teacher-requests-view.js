@@ -955,9 +955,29 @@ export default function TeacherRequestsView({
             <h3 className="text-base font-bold text-neutral-900 dark:text-neutral-100">
               ยืนยันการไม่อนุมัติคำขอลา
             </h3>
-            <p className="text-xs text-neutral-500">
-              นิสิต: {actionModal.leave.studentName} ({actionModal.leave.studentCode})
-            </p>
+            <div className="flex items-center justify-between gap-2 flex-wrap">
+              <p className="text-xs text-neutral-500">
+                นิสิต: <strong className="text-neutral-800 dark:text-neutral-200">{actionModal.leave.studentName}</strong> ({actionModal.leave.studentCode})
+              </p>
+              {(() => {
+                const modalLeaveInfo = getStudentLeaveInfo(actionModal.leave);
+                return (
+                  <span
+                    className={`text-[10px] font-bold px-2 py-0.5 rounded-full border ${
+                      modalLeaveInfo.isOverQuota
+                        ? 'bg-rose-100 text-rose-800 dark:bg-rose-950 dark:text-rose-200 border-rose-300 dark:border-rose-800 font-semibold'
+                        : modalLeaveInfo.order === 3
+                        ? 'bg-amber-100 text-amber-800 dark:bg-amber-950 dark:text-amber-300 border-amber-300 dark:border-amber-800 font-semibold'
+                        : 'bg-purple-50 text-[#7749BC] dark:bg-purple-950 dark:text-purple-300 border-purple-200 dark:border-purple-800'
+                    }`}
+                  >
+                    {modalLeaveInfo.isOverQuota
+                      ? `⚠️ เกินโควตา (ครั้งที่ ${modalLeaveInfo.order})`
+                      : `ครั้งที่ ${modalLeaveInfo.order} / 3`}
+                  </span>
+                );
+              })()}
+            </div>
 
             <div>
               <label className="block text-xs font-bold text-neutral-700 dark:text-neutral-300 mb-1">
