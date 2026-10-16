@@ -52,10 +52,37 @@ export default function WireframeStatsView({
   leaves = [],
   rosterByCourse = {},
 }) {
+  // Controls & States
+  const [semester, setSemester] = useState('1/2569');
+  const [activeStatsView, setActiveStatsView] = useState('current'); // 'current' | 'archive'
+  const [studentSearch, setStudentSearch] = useState('');
+  const [selectedLeaveTypeFilter, setSelectedLeaveTypeFilter] = useState(null); // 'all' | 'ป่วย' | 'กิจ' | 'กิจกรรม' | 'อื่น ๆ'
+  const [mobileSidebarOpen, setMobileSidebarOpen] = useState(false);
+  const [currentPage, setCurrentPage] = useState(1);
+  const pageSize = 10;
+
+  const availableSemesters = useMemo(() => {
+    const set = new Set();
+    courses.forEach((c) => {
+      if (c.term) set.add(c.term);
+    });
+    set.add('2/2569');
+    set.add('1/2569');
+    set.add('2/2568');
+    set.add('1/2568');
+    return Array.from(set);
+  }, [courses]);
+
+  const coursesForSemester = useMemo(() => {
+    if (!semester) return courses;
+    const match = courses.filter((c) => !c.term || c.term === semester);
+    return match.length > 0 ? match : courses;
+  }, [courses, semester]);
+
   // 1. Group courses by unique Subject (Code + Acronym)
   const subjectGroups = useMemo(() => {
     const map = new Map();
-    courses.forEach((c) => {
+    coursesForSemester.forEach((c) => {
       const key = c.acronym || c.code;
       if (!map.has(key)) {
         map.set(key, {
@@ -77,12 +104,25 @@ export default function WireframeStatsView({
       }
     });
     return Array.from(map.values());
-  }, [courses]);
+  }, [coursesForSemester]);
 
-  // Selected Subject (default to first subject, e.g. SA)
+  // Selected Subject (default to first subject)
   const [selectedSubjectKey, setSelectedSubjectKey] = useState(
     subjectGroups[0]?.key || 'SA'
   );
+
+  // Sync selected subject when semester changes
+  useEffect(() => {
+    if (subjectGroups.length > 0) {
+      const exists = subjectGroups.some((s) => s.key === selectedSubjectKey);
+      if (!exists) {
+        setSelectedSubjectKey(subjectGroups[0].key);
+        setSelectedCourseId(subjectGroups[0].sections[0]?.id || null);
+        setSelectedLeaveTypeFilter(null);
+        setCurrentPage(1);
+      }
+    }
+  }, [subjectGroups, selectedSubjectKey]);
 
   const currentSubject = useMemo(() => {
     return subjectGroups.find((s) => s.key === selectedSubjectKey) || subjectGroups[0] || null;
@@ -112,15 +152,6 @@ export default function WireframeStatsView({
   }, [courses, selectedCourseId, currentSubject]);
 
   const displayGroup = selectedCourse?.group || '01';
-
-  // Controls & States
-  const [semester, setSemester] = useState('1/2569');
-  const [activeStatsView, setActiveStatsView] = useState('current'); // 'current' | 'archive'
-  const [studentSearch, setStudentSearch] = useState('');
-  const [selectedLeaveTypeFilter, setSelectedLeaveTypeFilter] = useState(null); // 'all' | 'ป่วย' | 'กิจ' | 'กิจกรรม' | 'อื่น ๆ'
-  const [mobileSidebarOpen, setMobileSidebarOpen] = useState(false);
-  const [currentPage, setCurrentPage] = useState(1);
-  const pageSize = 10;
 
   // Sync archive query param
   useEffect(() => {
@@ -406,6 +437,7 @@ export default function WireframeStatsView({
           user={user}
           semester={semester}
           onSemesterChange={setSemester}
+          availableSemesters={availableSemesters}
           searchValue={studentSearch}
           onSearchChange={setStudentSearch}
           searchPlaceholder="ค้นหารหัสนิสิต หรือชื่อ-นามสกุล..."

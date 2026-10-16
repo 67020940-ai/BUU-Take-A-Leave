@@ -176,11 +176,13 @@ export default function StudentHomepageView({
     });
   }, [summaries, selectedTerm]);
 
-  // Available courses list for LeaveForm
+  // Available courses list for LeaveForm (filtered by selected semester)
   const availableCourses = useMemo(() => {
-    if (courses && courses.length > 0) return courses;
-    return summaries.map((s) => s.course).filter(Boolean);
-  }, [courses, summaries]);
+    const list = (courses && courses.length > 0) ? courses : summaries.map((s) => s.course).filter(Boolean);
+    if (!selectedTerm) return list;
+    const filtered = list.filter((c) => !c.term || c.term === selectedTerm);
+    return filtered.length > 0 ? filtered : list;
+  }, [courses, summaries, selectedTerm]);
 
   return (
     <div className="min-h-screen bg-slate-50/70 dark:bg-slate-950 flex flex-col lg:flex-row font-sans text-neutral-800 dark:text-neutral-100">

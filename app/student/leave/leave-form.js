@@ -1,7 +1,7 @@
 'use client';
 /* Hallmark · macrostructure: Long Document / Focus Form · theme: BUU Utilitarian · pre-emit critique: P5 H5 E5 S5 R5 V5 */
 
-import { useMemo, useState } from 'react';
+import { useMemo, useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import {
   AlertCircle,
@@ -89,6 +89,16 @@ export default function LeaveForm({
   const [touched, setTouched] = useState({});
   const [showConfirmModal, setShowConfirmModal] = useState(false);
   const [acknowledgedOverQuota, setAcknowledgedOverQuota] = useState(false);
+
+  // Sync courseId when available courses update (e.g. semester switched)
+  useEffect(() => {
+    if (courses && courses.length > 0) {
+      const exists = courses.some((c) => c.id === form.courseId);
+      if (!exists && !isLocked) {
+        setForm((prev) => ({ ...prev, courseId: courses[0].id }));
+      }
+    }
+  }, [courses, isLocked, form.courseId]);
 
   // รายวิชาที่เลือกในปัจจุบัน
   const currentCourse = useMemo(() => {
@@ -383,7 +393,7 @@ export default function LeaveForm({
                 >
                   {courses.map((c) => (
                     <option key={c.id} value={c.id}>
-                      {c.code} {c.name} {c.group ? `(กลุ่ม ${c.group})` : ''}
+                      {c.code} {c.name} {c.group ? `(กลุ่ม ${c.group})` : ''} {c.term ? `[เทอม ${c.term}]` : ''}
                     </option>
                   ))}
                 </select>
