@@ -25,6 +25,7 @@ import {
 import { STATUS_DETAILS, LEAVE_TYPE_DETAILS, LEAVE_TYPE_DEFAULT, formatThaiDate, formatThaiDateTime, sortAcademicTerms, formatTeacherFullName } from '@/lib/ui';
 import AttachmentPreview from '@/components/AttachmentPreview';
 import CancelLeaveButton from '@/components/CancelLeaveButton';
+import { calculateLeaveStats, formatLeaveClassTime } from '@/lib/leave-stats';
 
 const LEAVE_CATEGORIES = [
   { key: 'all', label: 'ทุกประเภท', icon: Layers },
@@ -130,10 +131,8 @@ export default function StudentHistoryView({ leaves: initialLeaves = [], summari
       }
 
       // 2. Status filter
-      if (selectedStatus === 'all') {
-        if (l.status === 'ยกเลิก') return false;
-      } else if (l.status !== selectedStatus) {
-        return false;
+      if (selectedStatus !== 'all') {
+        if (l.status !== selectedStatus) return false;
       }
 
       // 3. Type filter
@@ -185,9 +184,9 @@ export default function StudentHistoryView({ leaves: initialLeaves = [], summari
     return filteredLeaves.slice(start, start + pageSize);
   }, [filteredLeaves, currentPage, pageSize]);
 
-  const pendingCount = useMemo(() => leaves.filter((l) => l.status === 'รออนุมัติ').length, [leaves]);
-  const approvedCount = useMemo(() => leaves.filter((l) => l.status === 'อนุมัติ').length, [leaves]);
-  const rejectedCount = useMemo(() => leaves.filter((l) => l.status === 'ไม่อนุมัติ').length, [leaves]);
+  const stats = useMemo(() => {
+    return calculateLeaveStats(leaves, selectedTerm, summaries);
+  }, [leaves, selectedTerm, summaries]);
 
   return (
     <div className="space-y-6">
@@ -205,7 +204,12 @@ export default function StudentHistoryView({ leaves: initialLeaves = [], summari
           title="คลิกเพื่อแสดงคำขอทั้งหมด"
         >
           <p className="text-[11px] font-semibold text-neutral-500 dark:text-neutral-400">คำร้องขอลาทั้งหมด</p>
-          <p className="text-xl font-bold text-neutral-900 dark:text-neutral-100 mt-0.5">: {leaves.filter((l) => l.status !== 'ยกเลิก').length} รายการ</p>
+          <p className="text-xl font-bold text-neutral-900 dark:text-neutral-100 mt-0.5">{stats.total} รายการ</p>
+          {stats.hasCancelled && (
+            <p className="text-[10px] text-neutral-400 dark:text-neutral-500 mt-0.5 font-medium">
+              รวมยกเลิก {stats.cancelled}
+            </p>
+          )}
         </button>
 
         {/* Box 2: อนุมัติแล้ว */}
@@ -220,7 +224,7 @@ export default function StudentHistoryView({ leaves: initialLeaves = [], summari
           title="คลิกเพื่อกรองเฉพาะที่อนุมัติแล้ว"
         >
           <p className="text-[11px] font-semibold text-emerald-600 dark:text-emerald-400">อนุมัติ</p>
-          <p className="text-xl font-bold text-emerald-700 dark:text-emerald-300 mt-0.5">: {approvedCount} รายการ</p>
+          <p className="text-xl font-bold text-emerald-700 dark:text-emerald-300 mt-0.5">{stats.approved} รายการ</p>
         </button>
 
         {/* Box 3: รออนุมัติ */}
@@ -235,7 +239,7 @@ export default function StudentHistoryView({ leaves: initialLeaves = [], summari
           title="คลิกเพื่อกรองเฉพาะที่รออนุมัติ"
         >
           <p className="text-[11px] font-semibold text-amber-600 dark:text-amber-400">รออนุมัติ</p>
-          <p className="text-xl font-bold text-amber-700 dark:text-amber-300 mt-0.5">: {pendingCount} รายการ</p>
+          <p className="text-xl font-bold text-amber-700 dark:text-amber-300 mt-0.5">{stats.pending} รายการ</p>
         </button>
 
         {/* Box 4: ไม่อนุมัติ */}
@@ -250,7 +254,7 @@ export default function StudentHistoryView({ leaves: initialLeaves = [], summari
           title="คลิกเพื่อกรองเฉพาะที่ไม่อนุมัติ"
         >
           <p className="text-[11px] font-semibold text-rose-600 dark:text-rose-400">ไม่อนุมัติ</p>
-          <p className="text-xl font-bold text-rose-700 dark:text-rose-300 mt-0.5">: {rejectedCount} รายการ</p>
+          <p className="text-xl font-bold text-rose-700 dark:text-rose-300 mt-0.5">{stats.rejected} รายการ</p>
         </button>
       </div>
 
@@ -447,12 +451,10 @@ export default function StudentHistoryView({ leaves: initialLeaves = [], summari
                         {leave.endDate && leave.endDate !== leave.startDate ? ` - ${formatThaiDate(leave.endDate)}` : ''}
                       </span>
                     </span>
-                    {leave.period && (
-                      <span className="flex items-center space-x-1">
-                        <Clock className="w-3.5 h-3.5 text-neutral-400" />
-                        <span>{leave.period}</span>
-                      </span>
-                    )}
+                    <span className="flex items-center space-x-1 tabular-nums font-medium text-neutral-600 dark:text-neutral-300">
+                      <Clock className="w-3.5 h-3.5 text-[#7749BC] dark:text-purple-400 shrink-0" />
+                      <span>{formatLeaveClassTime(leave)}</span>
+                    </span>
                     {leave.attachment && (
                       <AttachmentPreview src={`/api/leaves/attachment/${leave.attachment}`} label="ดูหลักฐานแนบ" />
                     )}
@@ -578,10 +580,10 @@ export default function StudentHistoryView({ leaves: initialLeaves = [], summari
                 <div className="p-3 rounded-2xl bg-neutral-50 dark:bg-slate-800/60 border border-neutral-200/60 dark:border-slate-700/60">
                   <div className="flex items-center gap-1.5 text-[11px] text-neutral-500 dark:text-neutral-400 mb-1">
                     <Clock className="w-3.5 h-3.5 text-[#7749BC] dark:text-purple-400" />
-                    <span>ประเภท & ช่วงเวลา</span>
+                    <span>ประเภท & เวลาเรียน</span>
                   </div>
                   <p className="text-xs font-semibold text-neutral-900 dark:text-neutral-100">{detailModal.leave.type}</p>
-                  <p className="text-[11px] text-neutral-500">{detailModal.leave.period}</p>
+                  <p className="text-[11px] text-neutral-600 dark:text-neutral-400 tabular-nums font-medium">{formatLeaveClassTime(detailModal.leave)}</p>
                 </div>
               </div>
 

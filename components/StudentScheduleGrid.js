@@ -46,6 +46,69 @@ const DAYS = [
 
 import { getCoursePrep } from '@/lib/coursePrepData';
 import { formatTeacherFullName } from '@/lib/ui';
+import { normalizeDayKey } from '@/lib/leave-stats';
+
+function computeScheduleLanes(courses) {
+  if (!courses || courses.length === 0) {
+    return { laneCount: 1, placedCourses: [] };
+  }
+
+  // 1. Detect collisions with other courses
+  const withCollision = courses.map((c) => {
+    const cEnd = c.startSlot + c.slotSpan;
+    const hasCollision = courses.some(
+      (other) =>
+        other.id !== c.id &&
+        c.startSlot < (other.startSlot + other.slotSpan) &&
+        other.startSlot < cEnd
+    );
+    return { ...c, hasCollision };
+  });
+
+  // 2. Sort by startSlot asc, slotSpan desc
+  const sorted = [...withCollision].sort((a, b) => {
+    if (a.startSlot !== b.startSlot) return a.startSlot - b.startSlot;
+    return b.slotSpan - a.slotSpan;
+  });
+
+  // 3. Assign Google Calendar style lanes
+  const lanes = [];
+  const placedCourses = [];
+
+  for (const course of sorted) {
+    const courseEnd = course.startSlot + course.slotSpan;
+    let placedLaneIndex = -1;
+
+    for (let lIdx = 0; lIdx < lanes.length; lIdx++) {
+      const lane = lanes[lIdx];
+      const overlapsInLane = lane.some(
+        (existing) =>
+          course.startSlot < (existing.startSlot + existing.slotSpan) &&
+          existing.startSlot < courseEnd
+      );
+      if (!overlapsInLane) {
+        lane.push(course);
+        placedLaneIndex = lIdx;
+        break;
+      }
+    }
+
+    if (placedLaneIndex === -1) {
+      lanes.push([course]);
+      placedLaneIndex = lanes.length - 1;
+    }
+
+    placedCourses.push({
+      ...course,
+      laneIndex: placedLaneIndex,
+    });
+  }
+
+  return {
+    laneCount: Math.max(1, lanes.length),
+    placedCourses,
+  };
+}
 
 export default function StudentScheduleGrid({
   summaries = [],
@@ -70,14 +133,8 @@ export default function StudentScheduleGrid({
         const c = s.course || s;
         if (!c) return null;
 
-        // Parse day code (e.g. MO, TU, Monday, วันจันทร์)
-        let dayKey = 'MO';
-        const rawDay = String(c.day || '').trim().toUpperCase();
-        if (rawDay.includes('MO') || rawDay.includes('MON') || rawDay.includes('จันทร์')) dayKey = 'MO';
-        else if (rawDay.includes('TU') || rawDay.includes('TUE') || rawDay.includes('อังคาร')) dayKey = 'TU';
-        else if (rawDay.includes('WE') || rawDay.includes('WED') || rawDay.includes('พุธ')) dayKey = 'WE';
-        else if (rawDay.includes('TH') || rawDay.includes('THU') || rawDay.includes('พฤหัส')) dayKey = 'TH';
-        else if (rawDay.includes('FR') || rawDay.includes('FRI') || rawDay.includes('ศุกร์')) dayKey = 'FR';
+        // Parse standardized day key using centralized helper
+        const dayKey = normalizeDayKey(c.day) || 'MO';
 
         // Parse time: e.g. "09:00-11:50" or "13:00 - 16:50"
         let startH = 9;
@@ -233,27 +290,45 @@ export default function StudentScheduleGrid({
 
             return (
               <div className="grid grid-cols-1 md:grid-cols-2 gap-3.5">
-                {mobileDayCourses.map((c) => (
-                  <div
-                    key={c.id}
-                    className="p-4 rounded-2xl border-2 border-purple-200 dark:border-purple-800/80 bg-purple-50/30 dark:bg-slate-900 shadow-2xs space-y-3 flex flex-col justify-between"
-                  >
-                    <div className="space-y-2">
-                      <div className="flex items-start justify-between gap-2">
-                        <div>
-                          <div className="flex items-center gap-1.5">
-                            <span className="font-mono font-black text-sm text-[#7749BC] dark:text-purple-300">
-                              {c.code}
-                            </span>
-                            <span className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-purple-100 dark:bg-purple-950 text-[#7749BC] dark:text-purple-300">
-                              กลุ่ม {c.group}
-                            </span>
+                {mobileDayCourses.map((c) => {
+                  const hasCollision = mobileDayCourses.some(
+                    (other) =>
+                      other.id !== c.id &&
+                      c.startSlot < (other.startSlot + other.slotSpan) &&
+                      other.startSlot < (c.startSlot + c.slotSpan)
+                  );
+
+                  return (
+                    <div
+                      key={c.id}
+                      className={`p-4 rounded-2xl shadow-2xs space-y-3 flex flex-col justify-between transition-all ${
+                        hasCollision
+                          ? 'border-2 border-rose-500 ring-2 ring-rose-500/40 bg-rose-50/40 dark:bg-rose-950/20'
+                          : 'border-2 border-purple-200 dark:border-purple-800/80 bg-purple-50/30 dark:bg-slate-900'
+                      }`}
+                      title={hasCollision ? 'เวลาเรียนชนกับวิชาอื่น' : undefined}
+                    >
+                      <div className="space-y-2">
+                        <div className="flex items-start justify-between gap-2">
+                          <div>
+                            <div className="flex items-center gap-1.5 flex-wrap">
+                              <span className="font-mono font-black text-sm text-[#7749BC] dark:text-purple-300">
+                                {c.code}
+                              </span>
+                              <span className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-purple-100 dark:bg-purple-950 text-[#7749BC] dark:text-purple-300">
+                                กลุ่ม {c.group}
+                              </span>
+                              {hasCollision && (
+                                <span className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-rose-100 dark:bg-rose-950 text-rose-700 dark:text-rose-300 border border-rose-200 dark:border-rose-800">
+                                  เวลาเรียนชนกับวิชาอื่น
+                                </span>
+                              )}
+                            </div>
+                            <h4 className="font-bold text-xs text-neutral-900 dark:text-white mt-1">
+                              {c.name}
+                            </h4>
                           </div>
-                          <h4 className="font-bold text-xs text-neutral-900 dark:text-white mt-1">
-                            {c.name}
-                          </h4>
                         </div>
-                      </div>
 
                       <div className="grid grid-cols-2 gap-2 text-[11px] text-neutral-600 dark:text-neutral-400">
                         <div className="flex items-center gap-1.5">
@@ -295,8 +370,9 @@ export default function StudentScheduleGrid({
                       )}
                     </div>
                   </div>
-                ))}
-              </div>
+                );
+              })}
+            </div>
             );
           })()}
         </div>
@@ -308,107 +384,128 @@ export default function StudentScheduleGrid({
           <div className="min-w-[850px] p-4">
             {/* Header Row: Days label + Time Slots */}
             <div className="grid grid-cols-12 gap-1.5 mb-2 text-center text-xs font-bold text-neutral-500 dark:text-neutral-400">
-              <div className="col-span-1 py-2 bg-neutral-100 dark:bg-slate-800/80 rounded-xl flex items-center justify-center font-bold">
+              <div className="col-span-1 py-2 bg-neutral-100 dark:bg-slate-800 rounded-xl flex items-center justify-center font-bold sticky left-0 z-20 shadow-xs border border-neutral-200/50 dark:border-slate-700/50">
                 วัน
               </div>
               {TIME_SLOTS.map((t, idx) => (
-              <div
-                key={idx}
-                className="col-span-1 py-2 bg-neutral-100 dark:bg-slate-800/80 rounded-xl text-[11px] truncate px-0.5"
-                title={t.label}
-              >
-                {t.label.split(' - ')[0]}
-              </div>
-            ))}
-          </div>
-
-          {/* Schedule Body: Monday through Friday */}
-          <div className="space-y-2">
-            {DAYS.map((day) => {
-              const dayCourses = parsedCourses.filter((c) => c.dayKey === day.key);
-
-              return (
                 <div
-                  key={day.key}
-                  className="grid grid-cols-12 gap-1.5 min-h-[114px] items-stretch p-1.5 rounded-2xl bg-neutral-50/50 dark:bg-slate-900/50 border border-neutral-150 dark:border-slate-800/70"
+                  key={idx}
+                  className="col-span-1 py-2 bg-neutral-100 dark:bg-slate-800/80 rounded-xl text-[11px] truncate px-0.5"
+                  title={t.label}
                 >
-                  {/* Day Label Column */}
+                  {t.label.split(' - ')[0]}
+                </div>
+              ))}
+            </div>
+
+            {/* Schedule Body: Monday through Friday */}
+            <div className="space-y-2">
+              {DAYS.map((day) => {
+                const dayCourses = parsedCourses.filter((c) => c.dayKey === day.key);
+                const { laneCount, placedCourses } = computeScheduleLanes(dayCourses);
+                const rowMinHeight = Math.max(114, laneCount * 96 + 18);
+
+                return (
                   <div
-                    className={`col-span-1 flex flex-col items-center justify-center rounded-xl p-2 font-bold text-xs ${day.bgHeader}`}
+                    key={day.key}
+                    style={{ minHeight: `${rowMinHeight}px` }}
+                    className="grid grid-cols-12 gap-1.5 items-stretch p-1.5 rounded-2xl bg-neutral-50/50 dark:bg-slate-900/50 border border-neutral-150 dark:border-slate-800/70"
                   >
-                    <span className="font-bold text-sm tracking-tight">{day.dayTh.replace('วัน', '')}</span>
-                    <span className="text-[11px] opacity-75 font-mono font-medium">{day.dayEn.slice(0, 3)}</span>
-                  </div>
+                    {/* Day Label Column (Sticky left on mobile scroll) */}
+                    <div
+                      style={{ minHeight: `${rowMinHeight - 12}px` }}
+                      className={`col-span-1 flex flex-col items-center justify-center rounded-xl p-2 font-bold text-xs sticky left-0 z-20 shadow-xs border border-neutral-200/50 dark:border-slate-700/50 ${day.bgHeader}`}
+                    >
+                      <span className="font-bold text-sm tracking-tight">{day.dayTh.replace('วัน', '')}</span>
+                      <span className="text-[11px] opacity-75 font-mono font-medium">{day.dayEn.slice(0, 3)}</span>
+                    </div>
 
-                  {/* 11 Time Slots */}
-                  <div className="col-span-11 relative grid grid-cols-11 gap-1.5 min-h-[104px]">
-                    {/* Background Grid Cells */}
-                    {TIME_SLOTS.map((_, sIdx) => (
-                      <div
-                        key={sIdx}
-                        className="border border-dashed border-neutral-200/60 dark:border-slate-800/80 rounded-xl h-full min-h-[104px]"
-                      />
-                    ))}
-
-                    {/* Render Courses positioned absolute/grid */}
-                    {dayCourses.map((c) => {
-                      const leftPercent = (c.startSlot / 11) * 100;
-                      const widthPercent = (c.slotSpan / 11) * 100;
-
-                      return (
+                    {/* 11 Time Slots Container */}
+                    <div
+                      className="col-span-11 relative grid grid-cols-11 gap-1.5"
+                      style={{ minHeight: `${rowMinHeight - 12}px` }}
+                    >
+                      {/* Background Grid Cells */}
+                      {TIME_SLOTS.map((_, sIdx) => (
                         <div
-                          key={c.id}
-                          onClick={() => {
-                            setSelectedCourse(c);
-                            setModalTab('prep');
-                          }}
-                          style={{
-                            left: `${leftPercent}%`,
-                            width: `calc(${widthPercent}% - 6px)`,
-                          }}
-                          className={`absolute top-1 bottom-1 p-2.5 sm:p-3 rounded-2xl cursor-pointer transition-all duration-150 flex flex-col justify-between overflow-hidden shadow-xs hover:shadow-md hover:scale-[1.01] ${
-                            c.isMatch
-                              ? 'bg-[#DDD6FE] dark:bg-purple-900/90 border border-purple-300 dark:border-purple-600 text-neutral-900 dark:text-white ring-2 ring-[#7749BC]/30'
-                              : 'bg-neutral-200/60 dark:bg-slate-800/60 border border-neutral-300 dark:border-slate-700 opacity-40 text-neutral-600'
-                          }`}
-                          title={`${c.code} ${c.name} (${c.room})`}
-                        >
-                          {/* Card Top: Code + Group */}
-                          <div className="min-w-0">
-                            <div className="flex items-center justify-between gap-1 mb-1">
-                              <span className="font-extrabold text-xs font-mono truncate text-purple-950 dark:text-purple-100">
-                                {c.code}
-                              </span>
-                              <span className="text-[10px] px-2 py-0.5 rounded-full bg-white/90 dark:bg-purple-950/90 font-bold text-[#7749BC] dark:text-purple-300 shrink-0 border border-purple-200/50 dark:border-purple-700/50 shadow-2xs">
-                                กลุ่ม {c.group}
-                              </span>
+                          key={sIdx}
+                          className="border border-dashed border-neutral-200/60 dark:border-slate-800/80 rounded-xl h-full"
+                          style={{ minHeight: `${rowMinHeight - 12}px` }}
+                        />
+                      ))}
+
+                      {/* Render Courses in multi-lane Google Calendar layout */}
+                      {placedCourses.map((c) => {
+                        const leftPercent = (c.startSlot / 11) * 100;
+                        const widthPercent = (c.slotSpan / 11) * 100;
+                        const laneTop = laneCount > 1 ? c.laneIndex * 96 + 4 : 4;
+                        const laneHeight = laneCount > 1 ? '90px' : 'calc(100% - 8px)';
+
+                        return (
+                          <div
+                            key={c.id}
+                            onClick={() => {
+                              setSelectedCourse(c);
+                              setModalTab('prep');
+                            }}
+                            style={{
+                              left: `${leftPercent}%`,
+                              width: `calc(${widthPercent}% - 6px)`,
+                              top: `${laneTop}px`,
+                              height: laneHeight,
+                            }}
+                            className={`absolute p-2.5 sm:p-3 rounded-2xl cursor-pointer transition-all duration-150 flex flex-col justify-between overflow-hidden shadow-xs hover:shadow-md hover:scale-[1.01] ${
+                              c.hasCollision
+                                ? 'bg-rose-50/95 dark:bg-rose-950/85 border-2 border-rose-500 ring-2 ring-rose-500/40 text-neutral-900 dark:text-white'
+                                : c.isMatch
+                                ? 'bg-[#DDD6FE] dark:bg-purple-900/90 border border-purple-300 dark:border-purple-600 text-neutral-900 dark:text-white ring-2 ring-[#7749BC]/30'
+                                : 'bg-neutral-200/60 dark:bg-slate-800/60 border border-neutral-300 dark:border-slate-700 opacity-40 text-neutral-600'
+                            }`}
+                            title={c.hasCollision ? 'เวลาเรียนชนกับวิชาอื่น' : `${c.code} ${c.name} (${c.room})`}
+                          >
+                            {/* Card Top: Code + Group + Collision badge */}
+                            <div className="min-w-0">
+                              <div className="flex items-center justify-between gap-1 mb-1">
+                                <span className={`font-extrabold text-xs font-mono truncate ${c.hasCollision ? 'text-rose-950 dark:text-rose-200' : 'text-purple-950 dark:text-purple-100'}`}>
+                                  {c.code}
+                                </span>
+                                <div className="flex items-center gap-1 shrink-0">
+                                  {c.hasCollision && (
+                                    <span className="text-[9px] px-1.5 py-0.5 rounded-full bg-rose-500 text-white font-bold shrink-0 shadow-2xs">
+                                      ชนเวลา
+                                    </span>
+                                  )}
+                                  <span className="text-[10px] px-2 py-0.5 rounded-full bg-white/90 dark:bg-slate-800/90 font-bold text-neutral-800 dark:text-neutral-200 shrink-0 border border-neutral-200/50 dark:border-slate-700 shadow-2xs">
+                                    กลุ่ม {c.group}
+                                  </span>
+                                </div>
+                              </div>
+
+                              {/* Card Middle: Full Course Name */}
+                              <p className="text-xs font-bold leading-snug line-clamp-1 text-neutral-900 dark:text-white">
+                                {c.name}
+                              </p>
                             </div>
 
-                            {/* Card Middle: Full Course Name */}
-                            <p className="text-xs font-bold leading-snug line-clamp-2 text-neutral-900 dark:text-white">
-                              {c.name}
-                            </p>
+                            {/* Card Bottom: Room & Time */}
+                            <div className="flex items-center justify-between gap-2 pt-1 mt-auto border-t border-neutral-200/60 dark:border-slate-700/60 text-[10px]">
+                              <span className="flex items-center gap-1 font-semibold text-neutral-800 dark:text-neutral-200 truncate">
+                                <MapPin className="w-3 h-3 shrink-0 text-[#7749BC] dark:text-purple-300" />
+                                <span className="truncate font-mono">{c.room}</span>
+                              </span>
+                              <span className="flex items-center gap-1 font-mono text-[10px] text-neutral-700 dark:text-neutral-300 font-semibold shrink-0">
+                                <Clock className="w-3 h-3 shrink-0 text-[#7749BC] dark:text-purple-300" />
+                                <span>{c.time}</span>
+                              </span>
+                            </div>
                           </div>
-
-                          {/* Card Bottom: Room & Time (Strictly on its own row, never overlapping) */}
-                          <div className="flex items-center justify-between gap-2 pt-1.5 mt-auto border-t border-purple-300/70 dark:border-purple-700/70 text-[11px]">
-                            <span className="flex items-center gap-1 font-semibold text-neutral-800 dark:text-purple-200 truncate">
-                              <MapPin className="w-3.5 h-3.5 shrink-0 text-[#7749BC] dark:text-purple-300" />
-                              <span className="truncate font-mono">{c.room}</span>
-                            </span>
-                            <span className="flex items-center gap-1 font-mono text-[10px] text-neutral-700 dark:text-purple-300 font-semibold shrink-0">
-                              <Clock className="w-3 h-3 shrink-0 text-[#7749BC] dark:text-purple-300" />
-                              <span>{c.time}</span>
-                            </span>
-                          </div>
-                        </div>
-                      );
-                    })}
+                        );
+                      })}
+                    </div>
                   </div>
-                </div>
-              );
-            })}
-          </div>
+                );
+              })}
+            </div>
         </div>
       </div>
       )}

@@ -37,6 +37,7 @@ import {
   formatThaiDateTime,
   sortAcademicTerms,
 } from '@/lib/ui';
+import { formatLeaveClassTime } from '@/lib/leave-stats';
 
 function initials(name) {
   return (name || '?').trim().charAt(0).toUpperCase();
@@ -771,7 +772,7 @@ export default function TeacherHistoryView({
             <div className="p-4 rounded-2xl bg-neutral-50 dark:bg-slate-800/60 border border-neutral-200/60 space-y-2 text-xs">
               <p><strong>วิชา:</strong> {detailModal.leave.courseCode} {detailModal.leave.courseName}</p>
               <p><strong>ประเภทการลา:</strong> {detailModal.leave.type}</p>
-              <p><strong>ช่วงเวลา:</strong> {formatThaiDate(detailModal.leave.startDate)} ({detailModal.leave.period})</p>
+              <p><strong>ช่วงเวลา:</strong> {formatThaiDate(detailModal.leave.startDate)}{detailModal.leave.endDate && detailModal.leave.endDate !== detailModal.leave.startDate ? ` - ${formatThaiDate(detailModal.leave.endDate)}` : ''} (<span className="tabular-nums font-medium">{formatLeaveClassTime(detailModal.leave)}</span>)</p>
               <p><strong>เหตุผลนิสิต:</strong> {detailModal.leave.reason || '-'}</p>
               <p><strong>สถานะปัจจุบัน:</strong> {detailModal.leave.status}</p>
               <p><strong>ความเห็นอาจารย์:</strong> {detailModal.leave.teacherComment || 'ไม่มี'}</p>

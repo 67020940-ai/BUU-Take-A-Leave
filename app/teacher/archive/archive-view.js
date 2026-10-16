@@ -28,6 +28,7 @@ import {
 } from 'lucide-react';
 import { STATUS_DETAILS, LEAVE_TYPE_DETAILS, LEAVE_TYPE_DEFAULT, formatThaiDate, initials, sortAcademicTerms, isTermStartedOrPassed } from '@/lib/ui';
 import AttachmentPreview from '@/components/AttachmentPreview';
+import { formatLeaveClassTime } from '@/lib/leave-stats';
 
 export default function ArchiveView({ courses = [], leaves = [] }) {
   // Extract all unique academic terms that have already passed or started
@@ -472,8 +473,8 @@ export default function ArchiveView({ courses = [], leaves = [] }) {
                             ถึง {formatThaiDate(leave.endDate)}
                           </div>
                         )}
-                        <div className="text-[10px] text-neutral-400">
-                          {leave.period || 'เต็มวัน'}
+                        <div className="text-[10px] text-neutral-500 font-mono tabular-nums">
+                          {formatLeaveClassTime(leave)}
                         </div>
                       </td>
 
@@ -673,9 +674,9 @@ export default function ArchiveView({ courses = [], leaves = [] }) {
                             {leave.endDate && leave.endDate !== leave.startDate ? ` - ${formatThaiDate(leave.endDate)}` : ''}
                           </span>
                         </div>
-                        <div className="flex items-center gap-1 text-neutral-500 font-mono text-[10px]">
+                        <div className="flex items-center gap-1 text-neutral-500 font-mono text-[10px] tabular-nums">
                           <Clock className="w-3 h-3 text-neutral-400 shrink-0" />
-                          <span>{leave.period || 'เต็มวัน'}</span>
+                          <span>{formatLeaveClassTime(leave)}</span>
                         </div>
                       </div>
                     </div>

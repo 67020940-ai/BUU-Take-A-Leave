@@ -22,14 +22,13 @@ import {
 import { ATTACHMENT_FILENAME_RE } from '@/lib/uploads';
 
 const LEAVE_TYPES = ['ลาป่วย', 'ลากิจส่วนตัว', 'ลากิจกรรม', 'เหตุฉุกเฉิน', 'อื่นๆ', 'อื่น ๆ'];
-const LEAVE_PERIODS = ['เต็มคาบเรียน 3 ชั่วโมง'];
 const DATE_RE = /^\d{4}-\d{2}-\d{2}$/;
 const REASON_LIMIT = 300;
 
 async function enrichLeave(leave) {
   if (!leave) return null;
   const [course, student] = await Promise.all([
-    getCourse(leave.courseId),
+    leave.course || getCourse(leave.courseId),
     getUserById(leave.studentId),
   ]);
   return {
@@ -40,11 +39,15 @@ async function enrichLeave(leave) {
     courseTerm: course?.term || leave.courseTerm || '',
     courseGroup: course?.group || leave.courseGroup || leave.section || '',
     section: course?.group || leave.section || leave.courseGroup || '',
+    courseDay: course?.day || leave.courseDay || '',
+    courseTime: course?.time || leave.courseTime || '',
+    courseRoom: course?.room || leave.courseRoom || '',
     teacherName: course?.teacher?.name || course?.teacherName || leave.teacherName || '',
     studentName: student?.name || leave.studentName || '-',
     studentCode: student?.studentId || leave.studentCode || '-',
     studentEmail: student?.email || leave.studentEmail || '',
     studentAvatar: student?.avatar || leave.studentAvatar || null,
+    course: course || leave.course || null,
   };
 }
 
@@ -75,7 +78,7 @@ export async function POST(request) {
   if (!body.courseId || !body.type || !body.period || !body.startDate || !body.endDate || !body.reason) {
     return NextResponse.json({ error: 'กรอกข้อมูลให้ครบทุกช่อง' }, { status: 400 });
   }
-  if (!LEAVE_TYPES.includes(body.type) || !LEAVE_PERIODS.includes(body.period)) {
+  if (!LEAVE_TYPES.includes(body.type) || typeof body.period !== 'string' || !body.period.trim()) {
     return NextResponse.json({ error: 'ประเภทการลาหรือช่วงเวลาไม่ถูกต้อง' }, { status: 400 });
   }
   if (!DATE_RE.test(body.startDate) || !DATE_RE.test(body.endDate)) {

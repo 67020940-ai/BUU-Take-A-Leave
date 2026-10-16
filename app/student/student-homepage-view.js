@@ -34,6 +34,7 @@ import StudentScheduleView from './schedule/schedule-view';
 import { getCoursePrep } from '@/lib/coursePrepData';
 import { sortAcademicTerms, formatTeacherFullName } from '@/lib/ui';
 import { useSidebarCollapsed } from '@/lib/useSidebarCollapsed';
+import { calculateLeaveStats } from '@/lib/leave-stats';
 
 export default function StudentHomepageView({
   user,
@@ -163,12 +164,8 @@ export default function StudentHomepageView({
 
   // Statistics calculation for the 4 overview boxes (Student's own leaves)
   const stats = useMemo(() => {
-    const total = leavesList.length;
-    const approved = leavesList.filter((l) => l.status === 'อนุมัติ').length;
-    const pending = leavesList.filter((l) => l.status === 'รออนุมัติ').length;
-    const rejected = leavesList.filter((l) => l.status === 'ไม่อนุมัติ').length;
-    return { total, approved, pending, rejected };
-  }, [leavesList]);
+    return calculateLeaveStats(leavesList, 'all', summaries);
+  }, [leavesList, summaries]);
 
   // Filter summaries for the selected semester
   const currentSummaries = useMemo(() => {
@@ -236,6 +233,11 @@ export default function StudentHomepageView({
                       รายการ
                     </span>
                   </div>
+                  {stats.hasCancelled && (
+                    <p className="text-[10px] text-neutral-400 dark:text-neutral-500 mt-1 font-medium">
+                      รวมยกเลิก {stats.cancelled}
+                    </p>
+                  )}
                 </button>
 
                 {/* Box 2: อนุมัติ */}

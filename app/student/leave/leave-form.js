@@ -24,6 +24,7 @@ import {
 } from 'lucide-react';
 import AttachmentPreview from '@/components/AttachmentPreview';
 import { DAY_LABEL_TH, formatThaiDay, formatTeacherFullName } from '@/lib/ui';
+import { formatLeaveClassTime } from '@/lib/leave-stats';
 
 const inputCls =
   'w-full px-3.5 py-2.5 rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900 text-sm font-medium text-slate-900 dark:text-slate-100 placeholder:text-slate-400 focus:outline-none focus:border-[#7749BC] focus:ring-1 focus:ring-[#7749BC] transition-all shadow-2xs';
@@ -56,7 +57,7 @@ export default function LeaveForm({ courses, initialCourseId, lockCourse, initia
     courseId: initialCourseId || courses[0]?.id || '',
     type: initialValues?.type === 'อื่นๆ' ? 'อื่น ๆ' : initialValues?.type || 'ลาป่วย',
     otherTypeDetail: '',
-    period: initialValues?.period || 'เต็มคาบเรียน 3 ชั่วโมง',
+    period: initialValues?.period || '',
     startDate: initialValues?.startDate || '',
     endDate: initialValues?.endDate || '',
     reason: initialValues?.reason || '',
@@ -204,34 +205,42 @@ export default function LeaveForm({ courses, initialCourseId, lockCourse, initia
           ? `[ประเภท: ${form.otherTypeDetail.trim()}] ${form.reason.trim()}`
           : form.reason.trim();
 
-      const res = await fetch('/api/leaves', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          courseId: form.courseId,
-          type: form.type,
-          period: form.period,
+        const resolvedPeriod = formatLeaveClassTime({
           startDate: form.startDate,
           endDate: form.endDate,
-          reason: finalReason,
-          attachment: attachment?.url || attachment?.filename || null,
-          resubmitId: resubmitId || undefined,
-        }),
-      });
-      const data = await res.json().catch(() => ({}));
-      if (!res.ok) {
-        setError(data.error || `บันทึกไม่สำเร็จ (รหัสข้อผิดพลาด ${res.status}) กรุณาลองใหม่อีกครั้ง`);
-        return;
-      }
-      setForm({
-        courseId: courses[0]?.id || '',
-        type: 'ลาป่วย',
-        otherTypeDetail: '',
-        period: 'เต็มคาบเรียน 3 ชั่วโมง',
-        startDate: '',
-        endDate: '',
-        reason: '',
-      });
+          courseTime: currentCourse?.time,
+          courseDay: currentCourse?.day,
+          course: currentCourse,
+        });
+
+        const res = await fetch('/api/leaves', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            courseId: form.courseId,
+            type: form.type,
+            period: resolvedPeriod || 'เวลาเรียนตามตาราง',
+            startDate: form.startDate,
+            endDate: form.endDate,
+            reason: finalReason,
+            attachment: attachment?.url || attachment?.filename || null,
+            resubmitId: resubmitId || undefined,
+          }),
+        });
+        const data = await res.json().catch(() => ({}));
+        if (!res.ok) {
+          setError(data.error || `บันทึกไม่สำเร็จ (รหัสข้อผิดพลาด ${res.status}) กรุณาลองใหม่อีกครั้ง`);
+          return;
+        }
+        setForm({
+          courseId: courses[0]?.id || '',
+          type: 'ลาป่วย',
+          otherTypeDetail: '',
+          period: '',
+          startDate: '',
+          endDate: '',
+          reason: '',
+        });
       setAttachment(null);
       setTouched({});
       setSuccess('ส่งใบลาเรียบร้อยแล้ว รอการอนุมัติจากอาจารย์ผู้สอน กำลังไปยังหน้าประวัติการลา...');

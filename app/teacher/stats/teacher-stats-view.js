@@ -42,6 +42,7 @@ import {
 import { STATUS_DETAILS, LEAVE_TYPE_DETAILS, formatThaiDate, formatThaiDateTime, initials } from '@/lib/ui';
 import AttachmentPreview from '@/components/AttachmentPreview';
 import WireframeStatsView from './wireframe-stats-view';
+import { formatLeaveClassTime } from '@/lib/leave-stats';
 
 // Helper to format Thai date with day of the week
 function formatThaiDayOfWeekDate(dateStr) {
@@ -1706,12 +1707,10 @@ export default function TeacherStatsView({ courses = [], leaves = [], rosterByCo
                               {leave.courseCode} {leave.courseName} {leave.section ? `(กลุ่ม ${leave.section})` : ''}
                             </span>
                           </div>
-                          {leave.period && (
-                            <div className="flex items-center gap-1.5">
-                              <Clock className="w-3.5 h-3.5 text-neutral-400 shrink-0" />
-                              <span>{leave.period}</span>
-                            </div>
-                          )}
+                          <div className="flex items-center gap-1.5 tabular-nums">
+                            <Clock className="w-3.5 h-3.5 text-neutral-400 shrink-0" />
+                            <span>{formatLeaveClassTime(leave)}</span>
+                          </div>
                         </div>
 
                         {leave.reason && (
@@ -2071,8 +2070,8 @@ export default function TeacherStatsView({ courses = [], leaves = [], rosterByCo
                                     {formatThaiDate(leave.startDate)}
                                     {leave.endDate && leave.endDate !== leave.startDate && ` - ${formatThaiDate(leave.endDate)}`}
                                   </div>
-                                  <div className="text-[11px] text-neutral-500 dark:text-neutral-400 mt-0.5">
-                                    {leave.period || 'เต็มคาบเรียน'}
+                                  <div className="text-[11px] text-neutral-500 dark:text-neutral-400 mt-0.5 tabular-nums">
+                                    {formatLeaveClassTime(leave)}
                                   </div>
                                 </td>
 

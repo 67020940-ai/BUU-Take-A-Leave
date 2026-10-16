@@ -180,7 +180,7 @@ export default function WireframeStatsView({
               id: `leave-auto-${s.studentCode || idx}-${cat.type}-${i + 1}`,
               status: 'อนุมัติ',
               type: cat.type,
-              period: 'เต็มคาบเรียน (09:00 - 12:00)',
+              period: selectedCourse.time ? `เวลาเรียน ${selectedCourse.time}` : 'เวลาเรียน 9:00-11:50',
               startDate: dateStr,
               endDate: dateStr,
               reason: cat.reason,

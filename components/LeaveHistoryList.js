@@ -3,6 +3,7 @@ import { STATUS_DETAILS, LEAVE_TYPE_DETAILS, LEAVE_TYPE_DEFAULT, formatThaiDate 
 import { Calendar, Clock, FileText, RotateCcw, MessageSquare } from 'lucide-react';
 import AttachmentPreview from '@/components/AttachmentPreview';
 import CancelLeaveButton from '@/components/CancelLeaveButton';
+import { formatLeaveClassTime } from '@/lib/leave-stats';
 
 // leaves: [{ ...leaveRequest, courseName }]
 export default function LeaveHistoryList({ leaves }) {
@@ -58,12 +59,10 @@ export default function LeaveHistoryList({ leaves }) {
                   {formatThaiDate(leave.startDate)} - {formatThaiDate(leave.endDate)}
                 </span>
               </span>
-              {leave.period && (
-                <span className="flex items-center space-x-1">
-                  <Clock className="w-3.5 h-3.5 text-neutral-400" />
-                  <span>{leave.period}</span>
-                </span>
-              )}
+              <span className="flex items-center space-x-1 tabular-nums font-medium text-neutral-600 dark:text-neutral-300">
+                <Clock className="w-3.5 h-3.5 text-[#7749BC] dark:text-purple-400 shrink-0" />
+                <span>{formatLeaveClassTime(leave)}</span>
+              </span>
               {leave.attachment && (
                 <AttachmentPreview src={`/api/leaves/attachment/${leave.attachment}`} label="ดูไฟล์แนบ" />
               )}

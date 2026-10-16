@@ -37,6 +37,7 @@ import {
   formatThaiDateTime,
   sortAcademicTerms,
 } from '@/lib/ui';
+import { formatLeaveClassTime } from '@/lib/leave-stats';
 
 function initials(name) {
   return (name || '?').trim().charAt(0).toUpperCase();
@@ -671,8 +672,10 @@ export default function TeacherRequestsView({
                               วันที่ลา: {formatThaiDate(leave.startDate)}
                               {leave.endDate && leave.endDate !== leave.startDate
                                 ? ` - ${formatThaiDate(leave.endDate)}`
-                                : ''}{' '}
-                              ({leave.period})
+                                : ''}
+                            </span>
+                            <span className="tabular-nums font-medium text-neutral-500 dark:text-neutral-400">
+                              • {formatLeaveClassTime(leave)}
                             </span>
                           </div>
 
@@ -804,7 +807,7 @@ export default function TeacherRequestsView({
             <div className="p-4 rounded-2xl bg-neutral-50 dark:bg-slate-800/60 border border-neutral-200/60 dark:border-slate-700/60 space-y-2 text-xs">
               <p><strong>วิชา:</strong> {detailModal.leave.courseCode} {detailModal.leave.courseName}</p>
               <p><strong>ประเภทการลา:</strong> {detailModal.leave.type}</p>
-              <p><strong>ช่วงเวลา:</strong> {formatThaiDate(detailModal.leave.startDate)} ({detailModal.leave.period})</p>
+              <p><strong>ช่วงเวลา:</strong> {formatThaiDate(detailModal.leave.startDate)}{detailModal.leave.endDate && detailModal.leave.endDate !== detailModal.leave.startDate ? ` - ${formatThaiDate(detailModal.leave.endDate)}` : ''} (<span className="tabular-nums font-medium">{formatLeaveClassTime(detailModal.leave)}</span>)</p>
               <p><strong>เหตุผล:</strong> {detailModal.leave.reason || '-'}</p>
               <p><strong>ยื่นเมื่อ:</strong> {formatThaiDateTime(detailModal.leave.createdAt)}</p>
             </div>

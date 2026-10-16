@@ -32,6 +32,7 @@ import {
 import { STATUS_DETAILS, LEAVE_TYPE_DETAILS, LEAVE_TYPE_DEFAULT, DAY_LABEL_TH, formatThaiDay, formatThaiDate, formatThaiDateTime, sortAcademicTerms, formatTeacherFullName } from '@/lib/ui';
 import AttachmentPreview from '@/components/AttachmentPreview';
 import CancelLeaveButton from '@/components/CancelLeaveButton';
+import { formatLeaveClassTime } from '@/lib/leave-stats';
 
 const LEAVE_CATEGORIES = [
   { key: 'all', label: 'ทุกประเภท', icon: Layers },
@@ -634,12 +635,10 @@ export default function StudentDashboard({ summaries = [], leaves: initialLeaves
                           {leave.endDate && leave.endDate !== leave.startDate ? ` - ${formatThaiDate(leave.endDate)}` : ''}
                         </span>
                       </span>
-                      {leave.period && (
-                        <span className="flex items-center space-x-1">
-                          <Clock className="w-3.5 h-3.5 text-neutral-400" />
-                          <span>{leave.period}</span>
-                        </span>
-                      )}
+                      <span className="flex items-center space-x-1 tabular-nums font-medium text-neutral-600 dark:text-neutral-300">
+                        <Clock className="w-3.5 h-3.5 text-[#7749BC] dark:text-purple-400 shrink-0" />
+                        <span>{formatLeaveClassTime(leave)}</span>
+                      </span>
                       {leave.attachment && (
                         <AttachmentPreview src={`/api/leaves/attachment/${leave.attachment}`} label="ดูหลักฐานแนบ" />
                       )}
@@ -742,10 +741,10 @@ export default function StudentDashboard({ summaries = [], leaves: initialLeaves
                 <div className="p-3 rounded-2xl bg-neutral-50 dark:bg-slate-800/60 border border-neutral-200/60 dark:border-slate-700/60">
                   <div className="flex items-center gap-1.5 text-[11px] text-neutral-500 dark:text-neutral-400 mb-1">
                     <Clock className="w-3.5 h-3.5 text-[#7749BC] dark:text-purple-400" />
-                    <span>ประเภท & ช่วงเวลา</span>
+                    <span>ประเภท & เวลาเรียน</span>
                   </div>
                   <p className="text-xs font-semibold text-neutral-900 dark:text-neutral-100">{detailModal.leave.type}</p>
-                  <p className="text-[11px] text-neutral-500">{detailModal.leave.period}</p>
+                  <p className="text-[11px] text-neutral-600 dark:text-neutral-400 tabular-nums font-medium">{formatLeaveClassTime(detailModal.leave)}</p>
                 </div>
               </div>
 

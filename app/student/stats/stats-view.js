@@ -28,6 +28,7 @@ import {
 import LeaveBarChart from '@/components/charts/LeaveBarChart';
 import LeaveDonutChart from '@/components/charts/LeaveDonutChart';
 import { sortAcademicTerms, isTermStartedOrPassed } from '@/lib/ui';
+import { formatLeaveClassTime, calculateLeaveStats } from '@/lib/leave-stats';
 
 export default function StudentStatsView({ summaries = [], leaves = [] }) {
   // Extract unique academic terms
@@ -79,16 +80,15 @@ export default function StudentStatsView({ summaries = [], leaves = [] }) {
 
   // Current scope stats based on selectedTerm filter
   const stats = useMemo(() => {
-    const relevantLeaves =
-      selectedTerm === 'all'
-        ? leaves
-        : leaves.filter((l) => (l.courseTerm || summaries.find((s) => s.course?.id === l.courseId)?.course?.term) === selectedTerm);
+    const baseStats = calculateLeaveStats(leaves, selectedTerm, summaries);
+    const relevantLeaves = baseStats.scopedLeaves;
 
-    const total = relevantLeaves.length;
-    const approved = relevantLeaves.filter((l) => l.status === 'อนุมัติ').length;
-    const pending = relevantLeaves.filter((l) => l.status === 'รออนุมัติ').length;
-    const rejected = relevantLeaves.filter((l) => l.status === 'ไม่อนุมัติ').length;
-    const cancelled = relevantLeaves.filter((l) => l.status === 'ยกเลิก').length;
+    const total = baseStats.total;
+    const approved = baseStats.approved;
+    const pending = baseStats.pending;
+    const rejected = baseStats.rejected;
+    const cancelled = baseStats.cancelled;
+    const hasCancelled = baseStats.hasCancelled;
 
     const sick = relevantLeaves.filter((l) => l.type === 'ลาป่วย').length;
     const personal = relevantLeaves.filter((l) => l.type === 'ลากิจส่วนตัว').length;
@@ -239,6 +239,11 @@ export default function StudentStatsView({ summaries = [], leaves = [] }) {
             </span>
             <span className="text-xs text-neutral-400">ครั้ง</span>
           </div>
+          {stats.hasCancelled && (
+            <p className="text-[11px] text-neutral-500 dark:text-neutral-400 mt-0.5">
+              รวมยกเลิก {stats.cancelled}
+            </p>
+          )}
           <div className="flex items-center gap-1.5 mt-3 text-[11px]">
             <span className="inline-flex items-center text-emerald-600 dark:text-emerald-400 font-bold bg-emerald-50 dark:bg-emerald-950/50 px-2 py-0.5 rounded-md border border-emerald-200 dark:border-emerald-800">
               <TrendingUp className="w-3 h-3 mr-1" />
@@ -570,8 +575,8 @@ export default function StudentStatsView({ summaries = [], leaves = [] }) {
                         {l.status}
                       </span>
                     </div>
-                    <p className="text-neutral-600 dark:text-neutral-400 text-[11px]">
-                      {l.startDate === l.endDate ? l.startDate : `${l.startDate} ถึง ${l.endDate}`} • {l.period || 'เต็มคาบ'}
+                    <p className="text-neutral-600 dark:text-neutral-400 text-[11px] tabular-nums">
+                      {l.startDate === l.endDate ? l.startDate : `${l.startDate} ถึง ${l.endDate}`} • {formatLeaveClassTime(l)}
                     </p>
                     <p className="text-neutral-500 text-[11px]">
                       เหตุผล: {l.reason}
