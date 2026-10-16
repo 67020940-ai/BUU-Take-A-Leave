@@ -62,6 +62,11 @@ export default function SettingsModal({ isOpen, onClose, user }) {
         'buu_teacher_settings',
         JSON.stringify({ emailNotify, lineNotify, soundEnabled, defaultSemester })
       );
+      if (typeof window !== 'undefined' && defaultSemester) {
+        window.dispatchEvent(
+          new CustomEvent('buu_semester_updated', { detail: { semester: defaultSemester } })
+        );
+      }
       setSaved(true);
       setTimeout(() => {
         setSaved(false);

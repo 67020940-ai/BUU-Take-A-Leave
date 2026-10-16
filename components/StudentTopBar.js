@@ -82,13 +82,20 @@ export default function StudentTopBar({
       setShowNotifications(false);
       setShowAvatarUpload(true);
     };
+    const handleSemesterSync = (e) => {
+      if (e.detail?.semester && onSemesterChange) {
+        onSemesterChange(e.detail.semester);
+      }
+    };
     window.addEventListener('buu_open_avatar_upload', handleOpenUpload);
     window.addEventListener('buu_open_account', handleOpenUpload);
+    window.addEventListener('buu_semester_updated', handleSemesterSync);
     return () => {
       window.removeEventListener('buu_open_avatar_upload', handleOpenUpload);
       window.removeEventListener('buu_open_account', handleOpenUpload);
+      window.removeEventListener('buu_semester_updated', handleSemesterSync);
     };
-  }, []);
+  }, [onSemesterChange]);
 
   useEffect(() => {
     let active = true;
@@ -219,9 +226,20 @@ export default function StudentTopBar({
               value={searchValue}
               onChange={(e) => onSearchChange && onSearchChange(e.target.value)}
               placeholder={searchPlaceholder}
-              className="w-full pl-4 pr-10 py-2 sm:py-2.5 rounded-full bg-purple-50/90 dark:bg-purple-950/40 border border-purple-200 dark:border-purple-800/80 text-xs sm:text-sm text-neutral-900 dark:text-neutral-100 placeholder:text-purple-400 dark:placeholder:text-purple-500/70 focus:outline-none focus:ring-2 focus:ring-[#7749BC]/40 focus:border-[#7749BC] transition-all shadow-inner"
+              className="w-full pl-4 pr-10 py-2 sm:py-2.5 rounded-full bg-purple-50/90 dark:bg-purple-950/40 border border-purple-200 dark:border-purple-800/80 text-xs sm:text-sm text-neutral-900 dark:text-neutral-100 placeholder:text-purple-400 dark:placeholder:text-purple-500/70 focus:outline-none focus:ring-2 focus:ring-[#7749BC]/40 focus:border-[#7749BC] transition-all shadow-inner cursor-text"
             />
-            <Search className="w-4 h-4 text-[#7749BC] dark:text-purple-400 absolute right-3.5 top-1/2 -translate-y-1/2 pointer-events-none" />
+            {searchValue ? (
+              <button
+                type="button"
+                onClick={() => onSearchChange && onSearchChange('')}
+                className="absolute right-3 top-1/2 -translate-y-1/2 text-neutral-400 hover:text-neutral-600 dark:hover:text-neutral-200 cursor-pointer p-0.5"
+                title="ล้างข้อความค้นหา"
+              >
+                <X className="w-4 h-4" />
+              </button>
+            ) : (
+              <Search className="w-4 h-4 text-[#7749BC] dark:text-purple-400 absolute right-3.5 top-1/2 -translate-y-1/2 pointer-events-none" />
+            )}
           </div>
         </div>
 

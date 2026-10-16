@@ -237,7 +237,7 @@ export default function TeacherScheduleGrid({ courses = [], customItems = null, 
       });
     }
     return SCHEDULE_ITEMS;
-  }, [customItems, courses]);
+  }, [customItems, courses, semester]);
 
   const normalizedItems = useMemo(() => {
     return scheduleList.map((item, idx) => {
@@ -330,6 +330,12 @@ export default function TeacherScheduleGrid({ courses = [], customItems = null, 
               <div className="grid grid-cols-1 gap-3.5">
                 {mobileLanedClasses.map((item, idx) => {
                   const theme = getCourseTheme(item);
+                  const q = searchQuery.toLowerCase().trim();
+                  const isMatch =
+                    !q ||
+                    item.code.toLowerCase().includes(q) ||
+                    item.name.toLowerCase().includes(q) ||
+                    (item.room && item.room.toLowerCase().includes(q));
                   return (
                     <div
                       key={item.id || idx}
@@ -341,6 +347,10 @@ export default function TeacherScheduleGrid({ courses = [], customItems = null, 
                       className={`min-h-[44px] p-4 rounded-2xl border-2 space-y-3 cursor-pointer active:scale-98 transition-all ${
                         item.hasCollision
                           ? 'border-rose-400 dark:border-rose-600 bg-rose-50/40 dark:bg-rose-950/20'
+                          : isMatch && q
+                          ? 'border-[#7749BC] ring-2 ring-[#7749BC]/30 bg-purple-50/50 dark:bg-slate-900'
+                          : !isMatch
+                          ? 'border-neutral-200 dark:border-slate-800 opacity-40 bg-neutral-50/30 dark:bg-slate-900/40'
                           : 'border-purple-200 dark:border-purple-800/80 bg-purple-50/30 dark:bg-slate-900'
                       } shadow-2xs`}
                     >

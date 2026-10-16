@@ -305,6 +305,10 @@ export default function StudentScheduleGrid({
                       className={`p-4 rounded-2xl shadow-2xs space-y-3 flex flex-col justify-between transition-all ${
                         hasCollision
                           ? 'border-2 border-rose-500 ring-2 ring-rose-500/40 bg-rose-50/40 dark:bg-rose-950/20'
+                          : c.isMatch && searchQuery
+                          ? 'border-2 border-[#7749BC] ring-2 ring-[#7749BC]/30 bg-purple-50/50 dark:bg-slate-900'
+                          : !c.isMatch
+                          ? 'border-2 border-neutral-200 dark:border-slate-800 opacity-40 bg-neutral-50/30 dark:bg-slate-900/40'
                           : 'border-2 border-purple-200 dark:border-purple-800/80 bg-purple-50/30 dark:bg-slate-900'
                       }`}
                       title={hasCollision ? 'เวลาเรียนชนกับวิชาอื่น' : undefined}

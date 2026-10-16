@@ -84,13 +84,20 @@ export default function TeacherTopBar({
       setShowNotifications(false);
       setShowAvatarUpload(true);
     };
+    const handleSemesterSync = (e) => {
+      if (e.detail?.semester && onSemesterChange) {
+        onSemesterChange(e.detail.semester);
+      }
+    };
     window.addEventListener('buu_open_avatar_upload', handleOpenUpload);
     window.addEventListener('buu_open_account', handleOpenUpload);
+    window.addEventListener('buu_semester_updated', handleSemesterSync);
     return () => {
       window.removeEventListener('buu_open_avatar_upload', handleOpenUpload);
       window.removeEventListener('buu_open_account', handleOpenUpload);
+      window.removeEventListener('buu_semester_updated', handleSemesterSync);
     };
-  }, []);
+  }, [onSemesterChange]);
 
   useEffect(() => {
     let active = true;
