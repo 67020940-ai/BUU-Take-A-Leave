@@ -516,6 +516,8 @@ export default function StudentHomepageView({
               <div className="bg-white dark:bg-slate-900 rounded-3xl border border-neutral-200 dark:border-slate-800 p-6 sm:p-8 shadow-xs">
                 <LeaveForm
                   courses={availableCourses}
+                  leaves={leavesList}
+                  summaries={summaries}
                   initialCourseId={targetCourseForLeave || availableCourses[0]?.id || ''}
                   lockCourse={Boolean(targetCourseForLeave)}
                   resubmitId={resubmitId}

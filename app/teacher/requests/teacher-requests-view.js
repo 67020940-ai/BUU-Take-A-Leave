@@ -261,6 +261,32 @@ export default function TeacherRequestsView({
     return student.overQuota || student.approvedLeaves >= 3 || (student.percentage && student.percentage < 80);
   }
 
+  // คำนวณลำดับครั้งที่ลาของนิสิตคนนี้ในวิชานี้
+  function getStudentLeaveInfo(leave) {
+    if (!leave) return { order: 1, isOverQuota: false, totalCount: 1 };
+    const matchingLeaves = leaves.filter((l) => {
+      const matchStudent =
+        (l.studentCode && l.studentCode === leave.studentCode) ||
+        (l.studentId && l.studentId === leave.studentId);
+      const matchCourse =
+        (l.courseId && l.courseId === leave.courseId) ||
+        (l.courseCode && l.courseCode === leave.courseCode);
+      const isActive = l.status === 'อนุมัติ' || l.status === 'รออนุมัติ';
+      return matchStudent && matchCourse && isActive;
+    });
+
+    const sorted = [...matchingLeaves].sort((a, b) => new Date(a.createdAt || 0) - new Date(b.createdAt || 0));
+    const idx = sorted.findIndex((l) => l.id === leave.id);
+    const order = idx !== -1 ? idx + 1 : Math.max(1, matchingLeaves.length);
+    const isOverQuota = order > 3;
+
+    return {
+      order,
+      isOverQuota,
+      totalCount: matchingLeaves.length,
+    };
+  }
+
   async function handleDecide(leave, status, comment) {
     if (submittingId === leave.id) return;
     setSubmittingId(leave.id);
@@ -619,6 +645,7 @@ export default function TeacherRequestsView({
 
               {paginatedLeaves.map((leave) => {
                 const atRisk = isStudentAtRisk(leave.studentCode, leave.courseId);
+                const leaveInfo = getStudentLeaveInfo(leave);
                 const isSelected = selectedLeaveIds.has(leave.id);
                 const statusInfo = STATUS_DETAILS[leave.status] || STATUS_DETAILS['รออนุมัติ'];
                 const typeBadge = LEAVE_TYPE_DETAILS[leave.type] || LEAVE_TYPE_DEFAULT;
@@ -654,6 +681,19 @@ export default function TeacherRequestsView({
                             </span>
                             <span className={`text-[10px] font-bold px-2 py-0.5 rounded-full border ${typeBadge}`}>
                               {leave.type}
+                            </span>
+                            <span
+                              className={`text-[10px] font-bold px-2 py-0.5 rounded-full border ${
+                                leaveInfo.isOverQuota
+                                  ? 'bg-rose-100 text-rose-800 dark:bg-rose-950 dark:text-rose-200 border-rose-300 dark:border-rose-800 font-semibold'
+                                  : leaveInfo.order === 3
+                                  ? 'bg-amber-100 text-amber-800 dark:bg-amber-950 dark:text-amber-300 border-amber-300 dark:border-amber-800 font-semibold'
+                                  : 'bg-purple-50 text-[#7749BC] dark:bg-purple-950 dark:text-purple-300 border-purple-200 dark:border-purple-800'
+                              }`}
+                            >
+                              {leaveInfo.isOverQuota
+                                ? `⚠️ เกินโควตา 20% (ครั้งที่ ${leaveInfo.order} - พิจารณาพิเศษ)`
+                                : `ครั้งที่ ${leaveInfo.order} / 3`}
                             </span>
                             {atRisk && (
                               <span className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-rose-50 text-rose-700 dark:bg-rose-950/60 dark:text-rose-300 border border-rose-200 dark:border-rose-800 flex items-center gap-1">
@@ -803,6 +843,38 @@ export default function TeacherRequestsView({
                 <X className="w-5 h-5" />
               </button>
             </div>
+
+            {(() => {
+              const modalLeaveInfo = getStudentLeaveInfo(detailModal.leave);
+              return (
+                <div
+                  className={`p-3 rounded-2xl border text-xs flex items-center justify-between gap-2 ${
+                    modalLeaveInfo.isOverQuota
+                      ? 'bg-rose-50 dark:bg-rose-950/50 border-rose-200 dark:border-rose-800 text-rose-800 dark:text-rose-200 font-semibold'
+                      : modalLeaveInfo.order === 3
+                      ? 'bg-amber-50 dark:bg-amber-950/50 border-amber-200 dark:border-amber-800 text-amber-800 dark:text-amber-200 font-medium'
+                      : 'bg-purple-50 dark:bg-purple-950/50 border-purple-200 dark:border-purple-800 text-[#7749BC] dark:text-purple-300 font-medium'
+                  }`}
+                >
+                  <div className="flex items-center gap-2">
+                    {modalLeaveInfo.isOverQuota ? (
+                      <AlertTriangle className="w-4 h-4 text-rose-600 dark:text-rose-400 shrink-0" />
+                    ) : modalLeaveInfo.order === 3 ? (
+                      <AlertTriangle className="w-4 h-4 text-amber-600 dark:text-amber-400 shrink-0" />
+                    ) : (
+                      <CheckCircle2 className="w-4 h-4 text-[#7749BC] dark:text-purple-400 shrink-0" />
+                    )}
+                    <span>
+                      {modalLeaveInfo.isOverQuota
+                        ? `คำร้องนี้เป็นการลาเกินโควตา 20% (ครั้งที่ ${modalLeaveInfo.order}) — ต้องพิจารณาเป็นกรณีพิเศษ`
+                        : modalLeaveInfo.order === 3
+                        ? `คำร้องนี้เป็นการลาครั้งที่ 3 (ครั้งสุดท้ายตามเกณฑ์ 20%)`
+                        : `ลำดับการลา: ครั้งที่ ${modalLeaveInfo.order} จากโควตาสูงสุด 3 ครั้ง`}
+                    </span>
+                  </div>
+                </div>
+              );
+            })()}
 
             <div className="p-4 rounded-2xl bg-neutral-50 dark:bg-slate-800/60 border border-neutral-200/60 dark:border-slate-700/60 space-y-2 text-xs">
               <p><strong>วิชา:</strong> {detailModal.leave.courseCode} {detailModal.leave.courseName}</p>

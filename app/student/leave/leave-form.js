@@ -21,6 +21,7 @@ import {
   Lock,
   RotateCcw,
   HelpCircle,
+  AlertTriangle,
 } from 'lucide-react';
 import AttachmentPreview from '@/components/AttachmentPreview';
 import { DAY_LABEL_TH, formatThaiDay, formatTeacherFullName } from '@/lib/ui';
@@ -49,7 +50,16 @@ const LEAVE_TYPES = [
 
 const REASON_LIMIT = 300;
 
-export default function LeaveForm({ courses, initialCourseId, lockCourse, initialValues, resubmitId, onSuccess }) {
+export default function LeaveForm({
+  courses,
+  initialCourseId,
+  lockCourse,
+  initialValues,
+  resubmitId,
+  onSuccess,
+  leaves = [],
+  summaries = [],
+}) {
   const [isLocked, setIsLocked] = useState(lockCourse);
   const router = useRouter();
 
@@ -77,11 +87,60 @@ export default function LeaveForm({ courses, initialCourseId, lockCourse, initia
   const [saving, setSaving] = useState(false);
   const [fieldErrors, setFieldErrors] = useState({});
   const [touched, setTouched] = useState({});
+  const [showConfirmModal, setShowConfirmModal] = useState(false);
+  const [acknowledgedOverQuota, setAcknowledgedOverQuota] = useState(false);
 
   // รายวิชาที่เลือกในปัจจุบัน
   const currentCourse = useMemo(() => {
     return courses.find((c) => c.id === form.courseId) || courses[0] || null;
   }, [courses, form.courseId]);
+
+  // คำนวณสถิติโควตาการลาของวิชาที่เลือกในปัจจุบัน (เกณฑ์ขาดเรียนไม่เกิน 20% ปกติ 3 ครั้ง)
+  const courseLeaveStats = useMemo(() => {
+    if (!currentCourse) {
+      return {
+        usedCount: 0,
+        approvedCount: 0,
+        pendingCount: 0,
+        quotaLimit: 3,
+        nextNumber: 1,
+        remainingAfter: 2,
+        level: 1,
+      };
+    }
+    const activeLeaves = (leaves || []).filter((l) => {
+      const matchCourse =
+        (l.courseId && l.courseId === currentCourse.id) ||
+        (l.courseCode && l.courseCode === currentCourse.code);
+      const isActive = l.status === 'อนุมัติ' || l.status === 'รออนุมัติ';
+      return matchCourse && isActive;
+    });
+
+    const approvedCount = activeLeaves.filter((l) => l.status === 'อนุมัติ').length;
+    const pendingCount = activeLeaves.filter((l) => l.status === 'รออนุมัติ').length;
+    const usedCount = activeLeaves.length;
+    const quotaLimit = currentCourse.totalSessions
+      ? Math.max(1, Math.floor(currentCourse.totalSessions * 0.2))
+      : 3;
+    const nextNumber = usedCount + 1;
+    const remainingAfter = Math.max(0, quotaLimit - nextNumber);
+
+    let level = 1;
+    if (nextNumber === 1) level = 1;
+    else if (nextNumber === 2) level = 2;
+    else if (nextNumber === quotaLimit) level = 3;
+    else if (nextNumber > quotaLimit) level = 4;
+
+    return {
+      usedCount,
+      approvedCount,
+      pendingCount,
+      quotaLimit,
+      nextNumber,
+      remainingAfter,
+      level,
+    };
+  }, [currentCourse, leaves]);
 
   async function handleFileChange(e) {
     const file = e.target.files?.[0];
@@ -198,6 +257,13 @@ export default function LeaveForm({ courses, initialCourseId, lockCourse, initia
       return;
     }
 
+    // ตรวจสอบผ่านเรียบร้อย ให้เปิดป๊อปอัปแจ้งเตือนโควตา 4 ระดับเพื่อยืนยันก่อนส่งจริง
+    setAcknowledgedOverQuota(false);
+    setShowConfirmModal(true);
+  }
+
+  async function executeSubmit() {
+    setShowConfirmModal(false);
     setSaving(true);
     try {
       const finalReason =
@@ -205,42 +271,42 @@ export default function LeaveForm({ courses, initialCourseId, lockCourse, initia
           ? `[ประเภท: ${form.otherTypeDetail.trim()}] ${form.reason.trim()}`
           : form.reason.trim();
 
-        const resolvedPeriod = formatLeaveClassTime({
+      const resolvedPeriod = formatLeaveClassTime({
+        startDate: form.startDate,
+        endDate: form.endDate,
+        courseTime: currentCourse?.time,
+        courseDay: currentCourse?.day,
+        course: currentCourse,
+      });
+
+      const res = await fetch('/api/leaves', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          courseId: form.courseId,
+          type: form.type,
+          period: resolvedPeriod || 'เวลาเรียนตามตาราง',
           startDate: form.startDate,
           endDate: form.endDate,
-          courseTime: currentCourse?.time,
-          courseDay: currentCourse?.day,
-          course: currentCourse,
-        });
-
-        const res = await fetch('/api/leaves', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({
-            courseId: form.courseId,
-            type: form.type,
-            period: resolvedPeriod || 'เวลาเรียนตามตาราง',
-            startDate: form.startDate,
-            endDate: form.endDate,
-            reason: finalReason,
-            attachment: attachment?.url || attachment?.filename || null,
-            resubmitId: resubmitId || undefined,
-          }),
-        });
-        const data = await res.json().catch(() => ({}));
-        if (!res.ok) {
-          setError(data.error || `บันทึกไม่สำเร็จ (รหัสข้อผิดพลาด ${res.status}) กรุณาลองใหม่อีกครั้ง`);
-          return;
-        }
-        setForm({
-          courseId: courses[0]?.id || '',
-          type: 'ลาป่วย',
-          otherTypeDetail: '',
-          period: '',
-          startDate: '',
-          endDate: '',
-          reason: '',
-        });
+          reason: finalReason,
+          attachment: attachment?.url || attachment?.filename || null,
+          resubmitId: resubmitId || undefined,
+        }),
+      });
+      const data = await res.json().catch(() => ({}));
+      if (!res.ok) {
+        setError(data.error || `บันทึกไม่สำเร็จ (รหัสข้อผิดพลาด ${res.status}) กรุณาลองใหม่อีกครั้ง`);
+        return;
+      }
+      setForm({
+        courseId: courses[0]?.id || '',
+        type: 'ลาป่วย',
+        otherTypeDetail: '',
+        period: '',
+        startDate: '',
+        endDate: '',
+        reason: '',
+      });
       setAttachment(null);
       setTouched({});
       setSuccess('ส่งใบลาเรียบร้อยแล้ว รอการอนุมัติจากอาจารย์ผู้สอน กำลังไปยังหน้าประวัติการลา...');
@@ -338,6 +404,67 @@ export default function LeaveForm({ courses, initialCourseId, lockCourse, initia
                 <p className="text-xs text-neutral-500 dark:text-neutral-400 font-normal">
                   กลุ่ม {currentCourse.group || '01'} • ห้อง {currentCourse.room || '-'} • ผู้สอน:{' '}
                   {formatTeacherFullName(currentCourse.teacherName || currentCourse.teacher?.name)}
+                </p>
+              </div>
+            )}
+
+            {/* ป้ายเตือนสถานะโควตาการลาปัจจุบันของรายวิชานี้ */}
+            {currentCourse && (
+              <div
+                className={`mt-2.5 p-3 sm:p-3.5 rounded-2xl border transition-all ${
+                  courseLeaveStats.level === 4
+                    ? 'bg-rose-50/70 dark:bg-rose-950/30 border-rose-200 dark:border-rose-900/60'
+                    : courseLeaveStats.level === 3
+                    ? 'bg-amber-50/70 dark:bg-amber-950/30 border-amber-200 dark:border-amber-900/60'
+                    : courseLeaveStats.level === 2
+                    ? 'bg-amber-50/50 dark:bg-amber-950/20 border-amber-200/80 dark:border-amber-900/40'
+                    : 'bg-purple-50/60 dark:bg-purple-950/30 border-purple-200/70 dark:border-purple-900/50'
+                }`}
+              >
+                <div className="flex items-center justify-between gap-2 flex-wrap mb-1">
+                  <div className="flex items-center gap-1.5">
+                    {courseLeaveStats.level === 4 ? (
+                      <AlertTriangle className="w-4 h-4 text-rose-600 dark:text-rose-400 shrink-0" />
+                    ) : courseLeaveStats.level === 3 ? (
+                      <AlertTriangle className="w-4 h-4 text-amber-600 dark:text-amber-400 shrink-0" />
+                    ) : (
+                      <CheckCircle2 className="w-4 h-4 text-[#7749BC] dark:text-purple-400 shrink-0" />
+                    )}
+                    <span className="text-xs font-bold text-neutral-900 dark:text-neutral-100">
+                      สถานะโควตาการลา (เกณฑ์ขาดเรียนไม่เกิน 20%)
+                    </span>
+                  </div>
+                  <span
+                    className={`text-[11px] font-bold px-2.5 py-0.5 rounded-full border shadow-2xs font-mono tabular-nums ${
+                      courseLeaveStats.level === 4
+                        ? 'bg-rose-100 dark:bg-rose-950 text-rose-700 dark:text-rose-300 border-rose-300 dark:border-rose-800'
+                        : courseLeaveStats.level === 3
+                        ? 'bg-amber-100 dark:bg-amber-950 text-amber-800 dark:text-amber-300 border-amber-300 dark:border-amber-800'
+                        : 'bg-white/90 dark:bg-slate-900/90 text-[#7749BC] dark:text-purple-300 border-purple-200/80 dark:border-purple-800'
+                    }`}
+                  >
+                    ใช้ไป {courseLeaveStats.usedCount} / {courseLeaveStats.quotaLimit} ครั้ง
+                  </span>
+                </div>
+
+                <p className="text-[11px] text-neutral-600 dark:text-neutral-300 leading-relaxed">
+                  {courseLeaveStats.level === 4 ? (
+                    <span className="text-rose-700 dark:text-rose-300 font-semibold">
+                      ⚠️ คุณใช้สิทธิ์ลาครบเกณฑ์ {courseLeaveStats.quotaLimit} ครั้งแล้ว การยื่นครั้งต่อไปจะเป็นการลาครั้งที่ {courseLeaveStats.nextNumber} (เกินโควตา 20% พิจารณาแบบรายบุคคล)
+                    </span>
+                  ) : courseLeaveStats.level === 3 ? (
+                    <span className="text-amber-800 dark:text-amber-300 font-medium">
+                      การยื่นครั้งต่อไปจะเป็นการลา<strong>ครั้งที่ 3 (ครั้งสุดท้ายตามเกณฑ์ 20%)</strong> • หากอนุมัติจะไม่สามารถลาในวิชานี้ได้อีก
+                    </span>
+                  ) : courseLeaveStats.level === 2 ? (
+                    <span>
+                      ใช้ไปแล้ว 1 ครั้ง ({courseLeaveStats.approvedCount} อนุมัติ, {courseLeaveStats.pendingCount} รออนุมัติ) • การยื่นครั้งต่อไปเป็นครั้งที่ 2 (จะเหลืออีกเพียง 1 ครั้งสุดท้าย)
+                    </span>
+                  ) : (
+                    <span>
+                      ยังไม่เคยลาในวิชานี้ • มีโควตาลาได้สูงสุด {courseLeaveStats.quotaLimit} ครั้ง (20% ของ 15 คาบเรียน)
+                    </span>
+                  )}
                 </p>
               </div>
             )}
@@ -581,6 +708,194 @@ export default function LeaveForm({ courses, initialCourseId, lockCourse, initia
           </>
         )}
       </button>
+
+      {/* ================= Progressive Quota Confirmation Modal ================= */}
+      {showConfirmModal && (
+        <div
+          className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-xs animate-in fade-in duration-150"
+          onClick={() => setShowConfirmModal(false)}
+        >
+          <div
+            className="w-full max-w-md bg-white dark:bg-slate-900 rounded-3xl border border-neutral-200/90 dark:border-slate-800 shadow-2xl p-5 sm:p-6 space-y-4 animate-in zoom-in-95 duration-150"
+            onClick={(e) => e.stopPropagation()}
+          >
+            {/* Modal Header */}
+            <div className="flex items-start justify-between gap-3">
+              <div className="flex items-center gap-3">
+                <div
+                  className={`w-11 h-11 rounded-2xl flex items-center justify-center shrink-0 ${
+                    courseLeaveStats.level === 4
+                      ? 'bg-rose-100 dark:bg-rose-950/80 text-rose-600 dark:text-rose-300'
+                      : courseLeaveStats.level === 3
+                      ? 'bg-amber-100 dark:bg-amber-950/80 text-amber-600 dark:text-amber-300'
+                      : courseLeaveStats.level === 2
+                      ? 'bg-amber-100/70 dark:bg-amber-950/60 text-amber-600 dark:text-amber-300'
+                      : 'bg-purple-100 dark:bg-purple-950 text-[#7749BC] dark:text-purple-300'
+                  }`}
+                >
+                  {courseLeaveStats.level >= 3 ? (
+                    <AlertTriangle className="w-6 h-6" />
+                  ) : (
+                    <CheckCircle2 className="w-6 h-6" />
+                  )}
+                </div>
+                <div>
+                  <h3 className="text-base font-bold text-neutral-900 dark:text-neutral-100">
+                    {courseLeaveStats.level === 4
+                      ? 'แจ้งเตือนความเสี่ยงหมดสิทธิ์สอบ'
+                      : courseLeaveStats.level === 3
+                      ? 'คำเตือน: การใช้สิทธิ์ลาครั้งสุดท้าย'
+                      : courseLeaveStats.level === 2
+                      ? 'แจ้งเตือน: โควตาการลาใกล้เต็ม'
+                      : 'ยืนยันการยื่นคำร้องลาเรียน'}
+                  </h3>
+                  <div className="flex items-center gap-2 mt-1">
+                    <span
+                      className={`text-[10px] font-bold px-2.5 py-0.5 rounded-full border ${
+                        courseLeaveStats.level === 4
+                          ? 'bg-rose-100 text-rose-700 dark:bg-rose-950 dark:text-rose-300 border-rose-200 dark:border-rose-800'
+                          : courseLeaveStats.level === 3
+                          ? 'bg-amber-100 text-amber-800 dark:bg-amber-950 dark:text-amber-300 border-amber-200 dark:border-amber-800'
+                          : 'bg-purple-100 text-[#7749BC] dark:bg-purple-950 dark:text-purple-300 border-purple-200 dark:border-purple-800'
+                      }`}
+                    >
+                      {courseLeaveStats.level === 4
+                        ? `เกินโควตา 20% (ครั้งที่ ${courseLeaveStats.nextNumber})`
+                        : `การลาครั้งที่ ${courseLeaveStats.nextNumber} / ${courseLeaveStats.quotaLimit}`}
+                    </span>
+                  </div>
+                </div>
+              </div>
+
+              <button
+                type="button"
+                onClick={() => setShowConfirmModal(false)}
+                className="w-8 h-8 rounded-full flex items-center justify-center text-neutral-400 hover:text-neutral-600 hover:bg-neutral-100 dark:hover:bg-slate-800 transition-colors cursor-pointer"
+              >
+                <X className="w-4 h-4" />
+              </button>
+            </div>
+
+            {/* Quota Impact Alert Box */}
+            <div
+              className={`p-3.5 rounded-2xl border text-xs space-y-1.5 ${
+                courseLeaveStats.level === 4
+                  ? 'bg-rose-50/80 dark:bg-rose-950/40 border-rose-200 dark:border-rose-900/60 text-rose-900 dark:text-rose-200'
+                  : courseLeaveStats.level === 3
+                  ? 'bg-amber-50/80 dark:bg-amber-950/40 border-amber-200 dark:border-amber-900/60 text-amber-900 dark:text-amber-200'
+                  : 'bg-neutral-50 dark:bg-slate-800/60 border-neutral-200/80 dark:border-slate-700/80 text-neutral-700 dark:text-neutral-300'
+              }`}
+            >
+              {courseLeaveStats.level === 4 ? (
+                <>
+                  <p className="font-bold text-rose-700 dark:text-rose-300">
+                    ⚠️ คำร้องนี้เป็นการลาเกินเกณฑ์ 20% ของรายวิชา
+                  </p>
+                  <p className="leading-relaxed">
+                    คุณใช้สิทธิ์ลาในวิชานี้ครบกำหนด {courseLeaveStats.quotaLimit} ครั้งไปแล้ว การยื่นครั้งนี้จะถูกส่งให้อาจารย์ผู้สอนพิจารณาเป็นกรณีพิเศษเฉพาะบุคคล (Case-by-Case) ซึ่งอาจส่งผลต่อสิทธิ์การเข้าสอบปลายภาค (หมดสิทธิ์สอบตามข้อบังคับมหาวิทยาลัยบูรพา)
+                  </p>
+                </>
+              ) : courseLeaveStats.level === 3 ? (
+                <>
+                  <p className="font-bold text-amber-800 dark:text-amber-300">
+                    ⚠️ นี่คือการลาครั้งที่ 3 (ครั้งสุดท้ายตามเกณฑ์ 20%)
+                  </p>
+                  <p className="leading-relaxed">
+                    หากคำร้องนี้ได้รับการอนุมัติ ท่านจะไม่สามารถลาในรายวิชานี้ได้อีกตลอดภาคการศึกษานี้ หากมีการลาหรือขาดเรียนเพิ่มจะเกินเกณฑ์ 20% และเสี่ยงหมดสิทธิ์สอบทันที
+                  </p>
+                </>
+              ) : courseLeaveStats.level === 2 ? (
+                <>
+                  <p className="font-semibold text-neutral-900 dark:text-neutral-100">
+                    โควตาคงเหลือหลังการลา: เหลืออีกเพียง 1 ครั้งสุดท้าย
+                  </p>
+                  <p className="leading-relaxed text-neutral-600 dark:text-neutral-300">
+                    ปัจจุบันใช้สิทธิ์ไปแล้ว 1 ครั้ง เมื่อคำร้องนี้ผ่านจะใช้สิทธิ์เป็น 2/{courseLeaveStats.quotaLimit} ครั้ง
+                  </p>
+                </>
+              ) : (
+                <>
+                  <p className="font-semibold text-neutral-900 dark:text-neutral-100">
+                    โควตาคงเหลือหลังการลา: สามารถลาได้อีก {courseLeaveStats.remainingAfter} ครั้ง
+                  </p>
+                  <p className="leading-relaxed text-neutral-600 dark:text-neutral-300">
+                    คำร้องนี้เป็นการลาครั้งแรกของรายวิชานี้ (1/{courseLeaveStats.quotaLimit} ครั้ง)
+                  </p>
+                </>
+              )}
+            </div>
+
+            {/* Leave Details Summary */}
+            <div className="p-3.5 rounded-2xl bg-neutral-50 dark:bg-slate-800/60 border border-neutral-200/60 dark:border-slate-700/60 space-y-2 text-xs">
+              <div className="flex justify-between gap-2">
+                <span className="text-neutral-500 dark:text-neutral-400">รายวิชา:</span>
+                <span className="font-bold text-neutral-900 dark:text-neutral-100 text-right">
+                  {currentCourse?.code} {currentCourse?.name}
+                </span>
+              </div>
+              <div className="flex justify-between gap-2">
+                <span className="text-neutral-500 dark:text-neutral-400">ประเภทการลา:</span>
+                <span className="font-semibold text-[#7749BC] dark:text-purple-300">
+                  {form.type === 'อื่น ๆ' && form.otherTypeDetail ? `อื่น ๆ (${form.otherTypeDetail})` : form.type}
+                </span>
+              </div>
+              <div className="flex justify-between gap-2">
+                <span className="text-neutral-500 dark:text-neutral-400">วันที่ลา:</span>
+                <span className="font-medium text-neutral-800 dark:text-neutral-200">
+                  {form.startDate} {form.endDate && form.endDate !== form.startDate ? `ถึง ${form.endDate}` : ''} {dayCount ? `(${dayCount} วัน)` : ''}
+                </span>
+              </div>
+              <div className="flex justify-between gap-2">
+                <span className="text-neutral-500 dark:text-neutral-400">เหตุผล:</span>
+                <span className="text-neutral-800 dark:text-neutral-200 text-right line-clamp-2 max-w-[240px]">
+                  {form.reason || '-'}
+                </span>
+              </div>
+            </div>
+
+            {/* Level 4 Mandatory Checkbox */}
+            {courseLeaveStats.level === 4 && (
+              <label className="flex items-start gap-2.5 p-3 rounded-2xl bg-rose-50/90 dark:bg-rose-950/50 border border-rose-300 dark:border-rose-800 cursor-pointer text-xs select-none">
+                <input
+                  type="checkbox"
+                  checked={acknowledgedOverQuota}
+                  onChange={(e) => setAcknowledgedOverQuota(e.target.checked)}
+                  className="mt-0.5 w-4 h-4 rounded text-rose-600 focus:ring-rose-500 accent-rose-600 cursor-pointer shrink-0"
+                />
+                <span className="text-rose-900 dark:text-rose-200 font-medium leading-relaxed">
+                  ข้าพเจ้ารับทราบว่าการลาครั้งนี้เกินเกณฑ์ 20% ของรายวิชา และยินยอมให้อาจารย์ผู้สอนพิจารณาเป็นกรณีพิเศษ ซึ่งอาจส่งผลต่อสิทธิ์การเข้าสอบปลายภาค
+                </span>
+              </label>
+            )}
+
+            {/* Modal Buttons */}
+            <div className="pt-2 flex items-center justify-end gap-2.5">
+              <button
+                type="button"
+                onClick={() => setShowConfirmModal(false)}
+                className="min-h-[44px] px-4 py-2.5 rounded-xl border border-neutral-200 dark:border-slate-700 hover:bg-neutral-100 dark:hover:bg-slate-800 text-xs font-semibold text-neutral-700 dark:text-neutral-300 transition-all cursor-pointer"
+              >
+                แก้ไขข้อมูล
+              </button>
+              <button
+                type="button"
+                onClick={executeSubmit}
+                disabled={courseLeaveStats.level === 4 && !acknowledgedOverQuota}
+                className={`min-h-[44px] px-5 py-2.5 rounded-xl text-xs font-bold text-white shadow-md transition-all cursor-pointer flex items-center gap-1.5 ${
+                  courseLeaveStats.level === 4
+                    ? acknowledgedOverQuota
+                      ? 'bg-rose-600 hover:bg-rose-700 shadow-rose-600/25'
+                      : 'bg-rose-300 dark:bg-rose-900/40 opacity-50 cursor-not-allowed'
+                    : 'bg-[#7749BC] hover:bg-[#653ba6] shadow-purple-700/25'
+                }`}
+              >
+                <Send className="w-3.5 h-3.5" />
+                <span>ยืนยันส่งใบลา</span>
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </form>
   );
 }
