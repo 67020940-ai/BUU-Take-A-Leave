@@ -46,7 +46,7 @@ const DAYS = [
 
 import { getCoursePrep } from '@/lib/coursePrepData';
 import { formatTeacherFullName } from '@/lib/ui';
-import { normalizeDayKey } from '@/lib/leave-stats';
+import { normalizeDayKey, GE_SCHEDULE_MAP } from '@/lib/leave-stats';
 
 function computeScheduleLanes(courses) {
   if (!courses || courses.length === 0) {
@@ -133,14 +133,19 @@ export default function StudentScheduleGrid({
         const c = s.course || s;
         if (!c) return null;
 
+        const geSched = (c.code && GE_SCHEDULE_MAP[c.code]) || {};
+        const rawDay = c.day || geSched.day;
+        const rawTime = c.time || geSched.time;
+        const rawRoom = c.room || geSched.room;
+
         // Parse standardized day key using centralized helper
-        const dayKey = normalizeDayKey(c.day) || 'MO';
+        const dayKey = normalizeDayKey(rawDay) || 'MO';
 
         // Parse time: e.g. "09:00-11:50" or "13:00 - 16:50"
         let startH = 9;
         let endH = 12;
-        if (c.time && c.time.includes('-')) {
-          const [startStr, endStr] = c.time.split('-');
+        if (rawTime && rawTime.includes('-')) {
+          const [startStr, endStr] = rawTime.split('-');
           const sh = parseInt(startStr.trim().split(':')[0], 10);
           const eh = parseInt(endStr.trim().split(':')[0], 10);
           const em = parseInt(endStr.trim().split(':')[1] || '0', 10);
@@ -154,7 +159,7 @@ export default function StudentScheduleGrid({
 
         const isMatch =
           !searchQuery ||
-          [c.code, c.name, c.room, c.teacherName || c.teacher?.name].some(
+          [c.code, c.name, rawRoom, c.teacherName || c.teacher?.name].some(
             (field) => field && String(field).toLowerCase().includes(searchQuery.toLowerCase())
           );
 
@@ -165,8 +170,8 @@ export default function StudentScheduleGrid({
           code: c.code,
           name: c.name,
           group: c.group || '1',
-          room: c.room || 'ไม่ระบุห้อง',
-          time: c.time || '09:00 - 12:00',
+          room: rawRoom || 'ไม่ระบุห้อง',
+          time: rawTime || '09:00 - 12:00',
           teacherName: formatTeacherFullName(c.teacherName || c.teacher?.name),
           dayKey,
           startSlot,
