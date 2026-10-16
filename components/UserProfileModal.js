@@ -453,9 +453,9 @@ export default function UserProfileModal({
             </div>
           )}
 
-          {/* TAB 1: Profile Information */}
+          {/* TAB 1: Profile Information (Read-Only Showcase) */}
           {activeTab === 'profile' && (
-            <form id="profile-form" onSubmit={handleSaveProfile} className="space-y-4">
+            <div className="space-y-4">
               {/* Profile summary card */}
               <div className="p-4 rounded-2xl bg-neutral-50/80 dark:bg-slate-800/50 border border-neutral-200/80 dark:border-slate-800 flex items-center gap-4">
                 <div
@@ -477,7 +477,7 @@ export default function UserProfileModal({
                     <h4 className="font-bold text-sm text-neutral-900 dark:text-neutral-100 truncate">
                       {userDisplayName}
                     </h4>
-                    <span className="text-[11px] font-mono px-2 py-0.5 rounded-md bg-neutral-200/70 dark:bg-slate-700 text-neutral-700 dark:text-neutral-300">
+                    <span className="text-[11px] font-mono px-2 py-0.5 rounded-md bg-purple-100 dark:bg-purple-950 text-[#7749BC] dark:text-purple-300 font-semibold border border-purple-200 dark:border-purple-800">
                       {formData.studentId || formData.personnelId || user?.id || '-'}
                     </span>
                   </div>
@@ -497,66 +497,46 @@ export default function UserProfileModal({
 
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                   <div>
-                    <label className="block text-xs font-bold text-neutral-700 dark:text-neutral-300 mb-1">
-                      ชื่อจริง <span className="text-rose-500">*</span>
+                    <label className="block text-[11px] font-bold text-neutral-500 dark:text-neutral-400 mb-1">
+                      ชื่อจริง
                     </label>
-                    <input
-                      type="text"
-                      name="firstName"
-                      value={formData.firstName}
-                      onChange={handleInputChange}
-                      placeholder="เช่น จุฑามาศ"
-                      className="w-full px-3.5 py-2.5 rounded-xl border border-neutral-300 dark:border-slate-700 bg-white dark:bg-slate-800 text-xs font-medium text-neutral-900 dark:text-neutral-100 focus:outline-none focus:border-[#7749BC] shadow-xs"
-                      required
-                    />
+                    <div className="w-full px-3.5 py-2.5 rounded-xl border border-neutral-200 dark:border-slate-800 bg-neutral-50 dark:bg-slate-800/60 text-xs font-semibold text-neutral-900 dark:text-neutral-100 shadow-2xs">
+                      {formData.firstName || '-'}
+                    </div>
                   </div>
 
                   <div>
-                    <label className="block text-xs font-bold text-neutral-700 dark:text-neutral-300 mb-1">
-                      นามสกุล <span className="text-rose-500">*</span>
+                    <label className="block text-[11px] font-bold text-neutral-500 dark:text-neutral-400 mb-1">
+                      นามสกุล
                     </label>
-                    <input
-                      type="text"
-                      name="lastName"
-                      value={formData.lastName}
-                      onChange={handleInputChange}
-                      placeholder="เช่น แสงทอง"
-                      className="w-full px-3.5 py-2.5 rounded-xl border border-neutral-300 dark:border-slate-700 bg-white dark:bg-slate-800 text-xs font-medium text-neutral-900 dark:text-neutral-100 focus:outline-none focus:border-[#7749BC] shadow-xs"
-                      required
-                    />
+                    <div className="w-full px-3.5 py-2.5 rounded-xl border border-neutral-200 dark:border-slate-800 bg-neutral-50 dark:bg-slate-800/60 text-xs font-semibold text-neutral-900 dark:text-neutral-100 shadow-2xs">
+                      {formData.lastName || '-'}
+                    </div>
                   </div>
                 </div>
 
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                   <div>
-                    <label className="block text-xs font-bold text-neutral-700 dark:text-neutral-300 mb-1">
+                    <label className="block text-[11px] font-bold text-neutral-500 dark:text-neutral-400 mb-1">
                       เบอร์โทรศัพท์ติดต่อ
                     </label>
                     <div className="relative">
                       <Phone className="w-4 h-4 text-neutral-400 absolute left-3 top-1/2 -translate-y-1/2" />
-                      <input
-                        type="tel"
-                        name="phone"
-                        value={formData.phone}
-                        onChange={handleInputChange}
-                        placeholder="เช่น 081-234-5678"
-                        className="w-full pl-9 pr-3.5 py-2.5 rounded-xl border border-neutral-300 dark:border-slate-700 bg-white dark:bg-slate-800 text-xs font-medium text-neutral-900 dark:text-neutral-100 focus:outline-none focus:border-[#7749BC] shadow-xs"
-                      />
+                      <div className="w-full pl-9 pr-3.5 py-2.5 rounded-xl border border-neutral-200 dark:border-slate-800 bg-neutral-50 dark:bg-slate-800/60 text-xs font-medium text-neutral-900 dark:text-neutral-100 shadow-2xs">
+                        {formData.phone || 'ยังไม่ได้ระบุ'}
+                      </div>
                     </div>
                   </div>
 
                   <div>
-                    <label className="block text-xs font-bold text-neutral-700 dark:text-neutral-300 mb-1">
+                    <label className="block text-[11px] font-bold text-neutral-500 dark:text-neutral-400 mb-1">
                       อีเมลมหาวิทยาลัย (ล็อกอิน)
                     </label>
                     <div className="relative">
                       <Mail className="w-4 h-4 text-neutral-400 absolute left-3 top-1/2 -translate-y-1/2" />
-                      <input
-                        type="email"
-                        value={user?.email || ''}
-                        disabled
-                        className="w-full pl-9 pr-3.5 py-2.5 rounded-xl border border-neutral-200 dark:border-slate-800 bg-neutral-100/70 dark:bg-slate-800/40 text-xs font-mono text-neutral-500 dark:text-neutral-400 cursor-not-allowed shadow-xs"
-                      />
+                      <div className="w-full pl-9 pr-3.5 py-2.5 rounded-xl border border-neutral-200 dark:border-slate-800 bg-neutral-50 dark:bg-slate-800/60 text-xs font-mono text-neutral-700 dark:text-neutral-300 shadow-2xs">
+                        {user?.email || '-'}
+                      </div>
                     </div>
                   </div>
                 </div>
@@ -571,30 +551,25 @@ export default function UserProfileModal({
 
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                   <div>
-                    <label className="block text-xs font-bold text-neutral-700 dark:text-neutral-300 mb-1">
-                      {isStudent ? 'รหัสนิสิต (8 หลัก)' : 'รหัสบุคลากร / อาจารย์'}
+                    <label className="block text-[11px] font-bold text-neutral-500 dark:text-neutral-400 mb-1">
+                      {isStudent ? 'รหัสนิสิต' : 'รหัสบุคลากร / อาจารย์'}
                     </label>
-                    <input
-                      type="text"
-                      name={isStudent ? 'studentId' : 'personnelId'}
-                      value={isStudent ? formData.studentId : formData.personnelId}
-                      onChange={handleInputChange}
-                      placeholder={isStudent ? 'เช่น 66000001' : 'เช่น T-10492'}
-                      className="w-full px-3.5 py-2.5 rounded-xl border border-neutral-300 dark:border-slate-700 bg-white dark:bg-slate-800 text-xs font-mono font-medium text-neutral-900 dark:text-neutral-100 focus:outline-none focus:border-[#7749BC] shadow-xs"
-                    />
+                    <div className="w-full px-3.5 py-2.5 rounded-xl border border-neutral-200 dark:border-slate-800 bg-neutral-50 dark:bg-slate-800/60 text-xs font-mono font-bold text-neutral-900 dark:text-neutral-100 shadow-2xs">
+                      {isStudent ? (formData.studentId || user?.studentId || '-') : (formData.personnelId || user?.personnelId || user?.id || '-')}
+                    </div>
                   </div>
 
                   {isStudent ? (
                     <div>
                       <div className="flex items-center justify-between mb-1">
-                        <label className="block text-xs font-bold text-neutral-700 dark:text-neutral-300">
+                        <label className="block text-[11px] font-bold text-neutral-500 dark:text-neutral-400">
                           ชั้นปีการศึกษา
                         </label>
                         <span className="text-[10px] text-neutral-400 dark:text-neutral-500 font-normal">
-                          (คำนวณจากรหัสนิสิตอัตโนมัติ)
+                          (คำนวณจากรหัสนิสิต)
                         </span>
                       </div>
-                      <div className="w-full px-3.5 py-2.5 rounded-xl border border-neutral-200 dark:border-slate-800 bg-neutral-100/80 dark:bg-slate-800/60 text-xs font-semibold text-neutral-700 dark:text-neutral-300 flex items-center justify-between shadow-2xs select-none">
+                      <div className="w-full px-3.5 py-2.5 rounded-xl border border-neutral-200 dark:border-slate-800 bg-neutral-50 dark:bg-slate-800/60 text-xs font-semibold text-neutral-700 dark:text-neutral-300 flex items-center justify-between shadow-2xs select-none">
                         <span>{studentYearCalculated}</span>
                         <span className="px-2 py-0.5 rounded-md bg-purple-100 dark:bg-purple-950 text-[#7749BC] dark:text-purple-300 text-[10px] font-bold">
                           อัตโนมัติ
@@ -603,68 +578,48 @@ export default function UserProfileModal({
                     </div>
                   ) : (
                     <div>
-                      <label className="block text-xs font-bold text-neutral-700 dark:text-neutral-300 mb-1">
+                      <label className="block text-[11px] font-bold text-neutral-500 dark:text-neutral-400 mb-1">
                         ตำแหน่งทางวิชาการ
                       </label>
-                      <input
-                        type="text"
-                        name="bio"
-                        value={formData.bio}
-                        onChange={handleInputChange}
-                        placeholder="เช่น ผู้ช่วยศาสตราจารย์ ดร."
-                        className="w-full px-3.5 py-2.5 rounded-xl border border-neutral-300 dark:border-slate-700 bg-white dark:bg-slate-800 text-xs font-medium text-neutral-900 dark:text-neutral-100 focus:outline-none focus:border-[#7749BC] shadow-xs"
-                      />
+                      <div className="w-full px-3.5 py-2.5 rounded-xl border border-neutral-200 dark:border-slate-800 bg-neutral-50 dark:bg-slate-800/60 text-xs font-medium text-neutral-900 dark:text-neutral-100 shadow-2xs">
+                        {formData.bio || 'อาจารย์ประจำ'}
+                      </div>
                     </div>
                   )}
                 </div>
 
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                   <div>
-                    <label className="block text-xs font-bold text-neutral-700 dark:text-neutral-300 mb-1">
+                    <label className="block text-[11px] font-bold text-neutral-500 dark:text-neutral-400 mb-1">
                       คณะ
                     </label>
-                    <input
-                      type="text"
-                      name="faculty"
-                      value={formData.faculty}
-                      onChange={handleInputChange}
-                      placeholder="เช่น คณะวิทยาการสารสนเทศ"
-                      className="w-full px-3.5 py-2.5 rounded-xl border border-neutral-300 dark:border-slate-700 bg-white dark:bg-slate-800 text-xs font-medium text-neutral-900 dark:text-neutral-100 focus:outline-none focus:border-[#7749BC] shadow-xs"
-                    />
+                    <div className="w-full px-3.5 py-2.5 rounded-xl border border-neutral-200 dark:border-slate-800 bg-neutral-50 dark:bg-slate-800/60 text-xs font-medium text-neutral-900 dark:text-neutral-100 shadow-2xs">
+                      {formData.faculty || 'คณะวิทยาการสารสนเทศ'}
+                    </div>
                   </div>
 
                   <div>
-                    <label className="block text-xs font-bold text-neutral-700 dark:text-neutral-300 mb-1">
+                    <label className="block text-[11px] font-bold text-neutral-500 dark:text-neutral-400 mb-1">
                       สาขาวิชา / ภาควิชา
                     </label>
-                    <input
-                      type="text"
-                      name="department"
-                      value={formData.department}
-                      onChange={handleInputChange}
-                      placeholder="เช่น ภาควิชาสารสนเทศศึกษา"
-                      className="w-full px-3.5 py-2.5 rounded-xl border border-neutral-300 dark:border-slate-700 bg-white dark:bg-slate-800 text-xs font-medium text-neutral-900 dark:text-neutral-100 focus:outline-none focus:border-[#7749BC] shadow-xs"
-                    />
+                    <div className="w-full px-3.5 py-2.5 rounded-xl border border-neutral-200 dark:border-slate-800 bg-neutral-50 dark:bg-slate-800/60 text-xs font-medium text-neutral-900 dark:text-neutral-100 shadow-2xs">
+                      {formData.department || 'ภาควิชาสารสนเทศศึกษา'}
+                    </div>
                   </div>
                 </div>
 
                 {isStudent && (
                   <div>
-                    <label className="block text-xs font-bold text-neutral-700 dark:text-neutral-300 mb-1">
+                    <label className="block text-[11px] font-bold text-neutral-500 dark:text-neutral-400 mb-1">
                       อาจารย์ที่ปรึกษา (Advisor)
                     </label>
-                    <input
-                      type="text"
-                      name="advisorName"
-                      value={formData.advisorName}
-                      onChange={handleInputChange}
-                      placeholder="เช่น ดร.ธีรเดช มานะกุล"
-                      className="w-full px-3.5 py-2.5 rounded-xl border border-neutral-300 dark:border-slate-700 bg-white dark:bg-slate-800 text-xs font-medium text-neutral-900 dark:text-neutral-100 focus:outline-none focus:border-[#7749BC] shadow-xs"
-                    />
+                    <div className="w-full px-3.5 py-2.5 rounded-xl border border-neutral-200 dark:border-slate-800 bg-neutral-50 dark:bg-slate-800/60 text-xs font-medium text-neutral-900 dark:text-neutral-100 shadow-2xs">
+                      {formData.advisorName || 'ดร.ธีรเดช มานะกุล'}
+                    </div>
                   </div>
                 )}
               </div>
-            </form>
+            </div>
           )}
 
           {/* TAB 2: Avatar Upload */}
@@ -806,24 +761,34 @@ export default function UserProfileModal({
               </button>
             )}
 
-            <button
-              type="button"
-              disabled={isSaving}
-              onClick={handleSaveProfile}
-              className="px-5 py-2 rounded-xl bg-[#7749BC] hover:bg-[#653ba6] text-white text-xs font-bold flex items-center gap-2 shadow-md shadow-purple-900/20 transition-all disabled:opacity-50 cursor-pointer"
-            >
-              {isSaving ? (
-                <>
-                  <Loader2 className="w-4 h-4 animate-spin" />
-                  <span>กำลังบันทึกข้อมูล...</span>
-                </>
-              ) : (
-                <>
-                  <Save className="w-4 h-4" />
-                  <span>บันทึกข้อมูลทั้งหมด</span>
-                </>
-              )}
-            </button>
+            {activeTab === 'profile' ? (
+              <button
+                type="button"
+                onClick={onClose}
+                className="px-5 py-2 rounded-xl bg-[#7749BC] hover:bg-[#653ba6] text-white text-xs font-bold flex items-center gap-2 shadow-md shadow-purple-900/20 transition-all cursor-pointer"
+              >
+                <span>ปิดหน้าต่าง</span>
+              </button>
+            ) : (
+              <button
+                type="button"
+                disabled={isSaving}
+                onClick={handleSaveProfile}
+                className="px-5 py-2 rounded-xl bg-[#7749BC] hover:bg-[#653ba6] text-white text-xs font-bold flex items-center gap-2 shadow-md shadow-purple-900/20 transition-all disabled:opacity-50 cursor-pointer"
+              >
+                {isSaving ? (
+                  <>
+                    <Loader2 className="w-4 h-4 animate-spin" />
+                    <span>กำลังบันทึกข้อมูล...</span>
+                  </>
+                ) : (
+                  <>
+                    <Save className="w-4 h-4" />
+                    <span>บันทึกรูปโปรไฟล์</span>
+                  </>
+                )}
+              </button>
+            )}
           </div>
         </div>
       </div>
