@@ -149,12 +149,19 @@ export default function LeaveBarChart({
           padding: 8,
         },
         border: {
-          display: false,
+          display: true,
+          color: isDark ? 'rgba(255, 255, 255, 0.12)' : 'rgba(0, 0, 0, 0.1)',
         },
       },
       y: {
         stacked,
         beginAtZero: true,
+        suggestedMin: 0,
+        suggestedMax: (() => {
+          const allVals = datasets.flatMap((d) => d.data || []);
+          const max = Math.max(0, ...allVals);
+          return max < 4 ? 4 : undefined;
+        })(),
         grid: {
           color: isDark ? 'rgba(255, 255, 255, 0.07)' : 'rgba(0, 0, 0, 0.06)',
           drawBorder: false,
