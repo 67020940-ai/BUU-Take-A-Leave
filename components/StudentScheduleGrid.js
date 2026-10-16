@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useMemo } from 'react';
+import { useState, useMemo, useEffect } from 'react';
 import Link from 'next/link';
 import {
   CalendarDays,
@@ -19,6 +19,9 @@ import {
   GraduationCap,
   Download,
   AlertCircle,
+  AlertTriangle,
+  ShieldCheck,
+  TrendingUp,
   Check,
 } from 'lucide-react';
 
@@ -116,9 +119,11 @@ export default function StudentScheduleGrid({
   searchQuery = '',
   onSelectCourseForLeave,
   hideHeader = false,
+  selectedCourseId = null,
+  onClearSelectedCourseId = null,
 }) {
   const [selectedCourse, setSelectedCourse] = useState(null);
-  const [modalTab, setModalTab] = useState('prep'); // 'prep' | 'exam' | 'syllabus' | 'info'
+  const [modalTab, setModalTab] = useState('quota'); // 'quota' | 'prep' | 'exam' | 'syllabus'
   const [viewMode, setViewMode] = useState('cards'); // 'cards' | 'grid'
   const [mobileSelectedDay, setMobileSelectedDay] = useState(() => {
     const dayNum = new Date().getDay();
@@ -165,6 +170,14 @@ export default function StudentScheduleGrid({
 
         const prep = getCoursePrep(c.code);
 
+        const percent = s.percentage !== undefined ? s.percentage : (s.percent !== undefined ? s.percent : 100);
+        const total = s.totalSessions !== undefined ? s.totalSessions : (s.total || 15);
+        const leavesCount = s.approvedLeaves !== undefined ? s.approvedLeaves : (s.leaves || 0);
+        const pendingLeaves = s.pendingLeaves || 0;
+        const attended = s.attended !== undefined ? s.attended : Math.max(total - leavesCount, 0);
+        const quotaLimit = s.quotaLimit || Math.max(1, Math.floor(total * 0.2)) || 3;
+        const remainingLeaves = Math.max(0, quotaLimit - leavesCount);
+
         return {
           id: c.id || `${c.code}-${c.group}`,
           code: c.code,
@@ -177,15 +190,31 @@ export default function StudentScheduleGrid({
           startSlot,
           slotSpan,
           isMatch,
-          attendance: s.percent !== undefined ? s.percent : 100,
-          attended: s.attended !== undefined ? s.attended : 15,
-          total: s.total || 15,
-          leaves: s.leaves || 0,
+          attendance: percent,
+          attended,
+          total,
+          leaves: leavesCount,
+          pendingLeaves,
+          quotaLimit,
+          remainingLeaves,
           prep,
         };
       })
       .filter(Boolean);
   }, [summaries, searchQuery]);
+
+  // Support external course selection (e.g. from attendance health cards)
+  useEffect(() => {
+    if (selectedCourseId) {
+      const match = parsedCourses.find(
+        (c) => c.id === selectedCourseId || c.code === selectedCourseId
+      );
+      if (match) {
+        setSelectedCourse(match);
+        setModalTab('quota');
+      }
+    }
+  }, [selectedCourseId, parsedCourses]);
 
   return (
     <div className="bg-white dark:bg-slate-900 rounded-3xl border border-neutral-200/90 dark:border-slate-800 shadow-xs overflow-hidden">
@@ -356,12 +385,12 @@ export default function StudentScheduleGrid({
                         type="button"
                         onClick={() => {
                           setSelectedCourse(c);
-                          setModalTab('prep');
+                          setModalTab('quota');
                         }}
                         className="flex-1 min-h-[44px] py-2 px-3 rounded-xl bg-white dark:bg-slate-800 border border-neutral-200 dark:border-slate-700 text-xs font-bold text-neutral-700 dark:text-neutral-200 flex items-center justify-center gap-1.5 active:bg-neutral-100 cursor-pointer shadow-2xs"
                       >
-                        <Sparkles className="w-3.5 h-3.5 text-[#7749BC]" />
-                        <span>เตรียมตัว / แนวข้อสอบ</span>
+                        <ShieldCheck className="w-3.5 h-3.5 text-[#7749BC]" />
+                        <span>โควตา & สถิติวิชา</span>
                       </button>
                       {onSelectCourseForLeave && (
                         <button
@@ -451,7 +480,7 @@ export default function StudentScheduleGrid({
                             key={c.id}
                             onClick={() => {
                               setSelectedCourse(c);
-                              setModalTab('prep');
+                              setModalTab('quota');
                             }}
                             style={{
                               left: `${leftPercent}%`,
@@ -519,7 +548,10 @@ export default function StudentScheduleGrid({
       {selectedCourse && (
         <div
           className="fixed inset-0 z-50 bg-slate-900/60 backdrop-blur-xs flex items-center justify-center p-4 animate-in fade-in duration-150"
-          onClick={() => setSelectedCourse(null)}
+          onClick={() => {
+            setSelectedCourse(null);
+            if (onClearSelectedCourseId) onClearSelectedCourseId();
+          }}
         >
           <div
             className="w-full max-w-2xl bg-white dark:bg-slate-900 rounded-3xl border border-neutral-200 dark:border-slate-800 shadow-2xl p-5 sm:p-6 space-y-4 animate-in zoom-in-95 duration-150 max-h-[90vh] overflow-y-auto"
@@ -547,7 +579,10 @@ export default function StudentScheduleGrid({
               </div>
               <button
                 type="button"
-                onClick={() => setSelectedCourse(null)}
+                onClick={() => {
+                  setSelectedCourse(null);
+                  if (onClearSelectedCourseId) onClearSelectedCourseId();
+                }}
                 className="p-1.5 rounded-xl text-neutral-400 hover:text-neutral-700 dark:hover:text-neutral-200 hover:bg-neutral-100 dark:hover:bg-slate-800 transition-colors cursor-pointer"
               >
                 <X className="w-5 h-5" />
@@ -576,20 +611,35 @@ export default function StudentScheduleGrid({
 
               <div className="col-span-2 sm:col-span-1 p-2.5 rounded-xl bg-slate-50 dark:bg-slate-800/60 border border-slate-200/70 dark:border-slate-700/60 flex flex-col justify-center">
                 <span className="text-neutral-400 text-[10px] flex items-center gap-1">
-                  <Clock className="w-3 h-3 text-[#7749BC]" /> เวลาเรียนสะสม
+                  <Clock className="w-3 h-3 text-[#7749BC]" /> เวลาเรียน & โควตา
                 </span>
-                <p className="font-bold text-emerald-600 dark:text-emerald-400 mt-0.5 text-xs font-mono">
-                  {selectedCourse.attendance}% ({selectedCourse.attended}/{selectedCourse.total} คาบ)
+                <p className={`font-bold mt-0.5 text-xs font-mono ${
+                  selectedCourse.attendance < 80 ? 'text-rose-600 dark:text-rose-400' : 'text-emerald-600 dark:text-emerald-400'
+                }`}>
+                  {selectedCourse.attendance}% • เหลือลา {selectedCourse.remainingLeaves}/{selectedCourse.quotaLimit} ครั้ง
                 </p>
               </div>
             </div>
 
-            {/* Modal Tabs Navigation: เตรียมตัวก่อนเรียน | แนวข้อสอบ | แผน 15 สัปดาห์ */}
-            <div className="flex items-center gap-1.5 p-1 bg-slate-100 dark:bg-slate-800/80 rounded-2xl border border-slate-200/80 dark:border-slate-700/70 text-xs font-semibold">
+            {/* Modal Tabs Navigation: โควตา & สิทธิ์สอบ | เตรียมตัวก่อนเรียน | แนวข้อสอบ | แผน 15 สัปดาห์ */}
+            <div className="grid grid-cols-2 sm:grid-cols-4 gap-1.5 p-1 bg-slate-100 dark:bg-slate-800/80 rounded-2xl border border-slate-200/80 dark:border-slate-700/70 text-xs font-semibold">
+              <button
+                type="button"
+                onClick={() => setModalTab('quota')}
+                className={`py-2 px-2.5 rounded-xl transition-all cursor-pointer flex items-center justify-center gap-1.5 min-h-[44px] ${
+                  modalTab === 'quota'
+                    ? 'bg-white dark:bg-slate-900 text-[#7749BC] dark:text-purple-300 shadow-2xs font-bold'
+                    : 'text-neutral-600 dark:text-neutral-400 hover:text-neutral-900 dark:hover:text-white'
+                }`}
+              >
+                <ShieldCheck className="w-3.5 h-3.5" />
+                <span>โควตา & สิทธิ์สอบ</span>
+              </button>
+
               <button
                 type="button"
                 onClick={() => setModalTab('prep')}
-                className={`flex-1 py-1.5 px-3 rounded-xl transition-all cursor-pointer flex items-center justify-center gap-1.5 ${
+                className={`py-2 px-2.5 rounded-xl transition-all cursor-pointer flex items-center justify-center gap-1.5 min-h-[44px] ${
                   modalTab === 'prep'
                     ? 'bg-white dark:bg-slate-900 text-[#7749BC] dark:text-purple-300 shadow-2xs font-bold'
                     : 'text-neutral-600 dark:text-neutral-400 hover:text-neutral-900 dark:hover:text-white'
@@ -602,7 +652,7 @@ export default function StudentScheduleGrid({
               <button
                 type="button"
                 onClick={() => setModalTab('exam')}
-                className={`flex-1 py-1.5 px-3 rounded-xl transition-all cursor-pointer flex items-center justify-center gap-1.5 ${
+                className={`py-2 px-2.5 rounded-xl transition-all cursor-pointer flex items-center justify-center gap-1.5 min-h-[44px] ${
                   modalTab === 'exam'
                     ? 'bg-white dark:bg-slate-900 text-[#7749BC] dark:text-purple-300 shadow-2xs font-bold'
                     : 'text-neutral-600 dark:text-neutral-400 hover:text-neutral-900 dark:hover:text-white'
@@ -615,7 +665,7 @@ export default function StudentScheduleGrid({
               <button
                 type="button"
                 onClick={() => setModalTab('syllabus')}
-                className={`flex-1 py-1.5 px-3 rounded-xl transition-all cursor-pointer flex items-center justify-center gap-1.5 ${
+                className={`py-2 px-2.5 rounded-xl transition-all cursor-pointer flex items-center justify-center gap-1.5 min-h-[44px] ${
                   modalTab === 'syllabus'
                     ? 'bg-white dark:bg-slate-900 text-[#7749BC] dark:text-purple-300 shadow-2xs font-bold'
                     : 'text-neutral-600 dark:text-neutral-400 hover:text-neutral-900 dark:hover:text-white'
@@ -625,6 +675,242 @@ export default function StudentScheduleGrid({
                 <span>แผน 15 สัปดาห์</span>
               </button>
             </div>
+
+            {/* TAB 0: โควตาเวลาเรียน & สิทธิ์สอบ (Per-Course Quota Breakdown) */}
+            {modalTab === 'quota' && (
+              <div className="space-y-3.5 animate-in fade-in duration-100">
+                {/* Status Banner */}
+                <div
+                  className={`p-3.5 sm:p-4 rounded-2xl border flex items-start gap-3 ${
+                    selectedCourse.leaves > selectedCourse.quotaLimit || selectedCourse.attendance < 80
+                      ? 'bg-rose-50/90 dark:bg-rose-950/40 border-rose-200 dark:border-rose-900/80 text-rose-900 dark:text-rose-200'
+                      : selectedCourse.remainingLeaves === 0
+                      ? 'bg-orange-50/90 dark:bg-orange-950/40 border-orange-200 dark:border-orange-900/80 text-orange-900 dark:text-orange-200'
+                      : selectedCourse.remainingLeaves === 1
+                      ? 'bg-amber-50/90 dark:bg-amber-950/40 border-amber-200 dark:border-amber-900/80 text-amber-900 dark:text-amber-200'
+                      : 'bg-emerald-50/90 dark:bg-emerald-950/40 border-emerald-200 dark:border-emerald-900/80 text-emerald-900 dark:text-emerald-200'
+                  }`}
+                >
+                  <div
+                    className={`w-9 h-9 rounded-xl flex items-center justify-center shrink-0 ${
+                      selectedCourse.leaves > selectedCourse.quotaLimit || selectedCourse.attendance < 80
+                        ? 'bg-rose-500 text-white'
+                        : selectedCourse.remainingLeaves === 0
+                        ? 'bg-orange-500 text-white'
+                        : selectedCourse.remainingLeaves === 1
+                        ? 'bg-amber-500 text-white'
+                        : 'bg-emerald-500 text-white'
+                    }`}
+                  >
+                    {selectedCourse.leaves > selectedCourse.quotaLimit || selectedCourse.attendance < 80 ? (
+                      <AlertCircle className="w-5 h-5" />
+                    ) : selectedCourse.remainingLeaves <= 1 ? (
+                      <AlertTriangle className="w-5 h-5" />
+                    ) : (
+                      <ShieldCheck className="w-5 h-5" />
+                    )}
+                  </div>
+                  <div className="min-w-0 flex-1">
+                    <div className="flex items-center justify-between gap-2 flex-wrap">
+                      <h5 className="font-bold text-xs sm:text-sm">
+                        {selectedCourse.leaves > selectedCourse.quotaLimit || selectedCourse.attendance < 80
+                          ? 'สถานะ: ขาดเรียนเกินเกณฑ์ 20% (เสี่ยงหมดสิทธิ์สอบ)'
+                          : selectedCourse.remainingLeaves === 0
+                          ? 'สถานะ: ใช้โควตาการลาครบเต็มจำนวนแล้ว (ห้ามขาดเพิ่ม)'
+                          : selectedCourse.remainingLeaves === 1
+                          ? 'สถานะ: เฝ้าระวัง (สามารถลาได้อีกเพียง 1 ครั้ง)'
+                          : 'สถานะ: ปลอดภัยตามเกณฑ์เวลาเรียนมหาวิทยาลัย (สิทธิ์สอบปกติ)'}
+                      </h5>
+                      <span className="text-[11px] font-mono font-bold px-2 py-0.5 rounded-full bg-white/70 dark:bg-slate-900/60 border border-current/20">
+                        โควตา {selectedCourse.leaves}/{selectedCourse.quotaLimit} ครั้ง
+                      </span>
+                    </div>
+                    <p className="text-xs mt-1 opacity-90 leading-relaxed">
+                      {selectedCourse.leaves > selectedCourse.quotaLimit || selectedCourse.attendance < 80
+                        ? `คุณมีสถิติการลาหรือขาดเรียนรวม ${selectedCourse.leaves} ครั้ง ทำให้เวลาเรียนเหลือเพียง ${selectedCourse.attendance}% ซึ่งต่ำกว่าเกณฑ์ 80% กรุณาติดต่ออาจารย์ผู้สอนหรือฝ่ายวิชาการโดยด่วน`
+                        : selectedCourse.remainingLeaves === 0
+                        ? `คุณใช้สิทธิ์การลาครบทั้ง ${selectedCourse.quotaLimit} ครั้งแล้ว หากขาดเรียนหรือลาเพิ่มอีก 1 ครั้ง เวลาเรียนจะต่ำกว่า 80% และส่งผลกระทบต่อสิทธิ์สอบปลายภาคทันที`
+                        : selectedCourse.remainingLeaves === 1
+                        ? `คุณได้ยื่นลาไปแล้ว ${selectedCourse.leaves} ครั้ง และมีสิทธิ์ลาได้อีกเพียง 1 ครั้งเท่านั้น แนะนำให้สำรองไว้ใช้ยามจำเป็นฉุกเฉิน`
+                        : `คุณมีเวลาเรียนสะสม ${selectedCourse.attendance}% (${selectedCourse.attended}/${selectedCourse.total} คาบ) อยู่ในเกณฑ์ดีมาก และยังสามารถใช้สิทธิ์ลาได้อีก ${selectedCourse.remainingLeaves} ครั้ง`}
+                    </p>
+                  </div>
+                </div>
+
+                {/* Metric Cards Grid */}
+                <div className="grid grid-cols-1 sm:grid-cols-3 gap-2.5 text-xs">
+                  {/* 1. เวลาเรียนสะสม */}
+                  <div className="p-3.5 rounded-2xl bg-slate-50 dark:bg-slate-800/60 border border-slate-200/80 dark:border-slate-700/70 space-y-2">
+                    <div className="flex items-center justify-between">
+                      <span className="text-neutral-500 dark:text-neutral-400 font-medium flex items-center gap-1.5">
+                        <Clock className="w-3.5 h-3.5 text-[#7749BC]" /> เวลาเรียนสะสม
+                      </span>
+                      <span
+                        className={`font-mono font-black text-sm ${
+                          selectedCourse.attendance < 80
+                            ? 'text-rose-600 dark:text-rose-400'
+                            : 'text-emerald-600 dark:text-emerald-400'
+                        }`}
+                      >
+                        {selectedCourse.attendance}%
+                      </span>
+                    </div>
+                    <div className="w-full h-2 bg-neutral-200 dark:bg-slate-700 rounded-full overflow-hidden">
+                      <div
+                        className={`h-full rounded-full transition-all duration-300 ${
+                          selectedCourse.attendance < 80 ? 'bg-rose-500' : 'bg-emerald-500'
+                        }`}
+                        style={{ width: `${Math.min(100, selectedCourse.attendance)}%` }}
+                      />
+                    </div>
+                    <div className="flex items-center justify-between text-[11px] text-neutral-500 dark:text-neutral-400">
+                      <span>เข้าเรียนแล้ว</span>
+                      <span className="font-mono font-bold text-neutral-800 dark:text-neutral-200">
+                        {selectedCourse.attended} / {selectedCourse.total} คาบ
+                      </span>
+                    </div>
+                  </div>
+
+                  {/* 2. สถิติการลา */}
+                  <div className="p-3.5 rounded-2xl bg-slate-50 dark:bg-slate-800/60 border border-slate-200/80 dark:border-slate-700/70 space-y-2">
+                    <div className="flex items-center justify-between">
+                      <span className="text-neutral-500 dark:text-neutral-400 font-medium flex items-center gap-1.5">
+                        <FileText className="w-3.5 h-3.5 text-[#7749BC]" /> โควตาที่ใช้ไป
+                      </span>
+                      <span className="font-mono font-black text-sm text-neutral-900 dark:text-white">
+                        {selectedCourse.leaves} / {selectedCourse.quotaLimit} ครั้ง
+                      </span>
+                    </div>
+                    <div className="w-full h-2 bg-neutral-200 dark:bg-slate-700 rounded-full overflow-hidden">
+                      <div
+                        className={`h-full rounded-full transition-all duration-300 ${
+                          selectedCourse.leaves > selectedCourse.quotaLimit
+                            ? 'bg-rose-500'
+                            : selectedCourse.leaves === selectedCourse.quotaLimit
+                            ? 'bg-orange-500'
+                            : selectedCourse.leaves === selectedCourse.quotaLimit - 1
+                            ? 'bg-amber-500'
+                            : 'bg-purple-500'
+                        }`}
+                        style={{
+                          width: `${Math.min(100, (selectedCourse.leaves / selectedCourse.quotaLimit) * 100)}%`,
+                        }}
+                      />
+                    </div>
+                    <div className="flex items-center justify-between text-[11px] text-neutral-500 dark:text-neutral-400">
+                      <span>สัดส่วนการลา</span>
+                      <span className="font-mono font-bold text-neutral-800 dark:text-neutral-200">
+                        {Math.round((selectedCourse.leaves / selectedCourse.total) * 100)}% ของเวลาทั้งหมด
+                      </span>
+                    </div>
+                  </div>
+
+                  {/* 3. โควตาคงเหลือ */}
+                  <div className="p-3.5 rounded-2xl bg-slate-50 dark:bg-slate-800/60 border border-slate-200/80 dark:border-slate-700/70 space-y-2">
+                    <div className="flex items-center justify-between">
+                      <span className="text-neutral-500 dark:text-neutral-400 font-medium flex items-center gap-1.5">
+                        <ShieldCheck className="w-3.5 h-3.5 text-[#7749BC]" /> โควตาคงเหลือ
+                      </span>
+                      <span
+                        className={`font-mono font-black text-sm ${
+                          selectedCourse.remainingLeaves === 0
+                            ? 'text-orange-600 dark:text-orange-400'
+                            : selectedCourse.remainingLeaves === 1
+                            ? 'text-amber-600 dark:text-amber-400'
+                            : 'text-emerald-600 dark:text-emerald-400'
+                        }`}
+                      >
+                        {selectedCourse.remainingLeaves} ครั้ง
+                      </span>
+                    </div>
+                    <div className="flex items-center gap-1.5 pt-1">
+                      {Array.from({ length: selectedCourse.quotaLimit }).map((_, i) => {
+                        const isUsed = i < selectedCourse.leaves;
+                        return (
+                          <div
+                            key={i}
+                            className={`flex-1 h-3 rounded-md transition-all flex items-center justify-center text-[9px] font-bold ${
+                              isUsed
+                                ? 'bg-purple-600 text-white'
+                                : 'bg-neutral-200 dark:bg-slate-700 text-neutral-400'
+                            }`}
+                            title={`โควตาครั้งที่ ${i + 1}: ${isUsed ? 'ใช้แล้ว' : 'ยังว่างอยู่'}`}
+                          >
+                            {i + 1}
+                          </div>
+                        );
+                      })}
+                    </div>
+                    <div className="flex items-center justify-between text-[11px] text-neutral-500 dark:text-neutral-400">
+                      <span>เกณฑ์ขาดได้สูงสุด</span>
+                      <span className="font-mono font-bold text-neutral-800 dark:text-neutral-200">
+                        20% (3 ครั้ง)
+                      </span>
+                    </div>
+                  </div>
+                </div>
+
+                {/* Visual Quota Slot Gauge Breakdown */}
+                <div className="p-3.5 rounded-2xl bg-slate-50 dark:bg-slate-800/50 border border-slate-200/70 dark:border-slate-700/60 space-y-2.5">
+                  <h6 className="text-xs font-bold text-neutral-800 dark:text-neutral-200 flex items-center gap-1.5">
+                    <TrendingUp className="w-4 h-4 text-[#7749BC]" />
+                    <span>แผนภูมิแจกแจงสิทธิ์การลา (3 Quota Slots Breakdown)</span>
+                  </h6>
+
+                  <div className="grid grid-cols-1 sm:grid-cols-3 gap-2.5">
+                    {Array.from({ length: selectedCourse.quotaLimit }).map((_, slotIdx) => {
+                      const slotNum = slotIdx + 1;
+                      const isUsed = slotNum <= selectedCourse.leaves;
+                      const isCurrentRisk = slotNum === selectedCourse.quotaLimit;
+
+                      return (
+                        <div
+                          key={slotIdx}
+                          className={`p-3 rounded-xl border flex flex-col justify-between space-y-1.5 ${
+                            isUsed
+                              ? 'bg-purple-50/70 dark:bg-purple-950/40 border-purple-200 dark:border-purple-800/60'
+                              : 'bg-white dark:bg-slate-800/80 border-slate-200/80 dark:border-slate-700/70'
+                          }`}
+                        >
+                          <div className="flex items-center justify-between">
+                            <span className="text-[11px] font-bold text-neutral-700 dark:text-neutral-300">
+                              สิทธิ์ครั้งที่ {slotNum}
+                            </span>
+                            <span
+                              className={`text-[10px] font-bold px-2 py-0.5 rounded-full ${
+                                isUsed
+                                  ? 'bg-[#7749BC] text-white'
+                                  : 'bg-neutral-100 dark:bg-slate-700 text-neutral-500 dark:text-neutral-300'
+                              }`}
+                            >
+                              {isUsed ? 'ใช้สิทธิ์แล้ว' : 'ว่าง (ยังไม่ได้ใช้)'}
+                            </span>
+                          </div>
+                          <p className="text-[11px] text-neutral-500 dark:text-neutral-400">
+                            {isUsed
+                              ? 'บันทึกในระบบเรียบร้อย'
+                              : isCurrentRisk
+                              ? '⚠️ โควตาสุดท้ายก่อนหมดสิทธิ์สอบ'
+                              : 'โควตาปกติ ลาได้ตามเกณฑ์'}
+                          </p>
+                        </div>
+                      );
+                    })}
+                  </div>
+                </div>
+
+                {/* BUU University Policy Callout */}
+                <div className="p-3.5 rounded-2xl bg-purple-50/60 dark:bg-purple-950/30 border border-purple-200/70 dark:border-purple-800/50 space-y-1.5 text-xs">
+                  <h6 className="font-bold text-neutral-900 dark:text-purple-200 flex items-center gap-1.5">
+                    <HelpCircle className="w-4 h-4 text-[#7749BC]" />
+                    <span>ข้อบังคับมหาวิทยาลัยบูรพา ว่าด้วยการจัดการศึกษาระดับปริญญาตรี</span>
+                  </h6>
+                  <p className="text-neutral-600 dark:text-neutral-300 leading-relaxed text-[11px]">
+                    นิสิตต้องมีเวลาเรียนไม่น้อยกว่าร้อยละ 80 ของเวลาเรียนทั้งหมดในรายวิชานั้น (ขาดเรียนได้ไม่เกิน 3 ครั้ง สำหรับวิชา 15 คาบ) จึงจะมีสิทธิ์เข้าสอบไล่ปลายภาค หากมีเหตุจำเป็นฉุกเฉินหรือป่วยเกิน 3 วัน กรุณาแนบใบรับรองแพทย์และติดต่ออาจารย์ผู้สอนโดยตรง
+                  </p>
+                </div>
+              </div>
+            )}
 
             {/* TAB 1: เตรียมตัวก่อนเรียน (Pre-class Prep) */}
             {modalTab === 'prep' && (

@@ -52,6 +52,7 @@ export default function StudentHomepageView({
   const [searchQuery, setSearchQuery] = useState('');
   const [isSidebarCollapsed] = useSidebarCollapsed();
   const [targetCourseForLeave, setTargetCourseForLeave] = useState(initialCourseId);
+  const [selectedCourseForModal, setSelectedCourseForModal] = useState(null);
 
   // Real-time leaves state & periodic live synchronization
   const [leavesList, setLeavesList] = useState(leaves);
@@ -319,6 +320,8 @@ export default function StudentHomepageView({
                   summaries={currentSummaries}
                   semester={selectedTerm}
                   searchQuery={searchQuery}
+                  selectedCourseId={selectedCourseForModal}
+                  onClearSelectedCourseId={() => setSelectedCourseForModal(null)}
                   onSelectCourseForLeave={(cId, cCode) => {
                     setTargetCourseForLeave(cId);
                     handleSwitchTab('leave', { courseId: cId, code: cCode });
@@ -423,6 +426,8 @@ export default function StudentHomepageView({
                       const total = s.totalSessions !== undefined ? s.totalSessions : (s.total !== undefined ? s.total : 15);
                       const leavesCount = s.approvedLeaves !== undefined ? s.approvedLeaves : (s.leaves !== undefined ? s.leaves : 0);
                       const attended = s.attended !== undefined ? s.attended : Math.max(total - leavesCount, 0);
+                      const quotaLimit = s.quotaLimit || Math.max(1, Math.floor(total * 0.2)) || 3;
+                      const remainingQuota = Math.max(0, quotaLimit - leavesCount);
 
                       return (
                         <div
@@ -477,7 +482,45 @@ export default function StudentHomepageView({
                               <span>
                                 เข้าเรียน {attended}/{total} คาบ
                               </span>
-                              <span>ลา {leavesCount} ครั้ง</span>
+                              <span>ลา {leavesCount}/{quotaLimit} ครั้ง</span>
+                            </div>
+
+                            {/* Quota Badge & View Detail Button */}
+                            <div className="pt-2 flex items-center justify-between gap-1.5 border-t border-slate-200/50 dark:border-slate-700/50">
+                              <span
+                                className={`text-[10px] font-bold px-2 py-0.5 rounded-full border inline-flex items-center gap-1 ${
+                                  leavesCount > quotaLimit
+                                    ? 'bg-rose-50 text-rose-700 dark:bg-rose-950/60 dark:text-rose-300 border-rose-200/60 dark:border-rose-800/60'
+                                    : remainingQuota === 0
+                                    ? 'bg-orange-50 text-orange-700 dark:bg-orange-950/60 dark:text-orange-300 border-orange-200/60 dark:border-orange-800/60'
+                                    : remainingQuota === 1
+                                    ? 'bg-amber-50 text-amber-700 dark:bg-amber-950/60 dark:text-amber-300 border-amber-200/60 dark:border-amber-800/60'
+                                    : 'bg-emerald-50 text-emerald-700 dark:bg-emerald-950/60 dark:text-emerald-300 border-emerald-200/60 dark:border-emerald-800/60'
+                                }`}
+                              >
+                                {leavesCount > quotaLimit
+                                  ? '🚨 เกินโควตา'
+                                  : remainingQuota === 0
+                                  ? '⛔ โควตาเต็ม'
+                                  : remainingQuota === 1
+                                  ? '⚠️ เหลือ 1 ครั้ง'
+                                  : `เหลือโควตา ${remainingQuota} ครั้ง`}
+                              </span>
+
+                              <button
+                                type="button"
+                                onClick={() => {
+                                  setSelectedCourseForModal(c.id || c.code);
+                                  const scheduleEl = document.getElementById('schedule-section');
+                                  if (scheduleEl) {
+                                    scheduleEl.scrollIntoView({ behavior: 'smooth' });
+                                  }
+                                }}
+                                className="text-[11px] font-bold text-[#7749BC] dark:text-purple-300 hover:underline flex items-center gap-0.5 min-h-[32px] cursor-pointer"
+                              >
+                                <span>ดูโควตา</span>
+                                <ChevronRight className="w-3 h-3" />
+                              </button>
                             </div>
                           </div>
                         </div>
