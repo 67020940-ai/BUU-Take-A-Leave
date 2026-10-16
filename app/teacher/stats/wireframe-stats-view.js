@@ -111,6 +111,8 @@ export default function WireframeStatsView({
     return courses.find((c) => c.id === selectedCourseId) || currentSubject?.sections[0] || null;
   }, [courses, selectedCourseId, currentSubject]);
 
+  const displayGroup = selectedCourse?.group || '01';
+
   // Controls & States
   const [semester, setSemester] = useState('1/2569');
   const [activeStatsView, setActiveStatsView] = useState('current'); // 'current' | 'archive'
@@ -378,7 +380,6 @@ export default function WireframeStatsView({
   }, [filteredStudents, currentPage]);
 
   const [isSidebarCollapsed] = useSidebarCollapsed();
-  const displayGroup = selectedCourse?.group || '01';
 
   return (
     <div className="min-h-screen bg-slate-50/70 dark:bg-slate-950 flex flex-col lg:flex-row">
