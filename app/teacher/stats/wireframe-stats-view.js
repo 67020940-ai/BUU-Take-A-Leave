@@ -555,7 +555,7 @@ export default function WireframeStatsView({
           {/* TWO-COLUMN CHART GRID: BAR CHART (COMPARISON) & DONUT CHART (PROPORTIONS) */}
           <div className="grid grid-cols-1 lg:grid-cols-12 gap-4 sm:gap-6 items-stretch">
             {/* LEFT COLUMN: Bar Chart (Leave Types Breakdown in Selected Group) */}
-            <div className="lg:col-span-6 bg-white/90 dark:bg-slate-900/90 backdrop-blur-xl rounded-3xl border-2 border-neutral-300/90 dark:border-slate-700/80 p-5 shadow-xs flex flex-col justify-between">
+            <div className="lg:col-span-6 bg-white/90 dark:bg-slate-900/90 backdrop-blur-xl rounded-3xl border-2 border-neutral-300/90 dark:border-slate-700/80 p-5 shadow-xs flex flex-col justify-between overflow-hidden min-w-0">
               <div>
                 <div className="pb-3 border-b border-neutral-100 dark:border-slate-800">
                   <h3 className="text-sm sm:text-base font-bold text-neutral-900 dark:text-neutral-100 flex items-center gap-2">
@@ -591,7 +591,7 @@ export default function WireframeStatsView({
             </div>
 
             {/* RIGHT COLUMN: Donut Chart (Proportion Breakdown) */}
-            <div className="lg:col-span-6 bg-white/90 dark:bg-slate-900/90 backdrop-blur-xl rounded-3xl border-2 border-neutral-300/90 dark:border-slate-700/80 p-5 shadow-xs flex flex-col justify-between">
+            <div className="lg:col-span-6 bg-white/90 dark:bg-slate-900/90 backdrop-blur-xl rounded-3xl border-2 border-neutral-300/90 dark:border-slate-700/80 p-5 shadow-xs flex flex-col justify-between overflow-hidden min-w-0">
               <div>
                 <div className="pb-3 border-b border-neutral-100 dark:border-slate-800">
                   <h3 className="text-sm sm:text-base font-bold text-neutral-900 dark:text-neutral-100 flex items-center gap-2">
