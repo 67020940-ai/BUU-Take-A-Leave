@@ -25,8 +25,6 @@ import {
   Award,
   X,
 } from 'lucide-react';
-import LeaveBarChart from '@/components/charts/LeaveBarChart';
-import LeaveDonutChart from '@/components/charts/LeaveDonutChart';
 import { sortAcademicTerms, isTermStartedOrPassed } from '@/lib/ui';
 import { formatLeaveClassTime, calculateLeaveStats } from '@/lib/leave-stats';
 
@@ -46,7 +44,6 @@ export default function StudentStatsView({ summaries = [], leaves = [] }) {
   }, [summaries, leaves]);
 
   const [selectedTerm, setSelectedTerm] = useState('all');
-  const [chartMode, setChartMode] = useState('breakdown'); // 'breakdown' | 'total'
   const [selectedCategoryModal, setSelectedCategoryModal] = useState(null);
 
   // Multi-semester comparison breakdown
@@ -119,6 +116,7 @@ export default function StudentStatsView({ summaries = [], leaves = [] }) {
       pending,
       rejected,
       cancelled,
+      hasCancelled,
       sick,
       personal,
       activity,
@@ -146,61 +144,6 @@ export default function StudentStatsView({ summaries = [], leaves = [] }) {
       return matchType && matchTerm;
     });
   }, [selectedCategoryModal, leaves, summaries, selectedTerm]);
-
-  // Bar Chart Data Prep: Chronological Semesters Comparison
-  const sortedSemesters = useMemo(() => {
-    return [...semesterBreakdown].reverse(); // Oldest to newest
-  }, [semesterBreakdown]);
-
-  const semesterLabels = useMemo(() => {
-    return sortedSemesters.map((s) => `ภาคเรียน ${s.term}`);
-  }, [sortedSemesters]);
-
-  const barChartDatasets = useMemo(() => {
-    if (chartMode === 'total') {
-      return [
-        {
-          label: 'จำนวนครั้งที่ยื่นลาทั้งหมด',
-          data: sortedSemesters.map((s) => s.totalLeaves),
-          backgroundColor: '#7749BC',
-          hoverBackgroundColor: '#5B21B6',
-        },
-        {
-          label: 'อนุมัติแล้ว',
-          data: sortedSemesters.map((s) => s.approvedLeaves),
-          backgroundColor: '#10B981',
-          hoverBackgroundColor: '#059669',
-        },
-      ];
-    }
-
-    return [
-      {
-        label: 'ลาป่วย',
-        data: sortedSemesters.map((s) => s.sickLeaves),
-        backgroundColor: '#0284C7', // Sky-600
-        hoverBackgroundColor: '#0369A1',
-      },
-      {
-        label: 'ลากิจส่วนตัว',
-        data: sortedSemesters.map((s) => s.personalLeaves),
-        backgroundColor: '#7749BC', // Purple BUU
-        hoverBackgroundColor: '#5B21B6',
-      },
-      {
-        label: 'ลากิจกรรม',
-        data: sortedSemesters.map((s) => s.activityLeaves),
-        backgroundColor: '#6366F1', // Indigo-500
-        hoverBackgroundColor: '#4F46E5',
-      },
-      {
-        label: 'อื่น ๆ',
-        data: sortedSemesters.map((s) => s.otherLeaves),
-        backgroundColor: '#F59E0B', // Amber-500
-        hoverBackgroundColor: '#D97706',
-      },
-    ];
-  }, [sortedSemesters, chartMode]);
 
   return (
     <div className="space-y-6">
@@ -329,109 +272,6 @@ export default function StudentStatsView({ summaries = [], leaves = [] }) {
         </div>
       </div>
 
-      {/* 1.3 Two-Column Grid: Left Bar Chart & Right Donut Chart (Balanced 6:6 Grid Layout) */}
-      <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 items-stretch">
-        {/* LEFT COLUMN: Bar Chart (Semester Comparison) */}
-        <div className="lg:col-span-6 bg-white/80 dark:bg-slate-900/80 backdrop-blur-xl rounded-3xl border border-neutral-200/80 dark:border-slate-800 p-6 shadow-xs space-y-4 overflow-hidden min-w-0 flex flex-col justify-between">
-          <div>
-            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pb-2 border-b border-neutral-100 dark:border-slate-800">
-              <div>
-                <h2 className="text-sm sm:text-base font-bold text-neutral-900 dark:text-neutral-100 flex items-center gap-2">
-                  <BarChart3 className="w-4 h-4 text-[#7749BC]" />
-                  <span>ประวัติการลาเปรียบเทียบในแต่ละภาคเรียน</span>
-                </h2>
-                <p className="text-xs text-neutral-500 dark:text-neutral-400 mt-0.5">
-                  เปรียบเทียบสถิติจำนวนครั้งที่ยื่นลาจำแนกตามประเภทในแต่ละเทอม
-                </p>
-              </div>
-
-              {/* Toggle Mode */}
-              <div className="inline-flex p-1 bg-neutral-100 dark:bg-slate-800 rounded-xl text-xs font-semibold self-start sm:self-auto shrink-0">
-                <button
-                  type="button"
-                  onClick={() => setChartMode('breakdown')}
-                  className={`px-2.5 py-1 rounded-lg transition-all cursor-pointer ${
-                    chartMode === 'breakdown'
-                      ? 'bg-white dark:bg-slate-900 text-[#7749BC] dark:text-purple-300 shadow-xs'
-                      : 'text-neutral-600 dark:text-neutral-400 hover:text-neutral-900'
-                  }`}
-                >
-                  แยกประเภท
-                </button>
-                <button
-                  type="button"
-                  onClick={() => setChartMode('total')}
-                  className={`px-2.5 py-1 rounded-lg transition-all cursor-pointer ${
-                    chartMode === 'total'
-                      ? 'bg-white dark:bg-slate-900 text-[#7749BC] dark:text-purple-300 shadow-xs'
-                      : 'text-neutral-600 dark:text-neutral-400 hover:text-neutral-900'
-                  }`}
-                >
-                  ยอดรวม
-                </button>
-              </div>
-            </div>
-
-            <div className="pt-3">
-              <LeaveBarChart
-                labels={semesterLabels}
-                datasets={barChartDatasets}
-                yAxisLabel="ครั้ง"
-                height={260}
-                stacked={chartMode === 'breakdown'}
-              />
-            </div>
-          </div>
-
-          <div className="pt-3 border-t border-neutral-100 dark:border-slate-800 flex items-center justify-between text-xs text-neutral-500">
-            <span>แกน X: ภาคการศึกษา</span>
-            <span>แกน Y: จำนวนครั้งที่ยื่นลาเรียน (ครั้ง)</span>
-          </div>
-        </div>
-
-        {/* RIGHT COLUMN: Donut Chart (Category Breakdown & Quota) */}
-        <div className="lg:col-span-6 bg-white/80 dark:bg-slate-900/80 backdrop-blur-xl rounded-3xl border border-neutral-200/80 dark:border-slate-800 p-6 shadow-xs space-y-4 overflow-hidden min-w-0 flex flex-col justify-between">
-          <div>
-            <div className="pb-2 border-b border-neutral-100 dark:border-slate-800">
-              <h2 className="text-sm sm:text-base font-bold text-neutral-900 dark:text-neutral-100 flex items-center gap-2">
-                <HeartPulse className="w-4 h-4 text-sky-500" />
-                <span>สัดส่วนประเภทการลา & โควตาคงเหลือ</span>
-              </h2>
-              <p className="text-xs text-neutral-500 dark:text-neutral-400 mt-0.5">
-                {selectedTerm === 'all' ? 'รวมทุกภาคการศึกษา' : `เฉพาะภาคเรียนที่ ${selectedTerm}`}
-              </p>
-            </div>
-
-            <div className="pt-2">
-              <LeaveDonutChart
-                labels={['ลาป่วย', 'ลากิจส่วนตัว', 'ลากิจกรรม', 'อื่น ๆ']}
-                dataValues={[stats.sick, stats.personal, stats.activity, stats.others]}
-                colors={['#0284C7', '#7749BC', '#6366F1', '#F59E0B']}
-                hoverColors={['#0369A1', '#5B21B6', '#4F46E5', '#D97706']}
-                unit="ครั้ง"
-                height={190}
-                centerTitle="คำขอลาทั้งหมด"
-                centerValue={`${stats.total}`}
-                onSelectCategory={(cat) => setSelectedCategoryModal(cat)}
-              />
-            </div>
-          </div>
-
-          {/* Quota Usage Box */}
-          <div className="p-4 rounded-2xl bg-purple-50/60 dark:bg-purple-950/30 border border-purple-200/60 dark:border-purple-800/60 space-y-2 text-xs">
-            <div className="flex items-center justify-between font-bold text-[#7749BC] dark:text-purple-300">
-              <span className="flex items-center gap-1.5">
-                <ShieldCheck className="w-4 h-4" />
-                <span>สรุปการใช้โควตาเวลาเรียน</span>
-              </span>
-              <span>{stats.quotaRemainingPercent}% คงเหลือ</span>
-            </div>
-            <p className="text-[11px] text-neutral-600 dark:text-neutral-300 leading-relaxed">
-              ตามระเบียบมหาวิทยาลัย นิสิตต้องมีเวลาเรียนไม่น้อยกว่า <strong>80%</strong> ของเวลาเรียนทั้งหมด (ลาได้ไม่เกิน 20% หรือประมาณ 3 ครั้งต่อรายวิชา)
-            </p>
-          </div>
-        </div>
-      </div>
 
       {/* 3. Multi-Semester Comparison Cards */}
       <div>

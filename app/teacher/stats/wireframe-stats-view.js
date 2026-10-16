@@ -22,8 +22,10 @@ import TeacherTopBar from '@/components/TeacherTopBar';
 import AttachmentPreview from '@/components/AttachmentPreview';
 import ArchiveView from '@/app/teacher/archive/archive-view';
 import MobileBottomNav from '@/components/MobileBottomNav';
-import { Archive } from 'lucide-react';
+import { Archive, BarChart3 } from 'lucide-react';
 import { useSidebarCollapsed } from '@/lib/useSidebarCollapsed';
+import LeaveBarChart from '@/components/charts/LeaveBarChart';
+import LeaveDonutChart from '@/components/charts/LeaveDonutChart';
 
 // Helper to format Thai date
 function formatThaiDate(dateStr) {
@@ -546,6 +548,89 @@ export default function WireframeStatsView({
                     {stats.otherCount}
                   </span>
                 </button>
+              </div>
+            </div>
+          </div>
+
+          {/* TWO-COLUMN CHART GRID: BAR CHART (COMPARISON) & DONUT CHART (PROPORTIONS) */}
+          <div className="grid grid-cols-1 lg:grid-cols-12 gap-4 sm:gap-6 items-stretch">
+            {/* LEFT COLUMN: Bar Chart (Leave Types Breakdown in Selected Group) */}
+            <div className="lg:col-span-6 bg-white/90 dark:bg-slate-900/90 backdrop-blur-xl rounded-3xl border-2 border-neutral-300/90 dark:border-slate-700/80 p-5 shadow-xs flex flex-col justify-between">
+              <div>
+                <div className="pb-3 border-b border-neutral-100 dark:border-slate-800">
+                  <h3 className="text-sm sm:text-base font-bold text-neutral-900 dark:text-neutral-100 flex items-center gap-2">
+                    <BarChart3 className="w-4 h-4 text-[#7749BC]" />
+                    <span>เปรียบเทียบสถิติการลาจำแนกตามประเภท (กลุ่ม {displayGroup})</span>
+                  </h3>
+                  <p className="text-xs text-neutral-500 dark:text-neutral-400 mt-0.5">
+                    จำนวนครั้งที่นิสิตยื่นลาในรายวิชา {currentSubject?.code || selectedCourse?.code}
+                  </p>
+                </div>
+
+                <div className="pt-3">
+                  <LeaveBarChart
+                    labels={['ลาป่วย', 'ลากิจ', 'ลากิจกรรม', 'อื่น ๆ']}
+                    datasets={[
+                      {
+                        label: 'จำนวนครั้งที่ลา',
+                        data: [stats.sickCount, stats.personalCount, stats.activityCount, stats.otherCount],
+                        backgroundColor: ['#0284C7', '#7749BC', '#6366F1', '#F59E0B'],
+                        hoverBackgroundColor: ['#0369A1', '#5B21B6', '#4F46E5', '#D97706'],
+                      },
+                    ]}
+                    yAxisLabel="ครั้ง"
+                    height={220}
+                  />
+                </div>
+              </div>
+
+              <div className="pt-3 border-t border-neutral-100 dark:border-slate-800 flex items-center justify-between text-[11px] text-neutral-500">
+                <span>ยอดรวมยื่นลาทั้งหมด: <strong className="text-[#7749BC] dark:text-purple-300">{stats.submittedLeaves} ครั้ง</strong></span>
+                <span>นิสิตในกลุ่ม: <strong className="text-neutral-800 dark:text-neutral-200">{stats.totalStudents} คน</strong></span>
+              </div>
+            </div>
+
+            {/* RIGHT COLUMN: Donut Chart (Proportion Breakdown) */}
+            <div className="lg:col-span-6 bg-white/90 dark:bg-slate-900/90 backdrop-blur-xl rounded-3xl border-2 border-neutral-300/90 dark:border-slate-700/80 p-5 shadow-xs flex flex-col justify-between">
+              <div>
+                <div className="pb-3 border-b border-neutral-100 dark:border-slate-800">
+                  <h3 className="text-sm sm:text-base font-bold text-neutral-900 dark:text-neutral-100 flex items-center gap-2">
+                    <HeartPulse className="w-4 h-4 text-sky-500" />
+                    <span>สัดส่วนประเภทการลา (Leave Proportions)</span>
+                  </h3>
+                  <p className="text-xs text-neutral-500 dark:text-neutral-400 mt-0.5">
+                    คลิกที่กราฟวงกลมเพื่อกรองรายชื่อนิสิตในตารางด้านล่างทันที
+                  </p>
+                </div>
+
+                <div className="pt-2">
+                  <LeaveDonutChart
+                    labels={['ลาป่วย', 'ลากิจ', 'ลากิจกรรม', 'อื่น ๆ']}
+                    dataValues={[stats.sickCount, stats.personalCount, stats.activityCount, stats.otherCount]}
+                    colors={['#0284C7', '#7749BC', '#6366F1', '#F59E0B']}
+                    hoverColors={['#0369A1', '#5B21B6', '#4F46E5', '#D97706']}
+                    unit="ครั้ง"
+                    height={180}
+                    centerTitle="ยื่นลาสะสม"
+                    centerValue={`${stats.submittedLeaves}`}
+                    onSelectCategory={(cat) => {
+                      if (cat === 'ลาป่วย') setSelectedLeaveTypeFilter('ป่วย');
+                      else if (cat === 'ลากิจ' || cat === 'ลากิจส่วนตัว') setSelectedLeaveTypeFilter('กิจ');
+                      else if (cat === 'ลากิจกรรม') setSelectedLeaveTypeFilter('กิจกรรม');
+                      else if (cat === 'อื่น ๆ' || cat === 'อื่นๆ') setSelectedLeaveTypeFilter('อื่น ๆ');
+                    }}
+                  />
+                </div>
+              </div>
+
+              <div className="p-3 rounded-2xl bg-purple-50/70 dark:bg-purple-950/30 border border-purple-200/60 dark:border-purple-800/60 flex items-center justify-between text-xs">
+                <span className="text-[#7749BC] dark:text-purple-300 font-bold flex items-center gap-1.5">
+                  <Clock className="w-3.5 h-3.5" />
+                  <span>นิสิตเสี่ยงหมดสิทธิ์สอบ:</span>
+                </span>
+                <span className={`font-mono font-black ${stats.atRiskCount > 0 ? 'text-rose-600 dark:text-rose-400' : 'text-emerald-600'}`}>
+                  {stats.atRiskCount} คน
+                </span>
               </div>
             </div>
           </div>

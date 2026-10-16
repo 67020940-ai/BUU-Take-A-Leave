@@ -43,6 +43,8 @@ import { STATUS_DETAILS, LEAVE_TYPE_DETAILS, formatThaiDate, formatThaiDateTime,
 import AttachmentPreview from '@/components/AttachmentPreview';
 import WireframeStatsView from './wireframe-stats-view';
 import { formatLeaveClassTime } from '@/lib/leave-stats';
+import LeaveBarChart from '@/components/charts/LeaveBarChart';
+import LeaveDonutChart from '@/components/charts/LeaveDonutChart';
 
 // Helper to format Thai date with day of the week
 function formatThaiDayOfWeekDate(dateStr) {
@@ -1291,6 +1293,89 @@ export default function TeacherStatsView({ courses = [], leaves = [], rosterByCo
               </div>
             );
           })}
+        </div>
+
+        {/* 2.5 Two-Column Chart Grid: Bar Chart & Donut Chart */}
+        <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 items-stretch pt-2">
+          {/* LEFT: Bar Chart - Comparison by Leave Types */}
+          <div className="lg:col-span-6 bg-white/80 dark:bg-slate-900/80 backdrop-blur-xl rounded-3xl border border-neutral-200/80 dark:border-slate-800 p-6 shadow-xs flex flex-col justify-between">
+            <div>
+              <div className="pb-3 border-b border-neutral-100 dark:border-slate-800">
+                <h3 className="text-sm sm:text-base font-bold text-neutral-900 dark:text-neutral-100 flex items-center gap-2">
+                  <BarChart3 className="w-4 h-4 text-[#7749BC] dark:text-purple-400" />
+                  <span>เปรียบเทียบจำนวนครั้งการลาแต่ละประเภท</span>
+                </h3>
+                <p className="text-xs text-neutral-500 dark:text-neutral-400 mt-0.5">
+                  จำแนกตาม 4 ประเภทการลาหลักในขอบเขตรายวิชาและภาคเรียนที่เลือก
+                </p>
+              </div>
+
+              <div className="pt-3">
+                <LeaveBarChart
+                  labels={['ลาป่วย', 'ลากิจส่วนตัว', 'ลากิจกรรม', 'อื่น ๆ']}
+                  datasets={[
+                    {
+                      label: 'จำนวนครั้งที่ยื่นลา',
+                      data: [stats.sick, stats.personal, stats.activity, stats.others],
+                      backgroundColor: ['#0284C7', '#7749BC', '#6366F1', '#F59E0B'],
+                      hoverBackgroundColor: ['#0369A1', '#5B21B6', '#4F46E5', '#D97706'],
+                    },
+                  ]}
+                  yAxisLabel="ครั้ง"
+                  height={220}
+                />
+              </div>
+            </div>
+
+            <div className="pt-3 border-t border-neutral-100 dark:border-slate-800 flex items-center justify-between text-xs text-neutral-500">
+              <span>แกน X: ประเภทการลา</span>
+              <span>ยอดรวม: <strong className="text-[#7749BC] dark:text-purple-400">{stats.total} ครั้ง</strong></span>
+            </div>
+          </div>
+
+          {/* RIGHT: Donut Chart - Proportion Breakdown */}
+          <div className="lg:col-span-6 bg-white/80 dark:bg-slate-900/80 backdrop-blur-xl rounded-3xl border border-neutral-200/80 dark:border-slate-800 p-6 shadow-xs flex flex-col justify-between">
+            <div>
+              <div className="pb-3 border-b border-neutral-100 dark:border-slate-800">
+                <h3 className="text-sm sm:text-base font-bold text-neutral-900 dark:text-neutral-100 flex items-center gap-2">
+                  <HeartPulse className="w-4 h-4 text-sky-500" />
+                  <span>สัดส่วนประเภทการลา (Leave Proportions)</span>
+                </h3>
+                <p className="text-xs text-neutral-500 dark:text-neutral-400 mt-0.5">
+                  คลิกที่กราฟเพื่อกรองรายชื่อนิสิตในตารางด้านล่างตามประเภท
+                </p>
+              </div>
+
+              <div className="pt-2">
+                <LeaveDonutChart
+                  labels={['ลาป่วย', 'ลากิจส่วนตัว', 'ลากิจกรรม', 'อื่น ๆ']}
+                  dataValues={[stats.sick, stats.personal, stats.activity, stats.others]}
+                  colors={['#0284C7', '#7749BC', '#6366F1', '#F59E0B']}
+                  hoverColors={['#0369A1', '#5B21B6', '#4F46E5', '#D97706']}
+                  unit="ครั้ง"
+                  height={190}
+                  centerTitle="ยอดรวมคำขอ"
+                  centerValue={`${stats.total}`}
+                  onSelectCategory={(cat) => {
+                    if (cat === 'ลาป่วย') setStudentTypeFilter(studentTypeFilter === 'ลาป่วย' ? 'all' : 'ลาป่วย');
+                    else if (cat === 'ลากิจส่วนตัว' || cat === 'ลากิจ') setStudentTypeFilter(studentTypeFilter === 'ลากิจส่วนตัว' ? 'all' : 'ลากิจส่วนตัว');
+                    else if (cat === 'ลากิจกรรม') setStudentTypeFilter(studentTypeFilter === 'ลากิจกรรม' ? 'all' : 'ลากิจกรรม');
+                    else if (cat === 'อื่น ๆ' || cat === 'อื่นๆ') setStudentTypeFilter(studentTypeFilter === 'อื่น ๆ' ? 'all' : 'อื่น ๆ');
+                  }}
+                />
+              </div>
+            </div>
+
+            <div className="p-3 rounded-2xl bg-purple-50/60 dark:bg-purple-950/30 border border-purple-200/60 dark:border-purple-800/60 flex items-center justify-between text-xs">
+              <span className="text-[#7749BC] dark:text-purple-300 font-bold flex items-center gap-1.5">
+                <Users className="w-4 h-4" />
+                <span>นิสิตที่ยื่นลาในระบบ:</span>
+              </span>
+              <span className="font-mono font-bold text-neutral-800 dark:text-neutral-200">
+                {stats.uniqueStudentsCount} คน จากทั้งหมด {allStudents.length} คน
+              </span>
+            </div>
+          </div>
         </div>
       </div>
 
