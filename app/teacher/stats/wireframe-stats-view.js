@@ -276,6 +276,70 @@ export default function WireframeStatsView({
     };
   }, [selectedCourse, sectionStudents]);
 
+  // Cross-section comparison: Group 01 vs Group 02
+  const sectionComparison = useMemo(() => {
+    const sections = currentSubject?.sections || [];
+    const isMockSA = (currentSubject?.code || selectedCourse?.code) === '24527664';
+
+    // If SA wireframe mock
+    if (isMockSA) {
+      return {
+        hasMultipleSections: true,
+        labels: ['กลุ่ม 01', 'กลุ่ม 02'],
+        leavesData: [21, 14],
+        atRiskData: [6, 4],
+        studentsData: [39, 36],
+        group1Leaves: 21,
+        group2Leaves: 14,
+        group1Students: 39,
+        group2Students: 36,
+      };
+    }
+
+    if (sections.length > 1) {
+      const labels = sections.map((s, idx) => `กลุ่ม ${s.group || (idx === 0 ? '01' : '02')}`);
+      const leavesData = [];
+      const atRiskData = [];
+      const studentsData = [];
+
+      sections.forEach((sec) => {
+        const roster = rosterByCourse[sec.id] || [];
+        const secLeaves = leaves.filter((l) => l.courseId === sec.id || l.courseCode === sec.code);
+        const atRisk = roster.filter((s) => s.overQuota || (s.percentage ?? 100) < 80).length;
+        const totalLeaves = secLeaves.length > 0 ? secLeaves.length : roster.reduce((sum, s) => sum + (s.leavesCount || s.approvedLeaves || 0), 0);
+
+        leavesData.push(totalLeaves);
+        atRiskData.push(atRisk);
+        studentsData.push(roster.length || sec.studentCount || 35);
+      });
+
+      return {
+        hasMultipleSections: true,
+        labels,
+        leavesData,
+        atRiskData,
+        studentsData,
+        group1Leaves: leavesData[0] || 0,
+        group2Leaves: leavesData[1] || 0,
+        group1Students: studentsData[0] || 0,
+        group2Students: studentsData[1] || 0,
+      };
+    }
+
+    // Single section case (display Group 01 compared with course average/quota target)
+    return {
+      hasMultipleSections: false,
+      labels: [`กลุ่ม ${displayGroup}`],
+      leavesData: [stats.submittedLeaves],
+      atRiskData: [stats.atRiskCount],
+      studentsData: [stats.totalStudents],
+      group1Leaves: stats.submittedLeaves,
+      group2Leaves: 0,
+      group1Students: stats.totalStudents,
+      group2Students: 0,
+    };
+  }, [currentSubject, selectedCourse, rosterByCourse, leaves, stats, displayGroup]);
+
   // Filtered by search & leave type
   const filteredStudents = useMemo(() => {
     let result = sectionStudents;
@@ -554,39 +618,49 @@ export default function WireframeStatsView({
 
           {/* TWO-COLUMN CHART GRID: BAR CHART (COMPARISON) & DONUT CHART (PROPORTIONS) */}
           <div className="grid grid-cols-1 lg:grid-cols-12 gap-4 sm:gap-6 items-stretch">
-            {/* LEFT COLUMN: Bar Chart (Leave Types Breakdown in Selected Group) */}
+            {/* LEFT COLUMN: Bar Chart - Cross-Section Comparison (กลุ่ม 01 vs กลุ่ม 02) */}
             <div className="lg:col-span-6 bg-white/90 dark:bg-slate-900/90 backdrop-blur-xl rounded-3xl border-2 border-neutral-300/90 dark:border-slate-700/80 p-5 shadow-xs flex flex-col justify-between overflow-hidden min-w-0">
               <div>
                 <div className="pb-3 border-b border-neutral-100 dark:border-slate-800">
                   <h3 className="text-sm sm:text-base font-bold text-neutral-900 dark:text-neutral-100 flex items-center gap-2">
                     <BarChart3 className="w-4 h-4 text-[#7749BC]" />
-                    <span>เปรียบเทียบสถิติการลาจำแนกตามประเภท (กลุ่ม {displayGroup})</span>
+                    <span>เปรียบเทียบสถิติระหว่าง กลุ่ม 01 vs กลุ่ม 02</span>
                   </h3>
                   <p className="text-xs text-neutral-500 dark:text-neutral-400 mt-0.5">
-                    จำนวนครั้งที่นิสิตยื่นลาในรายวิชา {currentSubject?.code || selectedCourse?.code}
+                    เปรียบเทียบจำนวนการลาและนิสิตกลุ่มเสี่ยงในรายวิชา {currentSubject?.code || selectedCourse?.code}
                   </p>
                 </div>
 
                 <div className="pt-3">
                   <LeaveBarChart
-                    labels={['ลาป่วย', 'ลากิจ', 'ลากิจกรรม', 'อื่น ๆ']}
+                    labels={sectionComparison.hasMultipleSections ? sectionComparison.labels : ['กลุ่ม 01', 'กลุ่ม 02 (ไม่มีการเปิดสอน)']}
                     datasets={[
                       {
-                        label: 'จำนวนครั้งที่ลา',
-                        data: [stats.sickCount, stats.personalCount, stats.activityCount, stats.otherCount],
-                        backgroundColor: ['#0284C7', '#7749BC', '#6366F1', '#F59E0B'],
-                        hoverBackgroundColor: ['#0369A1', '#5B21B6', '#4F46E5', '#D97706'],
+                        label: 'ยื่นลาสะสม (ครั้ง)',
+                        data: sectionComparison.hasMultipleSections
+                          ? sectionComparison.leavesData
+                          : [sectionComparison.group1Leaves, 0],
+                        backgroundColor: '#7749BC',
+                        hoverBackgroundColor: '#5B21B6',
+                      },
+                      {
+                        label: 'เสี่ยงหมดสิทธิ์สอบ (คน)',
+                        data: sectionComparison.hasMultipleSections
+                          ? sectionComparison.atRiskData
+                          : [sectionComparison.atRiskData[0] || 0, 0],
+                        backgroundColor: '#F43F5E',
+                        hoverBackgroundColor: '#E11D48',
                       },
                     ]}
-                    yAxisLabel="ครั้ง"
+                    yAxisLabel="จำนวน"
                     height={220}
                   />
                 </div>
               </div>
 
               <div className="pt-3 border-t border-neutral-100 dark:border-slate-800 flex items-center justify-between text-[11px] text-neutral-500">
-                <span>ยอดรวมยื่นลาทั้งหมด: <strong className="text-[#7749BC] dark:text-purple-300">{stats.submittedLeaves} ครั้ง</strong></span>
-                <span>นิสิตในกลุ่ม: <strong className="text-neutral-800 dark:text-neutral-200">{stats.totalStudents} คน</strong></span>
+                <span>กลุ่ม 01: ยื่นลา <strong className="text-[#7749BC] dark:text-purple-300">{sectionComparison.group1Leaves} ครั้ง</strong> ({sectionComparison.group1Students} คน)</span>
+                <span>กลุ่ม 02: ยื่นลา <strong className="text-[#7749BC] dark:text-purple-300">{sectionComparison.group2Leaves} ครั้ง</strong> ({sectionComparison.group2Students} คน)</span>
               </div>
             </div>
 
