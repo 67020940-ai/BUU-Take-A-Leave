@@ -329,54 +329,58 @@ export default function StudentStatsView({ summaries = [], leaves = [] }) {
         </div>
       </div>
 
-      {/* 1.3 Two-Column Grid: Left Bar Chart & Right Donut Chart */}
-      <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 items-start">
+      {/* 1.3 Two-Column Grid: Left Bar Chart & Right Donut Chart (Balanced 6:6 Grid Layout) */}
+      <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 items-stretch">
         {/* LEFT COLUMN: Bar Chart (Semester Comparison) */}
-        <div className="lg:col-span-7 bg-white/80 dark:bg-slate-900/80 backdrop-blur-xl rounded-3xl border border-neutral-200/80 dark:border-slate-800 p-6 shadow-xs space-y-4 overflow-hidden min-w-0">
-          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pb-2 border-b border-neutral-100 dark:border-slate-800">
-            <div>
-              <h2 className="text-sm sm:text-base font-bold text-neutral-900 dark:text-neutral-100 flex items-center gap-2">
-                <BarChart3 className="w-4 h-4 text-[#7749BC]" />
-                <span>ประวัติการลาเปรียบเทียบในแต่ละภาคเรียน (Semester Comparison)</span>
-              </h2>
-              <p className="text-xs text-neutral-500 dark:text-neutral-400 mt-0.5">
-                เปรียบเทียบสถิติจำนวนครั้งที่ยื่นลาจำแนกตามประเภทในแต่ละเทอม
-              </p>
+        <div className="lg:col-span-6 bg-white/80 dark:bg-slate-900/80 backdrop-blur-xl rounded-3xl border border-neutral-200/80 dark:border-slate-800 p-6 shadow-xs space-y-4 overflow-hidden min-w-0 flex flex-col justify-between">
+          <div>
+            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pb-2 border-b border-neutral-100 dark:border-slate-800">
+              <div>
+                <h2 className="text-sm sm:text-base font-bold text-neutral-900 dark:text-neutral-100 flex items-center gap-2">
+                  <BarChart3 className="w-4 h-4 text-[#7749BC]" />
+                  <span>ประวัติการลาเปรียบเทียบในแต่ละภาคเรียน</span>
+                </h2>
+                <p className="text-xs text-neutral-500 dark:text-neutral-400 mt-0.5">
+                  เปรียบเทียบสถิติจำนวนครั้งที่ยื่นลาจำแนกตามประเภทในแต่ละเทอม
+                </p>
+              </div>
+
+              {/* Toggle Mode */}
+              <div className="inline-flex p-1 bg-neutral-100 dark:bg-slate-800 rounded-xl text-xs font-semibold self-start sm:self-auto shrink-0">
+                <button
+                  type="button"
+                  onClick={() => setChartMode('breakdown')}
+                  className={`px-2.5 py-1 rounded-lg transition-all cursor-pointer ${
+                    chartMode === 'breakdown'
+                      ? 'bg-white dark:bg-slate-900 text-[#7749BC] dark:text-purple-300 shadow-xs'
+                      : 'text-neutral-600 dark:text-neutral-400 hover:text-neutral-900'
+                  }`}
+                >
+                  แยกประเภท
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setChartMode('total')}
+                  className={`px-2.5 py-1 rounded-lg transition-all cursor-pointer ${
+                    chartMode === 'total'
+                      ? 'bg-white dark:bg-slate-900 text-[#7749BC] dark:text-purple-300 shadow-xs'
+                      : 'text-neutral-600 dark:text-neutral-400 hover:text-neutral-900'
+                  }`}
+                >
+                  ยอดรวม
+                </button>
+              </div>
             </div>
 
-            {/* Toggle Mode */}
-            <div className="inline-flex p-1 bg-neutral-100 dark:bg-slate-800 rounded-xl text-xs font-semibold self-start sm:self-auto">
-              <button
-                onClick={() => setChartMode('breakdown')}
-                className={`px-2.5 py-1 rounded-lg transition-all cursor-pointer ${
-                  chartMode === 'breakdown'
-                    ? 'bg-white dark:bg-slate-900 text-[#7749BC] dark:text-purple-300 shadow-xs'
-                    : 'text-neutral-600 dark:text-neutral-400 hover:text-neutral-900'
-                }`}
-              >
-                แยกประเภท
-              </button>
-              <button
-                onClick={() => setChartMode('total')}
-                className={`px-2.5 py-1 rounded-lg transition-all cursor-pointer ${
-                  chartMode === 'total'
-                    ? 'bg-white dark:bg-slate-900 text-[#7749BC] dark:text-purple-300 shadow-xs'
-                    : 'text-neutral-600 dark:text-neutral-400 hover:text-neutral-900'
-                }`}
-              >
-                ยอดรวม
-              </button>
+            <div className="pt-3">
+              <LeaveBarChart
+                labels={semesterLabels}
+                datasets={barChartDatasets}
+                yAxisLabel="ครั้ง"
+                height={260}
+                stacked={chartMode === 'breakdown'}
+              />
             </div>
-          </div>
-
-          <div className="pt-2">
-            <LeaveBarChart
-              labels={semesterLabels}
-              datasets={barChartDatasets}
-              yAxisLabel="ครั้ง"
-              height={290}
-              stacked={chartMode === 'breakdown'}
-            />
           </div>
 
           <div className="pt-3 border-t border-neutral-100 dark:border-slate-800 flex items-center justify-between text-xs text-neutral-500">
@@ -386,29 +390,31 @@ export default function StudentStatsView({ summaries = [], leaves = [] }) {
         </div>
 
         {/* RIGHT COLUMN: Donut Chart (Category Breakdown & Quota) */}
-        <div className="lg:col-span-5 bg-white/80 dark:bg-slate-900/80 backdrop-blur-xl rounded-3xl border border-neutral-200/80 dark:border-slate-800 p-6 shadow-xs space-y-4 overflow-hidden min-w-0">
-          <div className="pb-2 border-b border-neutral-100 dark:border-slate-800">
-            <h2 className="text-sm sm:text-base font-bold text-neutral-900 dark:text-neutral-100 flex items-center gap-2">
-              <HeartPulse className="w-4 h-4 text-sky-500" />
-              <span>สัดส่วนประเภทการลา & โควตาคงเหลือ</span>
-            </h2>
-            <p className="text-xs text-neutral-500 dark:text-neutral-400 mt-0.5">
-              {selectedTerm === 'all' ? 'รวมทุกภาคการศึกษา' : `เฉพาะภาคเรียนที่ ${selectedTerm}`}
-            </p>
-          </div>
+        <div className="lg:col-span-6 bg-white/80 dark:bg-slate-900/80 backdrop-blur-xl rounded-3xl border border-neutral-200/80 dark:border-slate-800 p-6 shadow-xs space-y-4 overflow-hidden min-w-0 flex flex-col justify-between">
+          <div>
+            <div className="pb-2 border-b border-neutral-100 dark:border-slate-800">
+              <h2 className="text-sm sm:text-base font-bold text-neutral-900 dark:text-neutral-100 flex items-center gap-2">
+                <HeartPulse className="w-4 h-4 text-sky-500" />
+                <span>สัดส่วนประเภทการลา & โควตาคงเหลือ</span>
+              </h2>
+              <p className="text-xs text-neutral-500 dark:text-neutral-400 mt-0.5">
+                {selectedTerm === 'all' ? 'รวมทุกภาคการศึกษา' : `เฉพาะภาคเรียนที่ ${selectedTerm}`}
+              </p>
+            </div>
 
-          <div className="pt-2">
-            <LeaveDonutChart
-              labels={['ลาป่วย', 'ลากิจส่วนตัว', 'ลากิจกรรม', 'อื่น ๆ']}
-              dataValues={[stats.sick, stats.personal, stats.activity, stats.others]}
-              colors={['#0284C7', '#7749BC', '#6366F1', '#F59E0B']}
-              hoverColors={['#0369A1', '#5B21B6', '#4F46E5', '#D97706']}
-              unit="ครั้ง"
-              height={200}
-              centerTitle="คำขอลาทั้งหมด"
-              centerValue={`${stats.total}`}
-              onSelectCategory={(cat) => setSelectedCategoryModal(cat)}
-            />
+            <div className="pt-2">
+              <LeaveDonutChart
+                labels={['ลาป่วย', 'ลากิจส่วนตัว', 'ลากิจกรรม', 'อื่น ๆ']}
+                dataValues={[stats.sick, stats.personal, stats.activity, stats.others]}
+                colors={['#0284C7', '#7749BC', '#6366F1', '#F59E0B']}
+                hoverColors={['#0369A1', '#5B21B6', '#4F46E5', '#D97706']}
+                unit="ครั้ง"
+                height={190}
+                centerTitle="คำขอลาทั้งหมด"
+                centerValue={`${stats.total}`}
+                onSelectCategory={(cat) => setSelectedCategoryModal(cat)}
+              />
+            </div>
           </div>
 
           {/* Quota Usage Box */}
