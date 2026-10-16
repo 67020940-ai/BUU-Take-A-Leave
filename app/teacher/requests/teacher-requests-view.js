@@ -23,6 +23,7 @@ import {
   AlertTriangle,
   RotateCcw,
   Sparkles,
+  CheckCircle2,
 } from 'lucide-react';
 import TeacherSidebar from '@/components/TeacherSidebar';
 import TeacherTopBar from '@/components/TeacherTopBar';
