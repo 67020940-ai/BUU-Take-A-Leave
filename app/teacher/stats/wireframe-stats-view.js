@@ -1037,8 +1037,11 @@ export default function WireframeStatsView({
 
                   {(() => {
                     const leavesInCat = modalStudent.leaves.filter((l) => {
-                      if (modalLeaveCategory === 'อื่นๆ') {
+                      if (modalLeaveCategory === 'อื่นๆ' || modalLeaveCategory === 'อื่น ๆ') {
                         return l.type === 'อื่นๆ' || l.type === 'อื่น ๆ' || l.type === 'เหตุฉุกเฉิน';
+                      }
+                      if (modalLeaveCategory === 'ลากิจส่วนตัว' || modalLeaveCategory === 'ลากิจ') {
+                        return l.type === 'ลากิจส่วนตัว' || l.type === 'ลากิจ';
                       }
                       return l.type === modalLeaveCategory;
                     });
