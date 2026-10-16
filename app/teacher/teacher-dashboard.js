@@ -432,7 +432,7 @@ export default function TeacherDashboard({
 
           {/* Timetable (ตารางสอน - Strictly matching wireframe S__3366938_0.jpg & Screenshot 3) */}
           <section id="schedule-section">
-            <TeacherScheduleGrid courses={courses} />
+            <TeacherScheduleGrid courses={courses} semester={selectedTerm} />
           </section>
 
           {/* Quick Action Banner to Requests if any pending */}

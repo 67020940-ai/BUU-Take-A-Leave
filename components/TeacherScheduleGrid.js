@@ -131,24 +131,7 @@ const COURSE_THEMES = {
 };
 
 function getCourseTheme(item) {
-  if (!item) return COURSE_THEMES.purple;
-  const str = `${item.code || ''} ${item.name || ''}`.toLowerCase();
-  if (str.includes('24527664') || str.includes('วิเคราะห์') || str.includes('sa')) {
-    return COURSE_THEMES.purple;
-  }
-  if (str.includes('24527564') || str.includes('โอเพนซอร์ส') || str.includes('oss')) {
-    return COURSE_THEMES.emerald;
-  }
-  if (str.includes('24510164') || str.includes('สารสนเทศเบื้องต้น') || str.includes('oa')) {
-    return COURSE_THEMES.sky;
-  }
-  if (str.includes('24538164') || str.includes('ฐานข้อมูล') || str.includes('db')) {
-    return COURSE_THEMES.amber;
-  }
-  const keys = ['purple', 'emerald', 'sky', 'amber', 'rose'];
-  let sum = 0;
-  for (let i = 0; i < str.length; i++) sum = (sum + str.charCodeAt(i)) % keys.length;
-  return COURSE_THEMES[keys[sum]];
+  return COURSE_THEMES.purple;
 }
 
 // Default classes matching wireframe S__3366938_0.jpg
@@ -199,7 +182,7 @@ const SCHEDULE_ITEMS = [
   },
 ];
 
-export default function TeacherScheduleGrid({ courses = [], customItems = null, onSelectCourse, hideHeader = false }) {
+export default function TeacherScheduleGrid({ courses = [], customItems = null, onSelectCourse, hideHeader = false, semester = '1/2569' }) {
   const [selectedItem, setSelectedItem] = useState(null);
   const [viewMode, setViewMode] = useState('cards'); // 'cards' | 'grid'
   const [mobileSelectedDay, setMobileSelectedDay] = useState(() => {
@@ -211,7 +194,11 @@ export default function TeacherScheduleGrid({ courses = [], customItems = null, 
   const scheduleList = useMemo(() => {
     if (customItems) return customItems;
     if (courses && courses.length > 0) {
-      return courses.map((c) => {
+      const activeCourses = semester && semester !== 'all'
+        ? courses.filter((c) => !c.term || c.term === semester)
+        : courses;
+
+      return activeCourses.map((c) => {
         let startH = 9;
         let endH = 12;
         if (c.time) {
@@ -274,18 +261,8 @@ export default function TeacherScheduleGrid({ courses = [], customItems = null, 
                 ตารางสอน (Teaching Schedule)
               </h3>
               <p className="text-xs text-neutral-500 dark:text-neutral-400">
-                ตารางเรียนและห้องสอนประจำสัปดาห์ ภาคเรียนที่ 1/2569
+                ตารางเรียนและห้องสอนประจำสัปดาห์ {semester && semester !== 'all' ? `ภาคเรียนที่ ${semester}` : 'ทุกภาคเรียน'}
               </p>
-            </div>
-          </div>
-          <div className="hidden sm:flex flex-wrap items-center gap-3 text-xs text-neutral-500 dark:text-neutral-400">
-            <div className="flex items-center gap-1.5">
-              <span className="w-3 h-3 rounded-md bg-purple-200 dark:bg-purple-900/80 border border-purple-300 dark:border-purple-700" />
-              <span className="text-[11px] font-medium text-neutral-700 dark:text-neutral-300">24527664 (SA)</span>
-            </div>
-            <div className="flex items-center gap-1.5">
-              <span className="w-3 h-3 rounded-md bg-emerald-200 dark:bg-emerald-900/80 border border-emerald-300 dark:border-emerald-700" />
-              <span className="text-[11px] font-medium text-neutral-700 dark:text-neutral-300">24527564 (OSS)</span>
             </div>
           </div>
         </div>
