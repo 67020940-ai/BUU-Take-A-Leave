@@ -291,43 +291,8 @@ export default function TeacherScheduleGrid({ courses = [], customItems = null, 
         </div>
       )}
 
-      {/* View Switcher Controls (Unified across iPad, Phone & Desktop) */}
-      <div className="p-3 sm:p-4 border-b border-neutral-100 dark:border-slate-800 flex items-center justify-between gap-3 bg-neutral-50/60 dark:bg-slate-900/40">
-        <div className="flex items-center gap-2">
-          <CalendarDays className="w-4 h-4 text-[#7749BC] dark:text-purple-400" />
-          <span className="text-xs font-bold text-neutral-800 dark:text-neutral-200">
-            รูปแบบการแสดงผล:
-          </span>
-        </div>
-        <div className="flex items-center gap-1 p-1 bg-neutral-200/60 dark:bg-slate-800 rounded-2xl text-xs">
-          <button
-            type="button"
-            onClick={() => setViewMode('cards')}
-            className={`min-h-[44px] px-3.5 py-2 rounded-xl text-xs font-bold transition-all cursor-pointer flex items-center gap-1.5 ${
-              viewMode === 'cards'
-                ? 'bg-[#7749BC] text-white shadow-xs'
-                : 'text-neutral-600 dark:text-neutral-400 hover:text-neutral-900 dark:hover:text-white'
-            }`}
-          >
-            <span>รายวัน (Cards)</span>
-          </button>
-          <button
-            type="button"
-            onClick={() => setViewMode('grid')}
-            className={`min-h-[44px] px-3.5 py-2 rounded-xl text-xs font-bold transition-all cursor-pointer flex items-center gap-1.5 ${
-              viewMode === 'grid'
-                ? 'bg-[#7749BC] text-white shadow-xs'
-                : 'text-neutral-600 dark:text-neutral-400 hover:text-neutral-900 dark:hover:text-white'
-            }`}
-          >
-            <span>ตารางรวม (Grid)</span>
-          </button>
-        </div>
-      </div>
-
-      {/* 1. Day-by-Day Cards View */}
-      {viewMode === 'cards' && (
-        <div className="p-3.5 sm:p-5 space-y-4 animate-in fade-in duration-150">
+      {/* 1. Mobile Day-by-Day Cards View (< md) */}
+      <div className="block md:hidden p-3.5 sm:p-5 space-y-4">
           {/* Day Selector Tabs */}
           <div className="grid grid-cols-5 gap-1 p-1 bg-neutral-100 dark:bg-slate-800/80 rounded-2xl w-full">
             {DAYS.map((day) => {
@@ -380,7 +345,7 @@ export default function TeacherScheduleGrid({ courses = [], customItems = null, 
             }
 
             return (
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-3.5">
+              <div className="grid grid-cols-1 gap-3.5">
                 {mobileLanedClasses.map((item, idx) => {
                   const theme = getCourseTheme(item);
                   return (
@@ -443,12 +408,10 @@ export default function TeacherScheduleGrid({ courses = [], customItems = null, 
               </div>
             );
           })()}
-        </div>
-      )}
+      </div>
 
-      {/* 2. Desktop & Tablet Full Time Grid */}
-      {viewMode === 'grid' && (
-        <div className="overflow-x-auto p-4 sm:p-6 animate-in fade-in duration-150">
+      {/* 2. Desktop & Tablet Full Time Grid (>= md) */}
+      <div className="hidden md:block overflow-x-auto p-4 sm:p-6">
           <div className="min-w-[840px] border border-neutral-200/90 dark:border-slate-700/80 rounded-2xl overflow-hidden bg-white dark:bg-slate-900 shadow-2xs">
             {/* Header Row: Date / Time + 8 Time Slots */}
             <div className="grid grid-cols-9 bg-neutral-100/80 dark:bg-slate-800/80 border-b border-neutral-200/90 dark:border-slate-700/80 text-center font-bold text-xs text-neutral-700 dark:text-neutral-200">
@@ -589,7 +552,6 @@ export default function TeacherScheduleGrid({ courses = [], customItems = null, 
             })}
           </div>
         </div>
-      )}
 
       {/* Class Detail Modal when clicked */}
       {selectedItem && (
