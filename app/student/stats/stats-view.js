@@ -81,7 +81,7 @@ export default function StudentStatsView({ summaries = [], leaves = [] }) {
   // Current scope stats based on selectedTerm filter
   const stats = useMemo(() => {
     const baseStats = calculateLeaveStats(leaves, selectedTerm, summaries);
-    const relevantLeaves = baseStats.scopedLeaves;
+    const relevantLeaves = baseStats.scopedLeaves || baseStats.filteredLeaves || [];
 
     const total = baseStats.total;
     const approved = baseStats.approved;

@@ -57,7 +57,14 @@ export default function LoginPage() {
         setPasswordInvalid(true);
         return;
       }
-      const target = ROLE_HOME[data.role] || '/';
+      let target = ROLE_HOME[data.role] || '/';
+      if (typeof window !== 'undefined') {
+        const sp = new URLSearchParams(window.location.search);
+        const cb = sp.get('callbackUrl');
+        if (cb && cb.startsWith(`/${data.role}`)) {
+          target = cb;
+        }
+      }
       window.location.href = target;
     } finally {
       setLoading(false);

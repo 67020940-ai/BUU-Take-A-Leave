@@ -10,9 +10,11 @@ export function middleware(request) {
   const isAdminRoute = pathname.startsWith('/admin');
 
   if (isStudentRoute || isTeacherRoute || isAdminRoute) {
+    const fullCallbackPath = `${pathname}${request.nextUrl.search}`;
+
     if (!token) {
       const loginUrl = new URL('/login', request.url);
-      loginUrl.searchParams.set('callbackUrl', pathname);
+      loginUrl.searchParams.set('callbackUrl', fullCallbackPath);
       return NextResponse.redirect(loginUrl);
     }
 
@@ -20,7 +22,7 @@ export function middleware(request) {
     const dotIndex = token.lastIndexOf('.');
     if (dotIndex === -1) {
       const loginUrl = new URL('/login', request.url);
-      loginUrl.searchParams.set('callbackUrl', pathname);
+      loginUrl.searchParams.set('callbackUrl', fullCallbackPath);
       return NextResponse.redirect(loginUrl);
     }
 
