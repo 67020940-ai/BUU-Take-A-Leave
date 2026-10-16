@@ -3,13 +3,22 @@ import { getCurrentUser, homePathForRole } from '@/lib/auth';
 import { getTeacherCoursesAndRoster, getTeacherLeaves } from '@/lib/teacherData';
 import TeacherHistoryView from './teacher-history-view';
 
+export const dynamic = 'force-dynamic';
+export const revalidate = 0;
+
 export const metadata = {
   title: 'ประวัติการอนุมัติ | Take A Leave',
   description: 'ประวัติและบันทึกการพิจารณาคำขอลาเรียนย้อนหลัง มหาวิทยาลัยบูรพา',
 };
 
 export default async function TeacherHistoryPage() {
-  const user = await getCurrentUser();
+  let user = null;
+  try {
+    user = await getCurrentUser();
+  } catch (err) {
+    if (err?.digest?.startsWith('NEXT_') || err?.digest === 'DYNAMIC_SERVER_USAGE') throw err;
+    console.warn('TeacherHistoryPage getCurrentUser error:', err);
+  }
   if (!user) redirect('/login');
   if (user.role !== 'teacher') redirect(homePathForRole(user.role));
 

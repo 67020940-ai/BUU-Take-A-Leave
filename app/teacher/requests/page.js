@@ -12,7 +12,13 @@ export const metadata = {
 };
 
 export default async function TeacherRequestsPage() {
-  const user = await getCurrentUser();
+  let user = null;
+  try {
+    user = await getCurrentUser();
+  } catch (err) {
+    if (err?.digest?.startsWith('NEXT_') || err?.digest === 'DYNAMIC_SERVER_USAGE') throw err;
+    console.warn('TeacherRequestsPage getCurrentUser error:', err);
+  }
   if (!user) redirect('/login');
   if (user.role !== 'teacher') redirect(homePathForRole(user.role));
 
