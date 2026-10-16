@@ -22,15 +22,32 @@ export default async function TeacherHistoryPage() {
   if (!user) redirect('/login');
   if (user.role !== 'teacher') redirect(homePathForRole(user.role));
 
-  const { usingMock, courses, rosterByCourse } = await getTeacherCoursesAndRoster(user.id);
-  const leaves = await getTeacherLeaves(user.id, usingMock);
+  let courses = [];
+  let rosterByCourse = {};
+  let usingMock = true;
+  let leaves = [];
+
+  try {
+    const data = await getTeacherCoursesAndRoster(user.id);
+    courses = data.courses || [];
+    rosterByCourse = data.rosterByCourse || {};
+    usingMock = Boolean(data.usingMock);
+  } catch (err) {
+    console.warn('TeacherHistoryPage getTeacherCoursesAndRoster error:', err);
+  }
+
+  try {
+    leaves = await getTeacherLeaves(user.id, usingMock);
+  } catch (err) {
+    console.warn('TeacherHistoryPage getTeacherLeaves error:', err);
+  }
 
   return (
     <TeacherHistoryView
       user={{
-        name: user.name,
-        role: user.role,
-        email: user.email,
+        name: user.name || 'อาจารย์ผู้สอน',
+        role: user.role || 'teacher',
+        email: user.email || '',
         faculty: user.faculty || 'คณะวิทยาการสารสนเทศ',
         major: user.major || 'ภาควิชาการจัดการสารสนเทศ',
       }}
