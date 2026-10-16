@@ -21,6 +21,8 @@ import {
   HelpCircle,
   ArrowLeft,
   Filter,
+  ArrowDownWideNarrow,
+  ArrowUpNarrowWide,
 } from 'lucide-react';
 import { STATUS_DETAILS, LEAVE_TYPE_DETAILS, LEAVE_TYPE_DEFAULT, formatThaiDate, formatThaiDateTime, sortAcademicTerms, formatTeacherFullName } from '@/lib/ui';
 import AttachmentPreview from '@/components/AttachmentPreview';
@@ -103,6 +105,7 @@ export default function StudentHistoryView({ leaves: initialLeaves = [], summari
   const [selectedStatus, setSelectedStatus] = useState(initialStatus || 'all');
   const [selectedType, setSelectedType] = useState('all');
   const [historyTimeFilter, setHistoryTimeFilter] = useState('all'); // 'all' | 'past' | 'latest'
+  const [sortOrder, setSortOrder] = useState('desc'); // 'desc' (ล่าสุดก่อน) | 'asc' (เก่าสุดก่อน)
   const [searchQuery, setSearchQuery] = useState('');
   const [detailModal, setDetailModal] = useState({ isOpen: false, leave: null });
   const [currentPage, setCurrentPage] = useState(1);
@@ -172,10 +175,14 @@ export default function StudentHistoryView({ leaves: initialLeaves = [], summari
     }).sort((a, b) => {
       const timeA = new Date(a.createdAt || a.startDate || 0).getTime();
       const timeB = new Date(b.createdAt || b.startDate || 0).getTime();
+      if (sortOrder === 'asc') {
+        if (timeA !== timeB) return timeA - timeB;
+        return Number(a.id || 0) - Number(b.id || 0);
+      }
       if (timeB !== timeA) return timeB - timeA;
       return Number(b.id || 0) - Number(a.id || 0);
     });
-  }, [leaves, selectedTerm, selectedStatus, selectedType, searchQuery, historyTimeFilter, summaries]);
+  }, [leaves, selectedTerm, selectedStatus, selectedType, searchQuery, historyTimeFilter, sortOrder, summaries]);
 
   // Pagination
   const totalPages = Math.ceil(filteredLeaves.length / pageSize) || 1;
@@ -283,21 +290,12 @@ export default function StudentHistoryView({ leaves: initialLeaves = [], summari
             </div>
           </div>
 
-          {/* Search Input with trailing options: การลาที่ผ่านมาแล้ว & การลาล่าสุด */}
+          {/* Search Input with trailing sort button: ล่าสุดก่อน */}
           <div className="sm:col-span-8">
             <div className="flex items-center justify-between mb-1">
               <label className="text-[11px] font-semibold text-neutral-500 dark:text-neutral-400">
                 ค้นหาข้อมูล (Search Course, Reason, Teacher)
               </label>
-              {historyTimeFilter !== 'all' && (
-                <button
-                  type="button"
-                  onClick={() => setHistoryTimeFilter('all')}
-                  className="text-[10px] text-[#7749BC] dark:text-purple-300 hover:underline font-semibold cursor-pointer"
-                >
-                  ล้างตัวกรอง ({historyTimeFilter === 'latest' ? 'การลาล่าสุด' : 'การลาที่ผ่านมาแล้ว'})
-                </button>
-              )}
             </div>
             <div className="relative flex items-center">
               <Search className="w-4 h-4 text-neutral-400 absolute left-3.5 top-1/2 -translate-y-1/2 pointer-events-none" />
@@ -306,33 +304,22 @@ export default function StudentHistoryView({ leaves: initialLeaves = [], summari
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
                 placeholder="ค้นหาชื่อวิชา, รหัสวิชา, เหตุผลการลา หรืออาจารย์..."
-                className="w-full pl-9 pr-48 sm:pr-56 py-2 rounded-xl border border-neutral-300 dark:border-slate-700 bg-white dark:bg-slate-800 text-xs text-neutral-900 dark:text-neutral-100 placeholder:text-neutral-400 focus:outline-none focus:border-[#7749BC] focus:ring-2 focus:ring-[#7749BC]/20 shadow-xs"
+                className="w-full pl-9 pr-28 sm:pr-32 py-2 rounded-xl border border-neutral-300 dark:border-slate-700 bg-white dark:bg-slate-800 text-xs text-neutral-900 dark:text-neutral-100 placeholder:text-neutral-400 focus:outline-none focus:border-[#7749BC] focus:ring-2 focus:ring-[#7749BC]/20 shadow-xs"
               />
-              {/* ตัวเลือก 2 รายการด้านหลังสุดของกรอบค้นหา */}
-              <div className="absolute right-1.5 top-1/2 -translate-y-1/2 flex items-center gap-1">
+              {/* ปุ่มสลับลำดับการแสดงผล (Sort button: ล่าสุดก่อน) */}
+              <div className="absolute right-1.5 top-1/2 -translate-y-1/2 flex items-center">
                 <button
                   type="button"
-                  onClick={() => setHistoryTimeFilter(historyTimeFilter === 'past' ? 'all' : 'past')}
-                  className={`px-2 sm:px-2.5 py-1 rounded-lg text-[10px] sm:text-[11px] font-bold transition-all cursor-pointer whitespace-nowrap ${
-                    historyTimeFilter === 'past'
-                      ? 'bg-[#7749BC] text-white shadow-xs ring-1 ring-purple-300'
-                      : 'bg-neutral-100 dark:bg-slate-700 text-neutral-600 dark:text-neutral-300 hover:bg-neutral-200 dark:hover:bg-slate-600'
-                  }`}
-                  title="กรองเฉพาะการลาที่ผ่านมาแล้ว"
+                  onClick={() => setSortOrder(sortOrder === 'desc' ? 'asc' : 'desc')}
+                  className="px-2.5 sm:px-3 py-1.5 rounded-lg text-[10px] sm:text-[11px] font-bold transition-all cursor-pointer whitespace-nowrap bg-neutral-100 hover:bg-neutral-200 dark:bg-slate-700 dark:hover:bg-slate-600 text-neutral-700 dark:text-neutral-200 border border-neutral-200 dark:border-slate-600 flex items-center gap-1.5 shadow-2xs"
+                  title={sortOrder === 'desc' ? 'เรียงจากล่าสุดก่อน (คลิกเพื่อเรียงจากเก่าสุด)' : 'เรียงจากเก่าสุดก่อน (คลิกเพื่อเรียงจากล่าสุด)'}
                 >
-                  การลาที่ผ่านมาแล้ว
-                </button>
-                <button
-                  type="button"
-                  onClick={() => setHistoryTimeFilter(historyTimeFilter === 'latest' ? 'all' : 'latest')}
-                  className={`px-2 sm:px-2.5 py-1 rounded-lg text-[10px] sm:text-[11px] font-bold transition-all cursor-pointer whitespace-nowrap ${
-                    historyTimeFilter === 'latest'
-                      ? 'bg-[#7749BC] text-white shadow-xs ring-1 ring-purple-300'
-                      : 'bg-neutral-100 dark:bg-slate-700 text-neutral-600 dark:text-neutral-300 hover:bg-neutral-200 dark:hover:bg-slate-600'
-                  }`}
-                  title="กรองเฉพาะการลาล่าสุด"
-                >
-                  การลาล่าสุด
+                  {sortOrder === 'desc' ? (
+                    <ArrowDownWideNarrow className="w-3.5 h-3.5 text-[#7749BC] dark:text-purple-400" />
+                  ) : (
+                    <ArrowUpNarrowWide className="w-3.5 h-3.5 text-[#7749BC] dark:text-purple-400" />
+                  )}
+                  <span>{sortOrder === 'desc' ? 'ล่าสุดก่อน' : 'เก่าสุดก่อน'}</span>
                 </button>
               </div>
             </div>
