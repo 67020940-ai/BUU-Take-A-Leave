@@ -69,6 +69,7 @@ function computeScheduleLanes(courses) {
 }
 
 const TIME_SLOTS = [
+  '8:00 - 9:00',
   '9:00 - 10:00',
   '10:00 - 11:00',
   '11:00 - 12:00',
@@ -77,6 +78,9 @@ const TIME_SLOTS = [
   '14:00 - 15:00',
   '15:00 - 16:00',
   '16:00 - 17:00',
+  '17:00 - 18:00',
+  '18:00 - 19:00',
+  '19:00 - 20:00',
 ];
 
 const DAYS = [
@@ -138,7 +142,7 @@ function getCourseTheme(item) {
 const SCHEDULE_ITEMS = [
   {
     day: 'Monday',
-    startSlot: 0, // 9:00
+    startSlot: 1, // 9:00
     slotSpan: 3,  // 9:00 - 12:00 (9:00-11:50)
     code: '24527664-64, 2',
     name: 'การวิเคราะห์และออกแบบระบบสารสนเทศ (SA) กลุ่ม 02',
@@ -149,7 +153,7 @@ const SCHEDULE_ITEMS = [
   },
   {
     day: 'Tuesday',
-    startSlot: 4, // 13:00
+    startSlot: 5, // 13:00
     slotSpan: 4,  // 13:00 - 17:00 (13:00-16:50)
     code: '24527564-64, 1',
     name: 'การประยุกต์โปรแกรมโอเพนซอร์ส (OSS) กลุ่ม 01',
@@ -160,7 +164,7 @@ const SCHEDULE_ITEMS = [
   },
   {
     day: 'Thursday',
-    startSlot: 0, // 9:00
+    startSlot: 1, // 9:00
     slotSpan: 3,  // 9:00 - 12:00
     code: '24527664-64, 1',
     name: 'การวิเคราะห์และออกแบบระบบสารสนเทศ (SA) กลุ่ม 01',
@@ -171,7 +175,7 @@ const SCHEDULE_ITEMS = [
   },
   {
     day: 'Friday',
-    startSlot: 4, // 13:00
+    startSlot: 5, // 13:00
     slotSpan: 3,  // 13:00 - 16:00
     code: '24527564-64, 2',
     name: 'การประยุกต์โปรแกรมโอเพนซอร์ส (OSS) กลุ่ม 02',
@@ -212,8 +216,9 @@ export default function TeacherScheduleGrid({ courses = [], customItems = null, 
             else if (endM > 0 && endH <= startH) endH += 1;
           }
         }
-        const startSlot = Math.max(0, Math.min(TIME_SLOTS.length - 1, startH - 9));
-        const endSlot = Math.max(startSlot + 1, Math.min(TIME_SLOTS.length, endH - 9));
+        const BASE_HOUR = 8;
+        const startSlot = Math.max(0, Math.min(TIME_SLOTS.length - 1, startH - BASE_HOUR));
+        const endSlot = Math.max(startSlot + 1, Math.min(TIME_SLOTS.length, endH - BASE_HOUR));
         const slotSpan = Math.max(1, endSlot - startSlot);
 
         return {
@@ -389,16 +394,21 @@ export default function TeacherScheduleGrid({ courses = [], customItems = null, 
 
       {/* 2. Desktop & Tablet Full Time Grid (>= md) */}
       <div className="hidden md:block overflow-x-auto p-4 sm:p-6">
-          <div className="min-w-[840px] border border-neutral-200/90 dark:border-slate-700/80 rounded-2xl overflow-hidden bg-white dark:bg-slate-900 shadow-2xs">
-            {/* Header Row: Date / Time + 8 Time Slots */}
-            <div className="grid grid-cols-9 bg-neutral-100/80 dark:bg-slate-800/80 border-b border-neutral-200/90 dark:border-slate-700/80 text-center font-bold text-xs text-neutral-700 dark:text-neutral-200">
+          <div className="min-w-[1040px] border border-neutral-200/90 dark:border-slate-700/80 rounded-2xl overflow-hidden bg-white dark:bg-slate-900 shadow-2xs">
+            {/* Header Row: Date / Time + Time Slots */}
+            <div
+              style={{
+                gridTemplateColumns: `minmax(95px, 115px) repeat(${TIME_SLOTS.length}, minmax(75px, 1fr))`,
+              }}
+              className="grid bg-neutral-100/80 dark:bg-slate-800/80 border-b border-neutral-200/90 dark:border-slate-700/80 text-center font-bold text-xs text-neutral-700 dark:text-neutral-200"
+            >
               <div className="p-3 border-r border-neutral-200/80 dark:border-slate-700 font-sans tracking-wide sticky left-0 z-20 bg-neutral-100 dark:bg-slate-800 shadow-xs">
                 Date / Time
               </div>
               {TIME_SLOTS.map((slot, idx) => (
                 <div
                   key={slot}
-                  className={`p-3 text-[11px] font-mono tracking-tight font-medium ${
+                  className={`p-2.5 text-[11px] font-mono tracking-tight font-medium ${
                     idx < TIME_SLOTS.length - 1 ? 'border-r border-neutral-200/80 dark:border-slate-700' : ''
                   }`}
                 >
@@ -417,8 +427,11 @@ export default function TeacherScheduleGrid({ courses = [], customItems = null, 
               return (
                 <div
                   key={day.key}
-                  style={{ minHeight: `${rowMinHeight}px` }}
-                  className={`grid grid-cols-9 ${
+                  style={{
+                    minHeight: `${rowMinHeight}px`,
+                    gridTemplateColumns: `minmax(95px, 115px) repeat(${TIME_SLOTS.length}, minmax(75px, 1fr))`,
+                  }}
+                  className={`grid ${
                     dayIdx < DAYS.length - 1 ? 'border-b border-neutral-200/70 dark:border-slate-800' : ''
                   }`}
                 >
@@ -437,10 +450,14 @@ export default function TeacherScheduleGrid({ courses = [], customItems = null, 
                     </span>
                   </div>
 
-                  {/* 8 Hour Columns for this day */}
+                  {/* Hour Columns for this day */}
                   <div
-                    style={{ minHeight: `${rowMinHeight}px` }}
-                    className="col-span-8 grid grid-cols-8 relative"
+                    style={{
+                      minHeight: `${rowMinHeight}px`,
+                      gridColumn: `span ${TIME_SLOTS.length} / span ${TIME_SLOTS.length}`,
+                      gridTemplateColumns: `repeat(${TIME_SLOTS.length}, minmax(0, 1fr))`,
+                    }}
+                    className="grid relative"
                   >
                     {/* Background grid lines */}
                     {TIME_SLOTS.map((_, slotIdx) => (
@@ -454,8 +471,8 @@ export default function TeacherScheduleGrid({ courses = [], customItems = null, 
 
                     {/* Render class blocks in multi-lane layout with collision detection */}
                     {placedCourses.map((item, cIdx) => {
-                      const leftPct = (item.startSlot / 8) * 100;
-                      const widthPct = (item.slotSpan / 8) * 100;
+                      const leftPct = (item.startSlot / TIME_SLOTS.length) * 100;
+                      const widthPct = (item.slotSpan / TIME_SLOTS.length) * 100;
                       const theme = getCourseTheme(item);
                       const laneTop = laneCount > 1 ? item.laneIndex * 96 + 4 : 6;
                       const laneHeight = laneCount > 1 ? '90px' : 'calc(100% - 12px)';
