@@ -186,7 +186,7 @@ const SCHEDULE_ITEMS = [
   },
 ];
 
-export default function TeacherScheduleGrid({ courses = [], customItems = null, onSelectCourse, hideHeader = false, semester = '1/2569' }) {
+export default function TeacherScheduleGrid({ courses = [], customItems = null, onSelectCourse, hideHeader = false, semester = '1/2569', searchQuery = '' }) {
   const [selectedItem, setSelectedItem] = useState(null);
   const [viewMode, setViewMode] = useState('cards'); // 'cards' | 'grid'
   const [mobileSelectedDay, setMobileSelectedDay] = useState(() => {
@@ -477,6 +477,13 @@ export default function TeacherScheduleGrid({ courses = [], customItems = null, 
                       const laneTop = laneCount > 1 ? item.laneIndex * 96 + 4 : 6;
                       const laneHeight = laneCount > 1 ? '90px' : 'calc(100% - 12px)';
 
+                      const q = searchQuery.toLowerCase().trim();
+                      const isMatch =
+                        !q ||
+                        item.code.toLowerCase().includes(q) ||
+                        item.name.toLowerCase().includes(q) ||
+                        (item.room && item.room.toLowerCase().includes(q));
+
                       return (
                         <div
                           key={item.id || cIdx}
@@ -493,6 +500,10 @@ export default function TeacherScheduleGrid({ courses = [], customItems = null, 
                           className={`absolute ml-1 p-2.5 rounded-2xl border shadow-xs cursor-pointer transition-all hover:scale-[1.01] hover:shadow-md flex flex-col justify-between overflow-hidden z-10 ${
                             item.hasCollision
                               ? 'border-2 border-rose-500 dark:border-rose-500 shadow-rose-200/50'
+                              : isMatch && q
+                              ? 'ring-2 ring-[#7749BC] dark:ring-purple-400 shadow-purple-200/50 dark:shadow-purple-900/40'
+                              : !isMatch
+                              ? 'opacity-35'
                               : theme.card
                           } ${theme.card}`}
                           title={

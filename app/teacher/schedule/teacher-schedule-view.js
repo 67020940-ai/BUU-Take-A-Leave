@@ -28,6 +28,7 @@ import TeacherScheduleGrid from '@/components/TeacherScheduleGrid';
 import MobileBottomNav from '@/components/MobileBottomNav';
 import { useSidebarCollapsed } from '@/lib/useSidebarCollapsed';
 import TeachingMaterialsSection from '@/components/TeachingMaterialsSection';
+import { sortAcademicTerms } from '@/lib/ui';
 
 const SAMPLE_LESSON_PLANS = {
   '24527664': [
@@ -194,12 +195,26 @@ export default function TeacherScheduleView({
   const [editingWeek, setEditingWeek] = useState(null);
   const [editNotes, setEditNotes] = useState('');
   const [toast, setToast] = useState(null);
+  const [searchQuery, setSearchQuery] = useState('');
+  const [selectedTerm, setSelectedTerm] = useState('1/2569');
 
-  // Filter courses for current semester (1/2569)
-  const currentSemesterCourses = useMemo(() => {
-    const list = courses.filter((c) => !c.term || c.term === '1/2569');
-    return list.length > 0 ? list : courses;
+  // Available academic semesters sorted with 1/2569 priority
+  const availableSemesters = useMemo(() => {
+    const set = new Set();
+    courses.forEach((c) => {
+      if (c.term) set.add(c.term);
+    });
+    set.add('1/2569');
+    set.add('2/2569');
+    return sortAcademicTerms(Array.from(set), false);
   }, [courses]);
+
+  // Filter courses for current selected semester
+  const currentSemesterCourses = useMemo(() => {
+    if (!selectedTerm || selectedTerm === 'all') return courses;
+    const list = courses.filter((c) => !c.term || c.term === selectedTerm);
+    return list.length > 0 ? list : courses;
+  }, [courses, selectedTerm]);
 
   // Group courses by unique subject
   const availableCourses = useMemo(() => {
@@ -259,6 +274,20 @@ export default function TeacherScheduleView({
     return activeLessons.find((l) => l.status === 'current') || activeLessons[0];
   }, [activeLessons]);
 
+  const filteredLessons = useMemo(() => {
+    const q = searchQuery.trim().toLowerCase();
+    if (!q) return activeLessons;
+    return activeLessons.filter((lesson) => {
+      return (
+        lesson.topic?.toLowerCase().includes(q) ||
+        lesson.objectives?.toLowerCase().includes(q) ||
+        lesson.notes?.toLowerCase().includes(q) ||
+        String(lesson.week).includes(q) ||
+        lesson.room?.toLowerCase().includes(q)
+      );
+    });
+  }, [activeLessons, searchQuery]);
+
   function handleSaveNote() {
     if (!editingWeek) return;
     setLessonPlans((prev) => {
@@ -290,7 +319,11 @@ export default function TeacherScheduleView({
       <div className={`flex-1 ${isSidebarCollapsed ? 'lg:pl-20' : 'lg:pl-64'} flex flex-col min-w-0 w-full transition-all duration-300`}>
         <TeacherTopBar
           user={user}
-          semester="1/2569"
+          semester={selectedTerm}
+          onSemesterChange={setSelectedTerm}
+          availableSemesters={availableSemesters}
+          searchValue={searchQuery}
+          onSearchChange={setSearchQuery}
           searchPlaceholder="ค้นหาหัวข้อการสอน, วิชา, หรือห้องเรียน..."
           onToggleMobileSidebar={() => setMobileSidebarOpen(true)}
         />
@@ -315,7 +348,11 @@ export default function TeacherScheduleView({
 
           {/* Section 1: Weekly Timetable Grid */}
           <section className="space-y-3">
-            <TeacherScheduleGrid courses={courses} />
+            <TeacherScheduleGrid
+              courses={courses}
+              semester={selectedTerm}
+              searchQuery={searchQuery}
+            />
           </section>
 
           {/* Section 2: Lesson Preparation & Syllabus System */}
@@ -432,7 +469,12 @@ export default function TeacherScheduleView({
               </h3>
 
               <div className="space-y-2.5">
-                {activeLessons.map((lesson) => {
+                {filteredLessons.length === 0 ? (
+                  <div className="p-8 text-center rounded-2xl border border-dashed border-neutral-200 dark:border-slate-800 bg-neutral-50/50 dark:bg-slate-900/50 text-xs text-neutral-500">
+                    ไม่พบแผนการสอนที่ตรงกับคำค้นหา "{searchQuery}"
+                  </div>
+                ) : (
+                  filteredLessons.map((lesson) => {
                   const isDone = lesson.status === 'completed';
                   const isCurrent = lesson.status === 'current';
 
@@ -501,7 +543,7 @@ export default function TeacherScheduleView({
                       </div>
                     </div>
                   );
-                })}
+                }))}
               </div>
             </div>
           </section>

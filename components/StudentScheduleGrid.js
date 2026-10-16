@@ -26,6 +26,7 @@ import {
 } from 'lucide-react';
 
 const TIME_SLOTS = [
+  { label: '8:00 - 9:00', startH: 8, endH: 9 },
   { label: '9:00 - 10:00', startH: 9, endH: 10 },
   { label: '10:00 - 11:00', startH: 10, endH: 11 },
   { label: '11:00 - 12:00', startH: 11, endH: 12 },
@@ -158,8 +159,9 @@ export default function StudentScheduleGrid({
           if (!isNaN(eh)) endH = em > 0 ? eh + 1 : eh;
         }
 
-        const startSlot = Math.max(0, Math.min(TIME_SLOTS.length - 1, startH - 9));
-        const endSlot = Math.max(startSlot + 1, Math.min(TIME_SLOTS.length, endH - 9));
+        const BASE_HOUR = 8;
+        const startSlot = Math.max(0, Math.min(TIME_SLOTS.length - 1, startH - BASE_HOUR));
+        const endSlot = Math.max(startSlot + 1, Math.min(TIME_SLOTS.length, endH - BASE_HOUR));
         const slotSpan = Math.max(1, endSlot - startSlot);
 
         const isMatch =
@@ -378,16 +380,21 @@ export default function StudentScheduleGrid({
 
       {/* 2. Desktop & iPad Full Grid Container (>= md) */}
       <div className="hidden md:block overflow-x-auto">
-          <div className="min-w-[850px] p-4">
+          <div className="min-w-[980px] p-4">
             {/* Header Row: Days label + Time Slots */}
-            <div className="grid grid-cols-12 gap-1.5 mb-2 text-center text-xs font-bold text-neutral-500 dark:text-neutral-400">
-              <div className="col-span-1 py-2 bg-neutral-100 dark:bg-slate-800 rounded-xl flex items-center justify-center font-bold sticky left-0 z-20 shadow-xs border border-neutral-200/50 dark:border-slate-700/50">
+            <div
+              style={{
+                gridTemplateColumns: `minmax(65px, 80px) repeat(${TIME_SLOTS.length}, minmax(65px, 1fr))`,
+              }}
+              className="grid gap-1.5 mb-2 text-center text-xs font-bold text-neutral-500 dark:text-neutral-400"
+            >
+              <div className="py-2 bg-neutral-100 dark:bg-slate-800 rounded-xl flex items-center justify-center font-bold sticky left-0 z-20 shadow-xs border border-neutral-200/50 dark:border-slate-700/50">
                 วัน
               </div>
               {TIME_SLOTS.map((t, idx) => (
                 <div
                   key={idx}
-                  className="col-span-1 py-2 bg-neutral-100 dark:bg-slate-800/80 rounded-xl text-[11px] truncate px-0.5"
+                  className="py-2 bg-neutral-100 dark:bg-slate-800/80 rounded-xl text-[11px] truncate px-0.5"
                   title={t.label}
                 >
                   {t.label.split(' - ')[0]}
@@ -405,22 +412,29 @@ export default function StudentScheduleGrid({
                 return (
                   <div
                     key={day.key}
-                    style={{ minHeight: `${rowMinHeight}px` }}
-                    className="grid grid-cols-12 gap-1.5 items-stretch p-1.5 rounded-2xl bg-neutral-50/50 dark:bg-slate-900/50 border border-neutral-150 dark:border-slate-800/70"
+                    style={{
+                      minHeight: `${rowMinHeight}px`,
+                      gridTemplateColumns: `minmax(65px, 80px) repeat(${TIME_SLOTS.length}, minmax(65px, 1fr))`,
+                    }}
+                    className="grid gap-1.5 items-stretch p-1.5 rounded-2xl bg-neutral-50/50 dark:bg-slate-900/50 border border-neutral-150 dark:border-slate-800/70"
                   >
                     {/* Day Label Column (Sticky left on mobile scroll) */}
                     <div
                       style={{ minHeight: `${rowMinHeight - 12}px` }}
-                      className={`col-span-1 flex flex-col items-center justify-center rounded-xl p-2 font-bold text-xs sticky left-0 z-20 shadow-xs border border-neutral-200/50 dark:border-slate-700/50 ${day.bgHeader}`}
+                      className={`flex flex-col items-center justify-center rounded-xl p-2 font-bold text-xs sticky left-0 z-20 shadow-xs border border-neutral-200/50 dark:border-slate-700/50 ${day.bgHeader}`}
                     >
                       <span className="font-bold text-sm tracking-tight">{day.dayTh.replace('วัน', '')}</span>
                       <span className="text-[11px] opacity-75 font-mono font-medium">{day.dayEn.slice(0, 3)}</span>
                     </div>
 
-                    {/* 11 Time Slots Container */}
+                    {/* Time Slots Container */}
                     <div
-                      className="col-span-11 relative grid grid-cols-11 gap-1.5"
-                      style={{ minHeight: `${rowMinHeight - 12}px` }}
+                      className="relative grid gap-1.5"
+                      style={{
+                        minHeight: `${rowMinHeight - 12}px`,
+                        gridColumn: `span ${TIME_SLOTS.length} / span ${TIME_SLOTS.length}`,
+                        gridTemplateColumns: `repeat(${TIME_SLOTS.length}, minmax(0, 1fr))`,
+                      }}
                     >
                       {/* Background Grid Cells */}
                       {TIME_SLOTS.map((_, sIdx) => (
@@ -433,8 +447,8 @@ export default function StudentScheduleGrid({
 
                       {/* Render Courses in multi-lane Google Calendar layout */}
                       {placedCourses.map((c) => {
-                        const leftPercent = (c.startSlot / 11) * 100;
-                        const widthPercent = (c.slotSpan / 11) * 100;
+                        const leftPercent = (c.startSlot / TIME_SLOTS.length) * 100;
+                        const widthPercent = (c.slotSpan / TIME_SLOTS.length) * 100;
                         const laneTop = laneCount > 1 ? c.laneIndex * 96 + 4 : 4;
                         const laneHeight = laneCount > 1 ? '90px' : 'calc(100% - 8px)';
 
