@@ -742,7 +742,11 @@ export default function WireframeStatsView({
                 paginatedStudents.map((student) => (
                   <div
                     key={student.studentId}
-                    className="p-3.5 rounded-2xl bg-white dark:bg-slate-800/80 border border-neutral-200/80 dark:border-slate-700/80 shadow-2xs flex items-center justify-between gap-3"
+                    onClick={() => {
+                      setModalStudent(student);
+                      setModalLeaveCategory(null);
+                    }}
+                    className="p-3.5 rounded-2xl bg-white dark:bg-slate-800/80 border border-neutral-200/80 dark:border-slate-700/80 shadow-2xs flex items-center justify-between gap-3 cursor-pointer hover:border-purple-300 dark:hover:border-purple-700 hover:bg-purple-50/30 transition-all"
                   >
                     <div className="min-w-0">
                       <p className="font-bold text-xs text-neutral-900 dark:text-neutral-100 truncate">
@@ -770,7 +774,8 @@ export default function WireframeStatsView({
 
                       <button
                         type="button"
-                        onClick={() => {
+                        onClick={(e) => {
+                          e.stopPropagation();
                           setModalStudent(student);
                           setModalLeaveCategory(null);
                         }}
@@ -808,7 +813,12 @@ export default function WireframeStatsView({
                     paginatedStudents.map((student) => (
                       <tr
                         key={student.studentId}
-                        className="hover:bg-purple-50/50 dark:hover:bg-purple-950/20 transition-colors group"
+                        onClick={() => {
+                          setModalStudent(student);
+                          setModalLeaveCategory(null);
+                        }}
+                        className="hover:bg-purple-50/70 dark:hover:bg-purple-950/30 transition-colors group cursor-pointer"
+                        title="คลิกเพื่อดูรายละเอียดการลาของนิสิต"
                       >
                         {/* รหัสนิสิต */}
                         <td className="py-4 px-4 sm:px-6 font-mono font-bold text-neutral-900 dark:text-neutral-100">
@@ -844,7 +854,8 @@ export default function WireframeStatsView({
                         <td className="py-4 px-4 text-center">
                           <button
                             type="button"
-                            onClick={() => {
+                            onClick={(e) => {
+                              e.stopPropagation();
                               setModalStudent(student);
                               setModalLeaveCategory(null);
                             }}
@@ -855,6 +866,7 @@ export default function WireframeStatsView({
                           </button>
                         </td>
                       </tr>
+
                     ))
                   )}
                 </tbody>
