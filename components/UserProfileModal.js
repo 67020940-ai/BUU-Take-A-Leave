@@ -390,7 +390,7 @@ export default function UserProfileModal({
                 </span>
               </h3>
               <p className="text-xs text-neutral-500 dark:text-neutral-400">
-                แก้ไขข้อมูลส่วนตัว ข้อมูลการศึกษา และรูปประจำตัวในระบบ
+                ข้อมูลส่วนตัว ข้อมูลการศึกษา และรูปประจำตัวในระบบ
               </p>
             </div>
           </div>
@@ -735,14 +735,20 @@ export default function UserProfileModal({
 
         {/* Modal Footer */}
         <div className="shrink-0 px-6 py-4 border-t border-neutral-100 dark:border-slate-800 flex items-center justify-between gap-3 bg-neutral-50/70 dark:bg-slate-900/60">
-          <button
-            type="button"
-            disabled={isSaving || isUploadingAvatar}
-            onClick={onClose}
-            className="px-4 py-2 rounded-xl border border-neutral-200 dark:border-slate-700 text-neutral-700 dark:text-neutral-300 font-bold hover:bg-neutral-100 dark:hover:bg-slate-800 transition-colors disabled:opacity-50 cursor-pointer text-xs"
-          >
-            ยกเลิก
-          </button>
+          {activeTab === 'profile' ? (
+            <span className="text-[11px] text-neutral-400 dark:text-neutral-500">
+              ข้อมูลอ้างอิงตามฐานข้อมูลระบบมหาวิทยาลัยบูรพา
+            </span>
+          ) : (
+            <button
+              type="button"
+              disabled={isSaving || isUploadingAvatar}
+              onClick={onClose}
+              className="px-4 py-2 rounded-xl border border-neutral-200 dark:border-slate-700 text-neutral-700 dark:text-neutral-300 font-bold hover:bg-neutral-100 dark:hover:bg-slate-800 transition-colors disabled:opacity-50 cursor-pointer text-xs"
+            >
+              ยกเลิก
+            </button>
+          )}
 
           <div className="flex items-center gap-2">
             {activeTab === 'avatar' && selectedFile && (
