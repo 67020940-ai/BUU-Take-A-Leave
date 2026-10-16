@@ -53,7 +53,7 @@ export default function TeacherHistoryView({
   const [leaves, setLeaves] = useState(initialLeaves);
   const [mobileSidebarOpen, setMobileSidebarOpen] = useState(false);
   const [statusFilter, setStatusFilter] = useState('all'); // 'all' | 'อนุมัติ' | 'ไม่อนุมัติ' | 'เพิกถอน'
-  const [selectedTerm, setSelectedTerm] = useState('all');
+  const [selectedTerm, setSelectedTerm] = useState('1/2569');
   const [selectedCourseId, setSelectedCourseId] = useState('all');
   const [searchQuery, setSearchQuery] = useState('');
   const [detailModal, setDetailModal] = useState({ isOpen: false, leave: null });

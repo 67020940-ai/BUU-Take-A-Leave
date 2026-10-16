@@ -101,7 +101,7 @@ export default function StudentHistoryView({ leaves: initialLeaves = [], summari
       };
     }
   }, [leaves]);
-  const [selectedTerm, setSelectedTerm] = useState('all');
+  const [selectedTerm, setSelectedTerm] = useState('1/2569');
   const [selectedStatus, setSelectedStatus] = useState(initialStatus || 'all');
   const [selectedType, setSelectedType] = useState('all');
   const [historyTimeFilter, setHistoryTimeFilter] = useState('all'); // 'all' | 'past' | 'latest'

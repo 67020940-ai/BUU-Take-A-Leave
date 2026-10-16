@@ -44,7 +44,7 @@ export default function StudentStatsView({ summaries = [], leaves = [] }) {
     return sortAcademicTerms(validTerms, false);
   }, [summaries, leaves]);
 
-  const [selectedTerm, setSelectedTerm] = useState('all');
+  const [selectedTerm, setSelectedTerm] = useState('1/2569');
   const [selectedCategoryModal, setSelectedCategoryModal] = useState(null);
 
   // Multi-semester comparison breakdown

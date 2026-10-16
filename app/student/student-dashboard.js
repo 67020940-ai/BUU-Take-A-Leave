@@ -44,7 +44,7 @@ const LEAVE_CATEGORIES = [
 
 export default function StudentDashboard({ summaries = [], leaves: initialLeaves = [] }) {
   const [leaves, setLeaves] = useState(initialLeaves);
-  const [selectedTerm, setSelectedTerm] = useState('all');
+  const [selectedTerm, setSelectedTerm] = useState('1/2569');
   const [selectedStatus, setSelectedStatus] = useState('all');
   const [selectedType, setSelectedType] = useState('all');
   const [searchQuery, setSearchQuery] = useState('');

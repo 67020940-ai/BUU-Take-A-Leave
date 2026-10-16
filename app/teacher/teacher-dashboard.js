@@ -20,7 +20,7 @@ import TeacherTopBar from '@/components/TeacherTopBar';
 import TeacherScheduleGrid from '@/components/TeacherScheduleGrid';
 import MobileBottomNav from '@/components/MobileBottomNav';
 import { useSidebarCollapsed } from '@/lib/useSidebarCollapsed';
-import { STATUS_DETAILS } from '@/lib/ui';
+import { STATUS_DETAILS, sortAcademicTerms } from '@/lib/ui';
 import AttachmentPreview from '@/components/AttachmentPreview';
 
 export default function TeacherDashboard({
@@ -78,7 +78,7 @@ export default function TeacherDashboard({
       if (l.courseTerm && l.courseTerm !== '-') terms.add(l.courseTerm);
     });
     if (terms.size === 0) terms.add('1/2569');
-    return Array.from(terms).sort().reverse();
+    return sortAcademicTerms(Array.from(terms), false);
   }, [courses, leaves]);
 
   // Total counts across all statuses

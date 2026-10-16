@@ -16,6 +16,7 @@ import {
   ClipboardCheck,
   ChevronRight,
   ChevronLeft,
+  ChevronDown,
   ShieldCheck,
   AlertCircle,
   Eye,
@@ -45,6 +46,7 @@ export default function AdminDashboard({ user, courses = [], leaves = [], ticket
   const [mobileSidebarOpen, setMobileSidebarOpen] = useState(false);
   const [searchQuery, setSearchQuery] = useState('');
   const [selectedTerm, setSelectedTerm] = useState('1/2569');
+  const [selectedTeacherFilter, setSelectedTeacherFilter] = useState('all');
 
   // Real-time leaves synchronization
   const [leavesList, setLeavesList] = useState(leaves);
@@ -202,19 +204,36 @@ export default function AdminDashboard({ user, courses = [], leaves = [], ticket
     return filteredLeaves.slice(start, start + LEAVE_PAGE_SIZE);
   }, [filteredLeaves, leavePage, LEAVE_PAGE_SIZE]);
 
+  // Unique Teacher List for Courses Filter
+  const teacherList = useMemo(() => {
+    const set = new Set();
+    courses.forEach((c) => {
+      const name = c.teacherName || c.teacher?.name;
+      if (name) set.add(name);
+    });
+    return Array.from(set).sort();
+  }, [courses]);
+
   // Filtered Courses
   const filteredCourses = useMemo(() => {
-    const q = searchQuery.toLowerCase();
-    if (!q) return courses;
+    const q = searchQuery.toLowerCase().trim();
     return courses.filter((c) => {
-      return (
+      // 1. Term filter (default 1/2569, or matches selectedTerm)
+      const matchesTerm = selectedTerm === 'all' || !c.term || c.term === selectedTerm;
+      // 2. Teacher filter
+      const teacherName = c.teacherName || c.teacher?.name || '';
+      const matchesTeacher = selectedTeacherFilter === 'all' || teacherName === selectedTeacherFilter;
+      // 3. Search query
+      const matchesSearch =
+        !q ||
         c.code.toLowerCase().includes(q) ||
         c.name.toLowerCase().includes(q) ||
         (c.room && c.room.toLowerCase().includes(q)) ||
-        (c.teacherName && c.teacherName.toLowerCase().includes(q))
-      );
+        (teacherName && teacherName.toLowerCase().includes(q));
+
+      return matchesTerm && matchesTeacher && matchesSearch;
     });
-  }, [courses, searchQuery]);
+  }, [courses, selectedTerm, selectedTeacherFilter, searchQuery]);
 
   const totalCoursePages = Math.max(1, Math.ceil(filteredCourses.length / COURSE_PAGE_SIZE));
   const paginatedCourses = useMemo(() => {
@@ -706,6 +725,45 @@ export default function AdminDashboard({ user, courses = [], leaves = [], ticket
                     <p className="text-xs text-neutral-500 dark:text-neutral-400">
                       ฐานข้อมูลรายวิชา อาจารย์ผู้สอน ห้องเรียน และจำนวนนิสิตที่ลงทะเบียน
                     </p>
+                  </div>
+                </div>
+
+                <div className="flex items-center gap-2.5 flex-wrap">
+                  {/* Filter by Teacher */}
+                  <div className="relative">
+                    <select
+                      value={selectedTeacherFilter}
+                      onChange={(e) => {
+                        setSelectedTeacherFilter(e.target.value);
+                        setCoursePage(1);
+                      }}
+                      className="text-xs font-medium pl-3 pr-8 py-2 rounded-xl bg-white dark:bg-slate-800 border border-neutral-200 dark:border-slate-700 text-neutral-800 dark:text-neutral-200 focus:outline-none focus:ring-2 focus:ring-[#7749BC]/40 appearance-none shadow-2xs cursor-pointer"
+                    >
+                      <option value="all">อาจารย์ทั้งหมด ({teacherList.length} ท่าน)</option>
+                      {teacherList.map((t) => (
+                        <option key={t} value={t}>
+                          {t}
+                        </option>
+                      ))}
+                    </select>
+                    <ChevronDown className="w-3.5 h-3.5 text-neutral-400 absolute right-2.5 top-1/2 -translate-y-1/2 pointer-events-none" />
+                  </div>
+
+                  {/* Filter by Term */}
+                  <div className="relative">
+                    <select
+                      value={selectedTerm}
+                      onChange={(e) => {
+                        setSelectedTerm(e.target.value);
+                        setCoursePage(1);
+                      }}
+                      className="text-xs font-bold pl-3 pr-8 py-2 rounded-xl bg-purple-50 dark:bg-purple-950/40 border border-purple-200 dark:border-purple-800 text-[#7749BC] dark:text-purple-300 focus:outline-none focus:ring-2 focus:ring-[#7749BC]/40 appearance-none shadow-2xs cursor-pointer"
+                    >
+                      <option value="1/2569">เทอม 1/2569 (ปัจจุบัน)</option>
+                      <option value="2/2569">เทอม 2/2569</option>
+                      <option value="all">ทุกภาคเรียน</option>
+                    </select>
+                    <ChevronDown className="w-3.5 h-3.5 text-[#7749BC] dark:text-purple-300 absolute right-2.5 top-1/2 -translate-y-1/2 pointer-events-none" />
                   </div>
                 </div>
               </div>

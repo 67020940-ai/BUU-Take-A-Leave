@@ -39,7 +39,7 @@ import {
   Flame,
   Info,
 } from 'lucide-react';
-import { STATUS_DETAILS, LEAVE_TYPE_DETAILS, formatThaiDate, formatThaiDateTime, initials } from '@/lib/ui';
+import { STATUS_DETAILS, LEAVE_TYPE_DETAILS, formatThaiDate, formatThaiDateTime, initials, sortAcademicTerms } from '@/lib/ui';
 import AttachmentPreview from '@/components/AttachmentPreview';
 import WireframeStatsView from './wireframe-stats-view';
 import { formatLeaveClassTime } from '@/lib/leave-stats';
@@ -85,11 +85,11 @@ export default function TeacherStatsView({ courses = [], leaves = [], rosterByCo
       if (l.courseTerm && l.courseTerm !== '-') terms.add(l.courseTerm);
     });
     if (terms.size === 0) terms.add('1/2569');
-    return Array.from(terms).sort().reverse();
+    return sortAcademicTerms(Array.from(terms), false);
   }, [courses, leaves]);
 
   const [viewMode, setViewMode] = useState('wireframe'); // 'wireframe' | 'analytics'
-  const [selectedTerm, setSelectedTerm] = useState('all');
+  const [selectedTerm, setSelectedTerm] = useState('1/2569');
   const [selectedCourseId, setSelectedCourseId] = useState('all');
 
   // Selected Month for Calendar Heatmap

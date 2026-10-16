@@ -71,8 +71,7 @@ export default function TeacherRequestsView({
   const [mobileSidebarOpen, setMobileSidebarOpen] = useState(false);
   const [activeTab, setActiveTab] = useState('รออนุมัติ'); // 'รออนุมัติ' | 'all'
 
-  // Filter states
-  const [selectedTerm, setSelectedTerm] = useState('all');
+  const [selectedTerm, setSelectedTerm] = useState('1/2569');
   const [selectedCourseId, setSelectedCourseId] = useState('all');
   const [typeFilter, setTypeFilter] = useState('all');
   const [isTodayOnly, setIsTodayOnly] = useState(false);

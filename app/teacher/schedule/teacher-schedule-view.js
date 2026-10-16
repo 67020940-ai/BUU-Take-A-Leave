@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useMemo } from 'react';
+import { useState, useMemo, useEffect } from 'react';
 import Link from 'next/link';
 import {
   CalendarDays,
@@ -15,6 +15,7 @@ import {
   AlertCircle,
   ExternalLink,
   ChevronRight,
+  ChevronDown,
   Sparkles,
   BarChart3,
   X,
@@ -194,10 +195,16 @@ export default function TeacherScheduleView({
   const [editNotes, setEditNotes] = useState('');
   const [toast, setToast] = useState(null);
 
+  // Filter courses for current semester (1/2569)
+  const currentSemesterCourses = useMemo(() => {
+    const list = courses.filter((c) => !c.term || c.term === '1/2569');
+    return list.length > 0 ? list : courses;
+  }, [courses]);
+
   // Group courses by unique subject
   const availableCourses = useMemo(() => {
     const map = new Map();
-    courses.forEach((c) => {
+    currentSemesterCourses.forEach((c) => {
       if (!map.has(c.code)) {
         map.set(c.code, {
           code: c.code,
@@ -206,7 +213,11 @@ export default function TeacherScheduleView({
           groups: [c.group || '01'],
         });
       } else {
-        map.get(c.code).groups.push(c.group || '02');
+        const existing = map.get(c.code);
+        const gr = c.group || '02';
+        if (!existing.groups.includes(gr)) {
+          existing.groups.push(gr);
+        }
       }
     });
     if (map.size === 0) {
@@ -214,17 +225,27 @@ export default function TeacherScheduleView({
         code: '24527664',
         name: 'การวิเคราะห์และออกแบบระบบสารสนเทศ',
         acronym: 'SA',
-        groups: ['01', '02'],
+        groups: ['01'],
       });
       map.set('24527564', {
         code: '24527564',
-        name: 'การประยุกต์โปรแกรมโอเพนซอร์ส',
+        name: 'การประยุกต์โปรแกรมกลุ่มโอเพนซอร์ส',
         acronym: 'OSS',
         groups: ['01', '02'],
       });
     }
     return Array.from(map.values());
-  }, [courses]);
+  }, [currentSemesterCourses]);
+
+  // Sync selectedCourseCode when availableCourses changes
+  useEffect(() => {
+    if (availableCourses.length > 0) {
+      const exists = availableCourses.some((c) => c.code === selectedCourseCode);
+      if (!exists) {
+        setSelectedCourseCode(availableCourses[0].code);
+      }
+    }
+  }, [availableCourses, selectedCourseCode]);
 
   const activeCourse = useMemo(() => {
     return availableCourses.find((c) => c.code === selectedCourseCode) || availableCourses[0];
@@ -310,25 +331,22 @@ export default function TeacherScheduleView({
                 </p>
               </div>
 
-              {/* Course Selector Tabs */}
-              <div className="flex items-center gap-2">
-                {availableCourses.map((c) => {
-                  const isSelected = selectedCourseCode === c.code;
-                  return (
-                    <button
-                      key={c.code}
-                      type="button"
-                      onClick={() => setSelectedCourseCode(c.code)}
-                      className={`px-4 py-2 rounded-2xl text-xs font-bold transition-all cursor-pointer shadow-xs ${
-                        isSelected
-                          ? 'bg-[#7749BC] text-white shadow-md shadow-purple-900/20'
-                          : 'bg-white dark:bg-slate-800 text-neutral-700 dark:text-neutral-300 hover:bg-neutral-100 border border-neutral-200/80 dark:border-slate-700'
-                      }`}
-                    >
-                      <span>{c.acronym}</span> • <span className="font-mono">{c.code}</span>
-                    </button>
-                  );
-                })}
+              {/* Modern Course Selector Dropdown */}
+              <div className="w-full sm:w-auto min-w-[260px] sm:min-w-[320px]">
+                <div className="relative">
+                  <select
+                    value={selectedCourseCode}
+                    onChange={(e) => setSelectedCourseCode(e.target.value)}
+                    className="w-full px-4 py-2.5 rounded-2xl border-2 border-purple-200 dark:border-purple-800/60 bg-white dark:bg-slate-800 text-xs sm:text-sm font-bold text-neutral-900 dark:text-neutral-100 focus:outline-none focus:border-[#7749BC] appearance-none pr-10 cursor-pointer shadow-xs"
+                  >
+                    {availableCourses.map((c) => (
+                      <option key={c.code} value={c.code}>
+                        {c.code} {c.name} {c.groups?.length ? `(กลุ่ม ${c.groups.join(', ')})` : ''}
+                      </option>
+                    ))}
+                  </select>
+                  <ChevronDown className="w-4 h-4 text-[#7749BC] absolute right-3.5 top-1/2 -translate-y-1/2 pointer-events-none" />
+                </div>
               </div>
             </div>
 
