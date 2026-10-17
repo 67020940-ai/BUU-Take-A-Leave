@@ -119,8 +119,13 @@ export default function WireframeStatsView({
   const pageSize = 10;
 
   const availableSemesters = useMemo(() => {
-    return ['1/2569', '2/2568', '1/2568'];
-  }, []);
+    const terms = new Set();
+    courses.forEach((c) => {
+      if (c.term && c.term !== '2/2569') terms.add(c.term);
+    });
+    if (terms.size === 0) terms.add('1/2569');
+    return Array.from(terms);
+  }, [courses]);
 
   const coursesForSemester = useMemo(() => {
     if (!semester) return courses;
@@ -222,10 +227,11 @@ export default function WireframeStatsView({
     const roster = rosterByCourse[selectedCourse.id] || [];
 
     return roster.map((s, idx) => {
-      // Find leaves belonging to this student in this course from DB props
+      // Find approved leaves belonging to this student in this specific section from DB props
       const dbLeaves = leaves.filter(
         (l) =>
-          (l.courseId === selectedCourse.id || l.courseCode === selectedCourse?.code) &&
+          l.status === 'อนุมัติ' &&
+          l.courseId === selectedCourse.id &&
           (l.studentCode === s.studentCode || l.studentId === s.studentId || l.studentName === s.studentName)
       );
 
@@ -340,7 +346,8 @@ export default function WireframeStatsView({
         roster.forEach((s) => {
           const dbLeaves = leaves.filter(
             (l) =>
-              (l.courseId === sec.id || l.courseCode === sec.code) &&
+              l.status === 'อนุมัติ' &&
+              l.courseId === sec.id &&
               (l.studentCode === s.studentCode || l.studentId === s.studentId || l.studentName === s.studentName)
           );
           const count =
