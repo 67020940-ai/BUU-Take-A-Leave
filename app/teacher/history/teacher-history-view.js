@@ -36,6 +36,7 @@ import {
   formatThaiDate,
   formatThaiDateTime,
   sortAcademicTerms,
+  isTermStartedOrPassed,
 } from '@/lib/ui';
 import { formatLeaveClassTime } from '@/lib/leave-stats';
 
@@ -89,14 +90,14 @@ export default function TeacherHistoryView({
     }
   }, []);
 
-  // Academic terms
+  // Academic terms (only started or passed terms)
   const academicTerms = useMemo(() => {
     const terms = new Set();
     courses.forEach((c) => {
-      if (c.term) terms.add(c.term);
+      if (c.term && isTermStartedOrPassed(c.term, '1/2569')) terms.add(c.term);
     });
     leaves.forEach((l) => {
-      if (l.courseTerm && l.courseTerm !== '-') terms.add(l.courseTerm);
+      if (l.courseTerm && l.courseTerm !== '-' && isTermStartedOrPassed(l.courseTerm, '1/2569')) terms.add(l.courseTerm);
     });
     if (terms.size === 0) terms.add('1/2569');
     return sortAcademicTerms(Array.from(terms), false);

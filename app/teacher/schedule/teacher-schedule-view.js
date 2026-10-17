@@ -28,7 +28,7 @@ import TeacherScheduleGrid from '@/components/TeacherScheduleGrid';
 import MobileBottomNav from '@/components/MobileBottomNav';
 import { useSidebarCollapsed } from '@/lib/useSidebarCollapsed';
 import TeachingMaterialsSection from '@/components/TeachingMaterialsSection';
-import { sortAcademicTerms } from '@/lib/ui';
+import { sortAcademicTerms, isTermStartedOrPassed } from '@/lib/ui';
 
 const SAMPLE_LESSON_PLANS = {
   '24527664': [
@@ -198,14 +198,13 @@ export default function TeacherScheduleView({
   const [searchQuery, setSearchQuery] = useState('');
   const [selectedTerm, setSelectedTerm] = useState('1/2569');
 
-  // Available academic semesters sorted with 1/2569 priority
+  // Available academic semesters sorted with 1/2569 priority (only started or passed terms)
   const availableSemesters = useMemo(() => {
     const set = new Set();
     courses.forEach((c) => {
-      if (c.term) set.add(c.term);
+      if (c.term && isTermStartedOrPassed(c.term, '1/2569')) set.add(c.term);
     });
     set.add('1/2569');
-    set.add('2/2569');
     return sortAcademicTerms(Array.from(set), false);
   }, [courses]);
 

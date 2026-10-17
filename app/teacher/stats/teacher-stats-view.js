@@ -39,7 +39,7 @@ import {
   Flame,
   Info,
 } from 'lucide-react';
-import { STATUS_DETAILS, LEAVE_TYPE_DETAILS, formatThaiDate, formatThaiDateTime, initials, sortAcademicTerms } from '@/lib/ui';
+import { STATUS_DETAILS, LEAVE_TYPE_DETAILS, formatThaiDate, formatThaiDateTime, initials, sortAcademicTerms, isTermStartedOrPassed } from '@/lib/ui';
 import AttachmentPreview from '@/components/AttachmentPreview';
 import WireframeStatsView from './wireframe-stats-view';
 import { formatLeaveClassTime } from '@/lib/leave-stats';
@@ -75,14 +75,14 @@ function formatShortDate(dateStr) {
 }
 
 export default function TeacherStatsView({ courses = [], leaves = [], rosterByCourse = {} }) {
-  // Extract unique academic terms
+  // Extract unique academic terms (only started or passed terms)
   const academicTerms = useMemo(() => {
     const terms = new Set();
     courses.forEach((c) => {
-      if (c.term) terms.add(c.term);
+      if (c.term && isTermStartedOrPassed(c.term, '1/2569')) terms.add(c.term);
     });
     leaves.forEach((l) => {
-      if (l.courseTerm && l.courseTerm !== '-') terms.add(l.courseTerm);
+      if (l.courseTerm && l.courseTerm !== '-' && isTermStartedOrPassed(l.courseTerm, '1/2569')) terms.add(l.courseTerm);
     });
     if (terms.size === 0) terms.add('1/2569');
     return sortAcademicTerms(Array.from(terms), false);

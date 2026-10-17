@@ -20,7 +20,7 @@ import TeacherTopBar from '@/components/TeacherTopBar';
 import TeacherScheduleGrid from '@/components/TeacherScheduleGrid';
 import MobileBottomNav from '@/components/MobileBottomNav';
 import { useSidebarCollapsed } from '@/lib/useSidebarCollapsed';
-import { STATUS_DETAILS, sortAcademicTerms } from '@/lib/ui';
+import { STATUS_DETAILS, sortAcademicTerms, isTermStartedOrPassed } from '@/lib/ui';
 import AttachmentPreview from '@/components/AttachmentPreview';
 
 export default function TeacherDashboard({
@@ -70,14 +70,14 @@ export default function TeacherDashboard({
     };
   }, []);
 
-  // Extract unique academic terms from courses and leaves
+  // Extract unique academic terms from courses and leaves (only started or passed terms)
   const academicTerms = useMemo(() => {
     const terms = new Set();
     courses.forEach((c) => {
-      if (c.term) terms.add(c.term);
+      if (c.term && isTermStartedOrPassed(c.term, '1/2569')) terms.add(c.term);
     });
     leaves.forEach((l) => {
-      if (l.courseTerm && l.courseTerm !== '-') terms.add(l.courseTerm);
+      if (l.courseTerm && l.courseTerm !== '-' && isTermStartedOrPassed(l.courseTerm, '1/2569')) terms.add(l.courseTerm);
     });
     if (terms.size === 0) terms.add('1/2569');
     return sortAcademicTerms(Array.from(terms), false);

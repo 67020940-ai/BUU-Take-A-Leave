@@ -119,7 +119,7 @@ export default function WireframeStatsView({
   const pageSize = 10;
 
   const availableSemesters = useMemo(() => {
-    return ['2/2569', '1/2569', '2/2568', '1/2568'];
+    return ['1/2569', '2/2568', '1/2568'];
   }, []);
 
   const coursesForSemester = useMemo(() => {

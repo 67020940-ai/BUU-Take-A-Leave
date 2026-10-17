@@ -23,7 +23,7 @@ export default function TeacherTopBar({
   user,
   semester = '1/2569',
   onSemesterChange,
-  availableSemesters = ['2/2569', '1/2569', '2/2568', '1/2568'],
+  availableSemesters = ['1/2569', '2/2568', '1/2568'],
   searchValue = '',
   onSearchChange,
   searchPlaceholder = 'ค้นหาคำร้อง, นิสิต, หรือวิชา...',
