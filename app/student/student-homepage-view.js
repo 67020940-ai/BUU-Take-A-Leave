@@ -603,7 +603,13 @@ export default function StudentHomepageView({
                 </div>
               </div>
 
-              <StudentStatsView summaries={summaries} leaves={leavesList} />
+              <StudentStatsView
+                summaries={summaries}
+                leaves={leavesList}
+                semester={selectedTerm}
+                onSemesterChange={setSelectedTerm}
+                externalSearch={searchQuery}
+              />
             </div>
           )}
 
@@ -631,7 +637,15 @@ export default function StudentHomepageView({
                 </div>
               </div>
 
-              <StudentHistoryView leaves={leavesList} summaries={summaries} initialStatus={initialStatus} />
+              <StudentHistoryView
+                leaves={leavesList}
+                summaries={summaries}
+                initialStatus={initialStatus}
+                semester={selectedTerm}
+                onSemesterChange={setSelectedTerm}
+                externalSearch={searchQuery}
+                onExternalSearchChange={setSearchQuery}
+              />
             </div>
           )}
 

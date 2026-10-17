@@ -1,7 +1,7 @@
 'use client';
 /* Hallmark · macrostructure: Stat-Led · theme: BUU Utilitarian · pre-emit critique: P5 H5 E5 S5 R5 V5 */
 
-import { useMemo, useState } from 'react';
+import { useMemo, useState, useEffect } from 'react';
 import Link from 'next/link';
 import {
   BarChart3,
@@ -29,7 +29,13 @@ import {
 import { sortAcademicTerms, isTermStartedOrPassed, formatTeacherFullName } from '@/lib/ui';
 import { formatLeaveClassTime, calculateLeaveStats } from '@/lib/leave-stats';
 
-export default function StudentStatsView({ summaries = [], leaves = [] }) {
+export default function StudentStatsView({
+  summaries = [],
+  leaves = [],
+  semester,
+  onSemesterChange,
+  externalSearch = '',
+}) {
   // Extract unique academic terms
   const academicTerms = useMemo(() => {
     const terms = new Set();
@@ -44,8 +50,19 @@ export default function StudentStatsView({ summaries = [], leaves = [] }) {
     return sortAcademicTerms(validTerms, false);
   }, [summaries, leaves]);
 
-  const [selectedTerm, setSelectedTerm] = useState('1/2569');
+  const [selectedTerm, setSelectedTerm] = useState(semester || '1/2569');
   const [selectedCategoryModal, setSelectedCategoryModal] = useState(null);
+
+  useEffect(() => {
+    if (semester) setSelectedTerm(semester);
+  }, [semester]);
+
+  function handleTermSelect(newTerm) {
+    setSelectedTerm(newTerm);
+    if (onSemesterChange && newTerm !== 'all') {
+      onSemesterChange(newTerm);
+    }
+  }
 
   // Multi-semester comparison breakdown
   const semesterBreakdown = useMemo(() => {
@@ -147,9 +164,22 @@ export default function StudentStatsView({ summaries = [], leaves = [] }) {
   }, [selectedCategoryModal, leaves, summaries, selectedTerm]);
 
   const currentSummaries = useMemo(() => {
-    if (selectedTerm === 'all') return summaries;
-    return summaries.filter((s) => (s.course?.term || s.term) === selectedTerm);
-  }, [summaries, selectedTerm]);
+    const byTerm =
+      selectedTerm === 'all'
+        ? summaries
+        : summaries.filter((s) => (s.course?.term || s.term) === selectedTerm);
+    const q = externalSearch.trim().toLowerCase();
+    if (!q) return byTerm;
+    return byTerm.filter((s) => {
+      const c = s.course || s;
+      return (
+        (c.code || '').toLowerCase().includes(q) ||
+        (c.name || '').toLowerCase().includes(q) ||
+        (c.room || '').toLowerCase().includes(q) ||
+        (c.teacherName || c.teacher?.name || '').toLowerCase().includes(q)
+      );
+    });
+  }, [summaries, selectedTerm, externalSearch]);
 
   return (
     <div className="space-y-6">
@@ -158,7 +188,7 @@ export default function StudentStatsView({ summaries = [], leaves = [] }) {
         <div className="relative w-full sm:w-auto min-w-[220px]">
           <select
             value={selectedTerm}
-            onChange={(e) => setSelectedTerm(e.target.value)}
+            onChange={(e) => handleTermSelect(e.target.value)}
             className="w-full px-4 py-2.5 rounded-2xl border border-neutral-300 dark:border-slate-700 bg-white dark:bg-slate-800 text-xs font-bold text-neutral-900 dark:text-neutral-100 focus:outline-none focus:border-[#7749BC] appearance-none pr-10 shadow-xs cursor-pointer"
           >
             <option value="all">ทุกภาคการศึกษา (All Semesters)</option>
@@ -294,7 +324,7 @@ export default function StudentStatsView({ summaries = [], leaves = [] }) {
             return (
               <div
                 key={sb.term}
-                onClick={() => setSelectedTerm(sb.term)}
+                onClick={() => handleTermSelect(sb.term)}
                 className={`p-5 rounded-3xl border transition-all cursor-pointer space-y-4 ${
                   isSelected
                     ? 'bg-purple-50/80 dark:bg-purple-950/50 border-[#7749BC] ring-2 ring-[#7749BC]/25 shadow-md'

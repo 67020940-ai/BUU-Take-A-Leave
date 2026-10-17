@@ -37,7 +37,15 @@ const LEAVE_CATEGORIES = [
   { key: 'อื่น ๆ', label: 'อื่น ๆ', icon: HelpCircle },
 ];
 
-export default function StudentHistoryView({ leaves: initialLeaves = [], summaries = [], initialStatus = 'all' }) {
+export default function StudentHistoryView({
+  leaves: initialLeaves = [],
+  summaries = [],
+  initialStatus = 'all',
+  semester,
+  onSemesterChange,
+  externalSearch,
+  onExternalSearchChange,
+}) {
   const [leaves, setLeaves] = useState(initialLeaves);
 
   useEffect(() => {
@@ -101,15 +109,23 @@ export default function StudentHistoryView({ leaves: initialLeaves = [], summari
       };
     }
   }, [leaves]);
-  const [selectedTerm, setSelectedTerm] = useState('1/2569');
+  const [selectedTerm, setSelectedTerm] = useState(semester || '1/2569');
   const [selectedStatus, setSelectedStatus] = useState(initialStatus || 'all');
   const [selectedType, setSelectedType] = useState('all');
   const [historyTimeFilter, setHistoryTimeFilter] = useState('all'); // 'all' | 'past' | 'latest'
   const [sortOrder, setSortOrder] = useState('desc'); // 'desc' (ล่าสุดก่อน) | 'asc' (เก่าสุดก่อน)
-  const [searchQuery, setSearchQuery] = useState('');
+  const [searchQuery, setSearchQuery] = useState(externalSearch || '');
   const [detailModal, setDetailModal] = useState({ isOpen: false, leave: null });
   const [currentPage, setCurrentPage] = useState(1);
   const pageSize = 20;
+
+  useEffect(() => {
+    if (semester) setSelectedTerm(semester);
+  }, [semester]);
+
+  useEffect(() => {
+    if (externalSearch !== undefined) setSearchQuery(externalSearch);
+  }, [externalSearch]);
 
   // Extract unique academic terms sorted chronologically
   const academicTerms = useMemo(() => {
@@ -276,7 +292,11 @@ export default function StudentHistoryView({ leaves: initialLeaves = [], summari
             <div className="relative">
               <select
                 value={selectedTerm}
-                onChange={(e) => setSelectedTerm(e.target.value)}
+                onChange={(e) => {
+                  const val = e.target.value;
+                  setSelectedTerm(val);
+                  if (onSemesterChange && val !== 'all') onSemesterChange(val);
+                }}
                 className="w-full px-3 py-2 rounded-xl border border-neutral-300 dark:border-slate-700 bg-white dark:bg-slate-800 text-xs font-medium text-neutral-900 dark:text-neutral-100 focus:outline-none focus:border-[#7749BC] appearance-none pr-8 cursor-pointer"
               >
                 <option value="all">ทุกภาคการศึกษา (All Semesters)</option>
@@ -302,7 +322,11 @@ export default function StudentHistoryView({ leaves: initialLeaves = [], summari
               <input
                 type="text"
                 value={searchQuery}
-                onChange={(e) => setSearchQuery(e.target.value)}
+                onChange={(e) => {
+                  const val = e.target.value;
+                  setSearchQuery(val);
+                  if (onExternalSearchChange) onExternalSearchChange(val);
+                }}
                 placeholder="ค้นหาชื่อวิชา, รหัสวิชา, เหตุผลการลา หรืออาจารย์..."
                 className="w-full pl-9 pr-28 sm:pr-32 py-2 rounded-xl border border-neutral-300 dark:border-slate-700 bg-white dark:bg-slate-800 text-xs text-neutral-900 dark:text-neutral-100 placeholder:text-neutral-400 focus:outline-none focus:border-[#7749BC] focus:ring-2 focus:ring-[#7749BC]/20 shadow-xs"
               />
