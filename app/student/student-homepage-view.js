@@ -32,7 +32,7 @@ import StudentStatsView from './stats/stats-view';
 import StudentHistoryView from './history/history-view';
 import StudentScheduleView from './schedule/schedule-view';
 import { getCoursePrep } from '@/lib/coursePrepData';
-import { sortAcademicTerms, formatTeacherFullName } from '@/lib/ui';
+import { sortAcademicTerms, isTermStartedOrPassed, formatTeacherFullName } from '@/lib/ui';
 import { useSidebarCollapsed } from '@/lib/useSidebarCollapsed';
 import { calculateLeaveStats } from '@/lib/leave-stats';
 
@@ -154,7 +154,8 @@ export default function StudentHomepageView({
       set.add('2/2568');
       set.add('1/2568');
     }
-    return sortAcademicTerms(Array.from(set), false);
+    const validTerms = Array.from(set).filter((t) => isTermStartedOrPassed(t, '1/2569'));
+    return sortAcademicTerms(validTerms.length > 0 ? validTerms : Array.from(set), false);
   }, [summaries, leavesList]);
 
   const [selectedTerm, setSelectedTerm] = useState('1/2569');

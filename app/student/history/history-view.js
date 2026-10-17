@@ -24,7 +24,7 @@ import {
   ArrowDownWideNarrow,
   ArrowUpNarrowWide,
 } from 'lucide-react';
-import { STATUS_DETAILS, LEAVE_TYPE_DETAILS, LEAVE_TYPE_DEFAULT, formatThaiDate, formatThaiDateTime, sortAcademicTerms, formatTeacherFullName } from '@/lib/ui';
+import { STATUS_DETAILS, LEAVE_TYPE_DETAILS, LEAVE_TYPE_DEFAULT, formatThaiDate, formatThaiDateTime, sortAcademicTerms, isTermStartedOrPassed, formatTeacherFullName } from '@/lib/ui';
 import AttachmentPreview from '@/components/AttachmentPreview';
 import CancelLeaveButton from '@/components/CancelLeaveButton';
 import { calculateLeaveStats, formatLeaveClassTime } from '@/lib/leave-stats';
@@ -137,7 +137,8 @@ export default function StudentHistoryView({
       if (l.courseTerm && l.courseTerm !== '-') terms.add(l.courseTerm);
     });
     if (terms.size === 0) terms.add('1/2569');
-    return sortAcademicTerms(Array.from(terms), false);
+    const validTerms = Array.from(terms).filter((t) => isTermStartedOrPassed(t, '1/2569'));
+    return sortAcademicTerms(validTerms.length > 0 ? validTerms : Array.from(terms), false);
   }, [summaries, leaves]);
 
   // Filter leaves according to term, status, type, and search query

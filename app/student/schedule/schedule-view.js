@@ -15,7 +15,7 @@ import {
   CheckCircle2,
   TrendingUp,
 } from 'lucide-react';
-import { DAY_LABEL_TH, formatThaiDay, formatTeacherFullName } from '@/lib/ui';
+import { DAY_LABEL_TH, formatThaiDay, formatTeacherFullName, sortAcademicTerms, isTermStartedOrPassed } from '@/lib/ui';
 import TeachingMaterialsSection from '@/components/TeachingMaterialsSection';
 
 export default function StudentScheduleView({ summaries = [] }) {
@@ -26,7 +26,8 @@ export default function StudentScheduleView({ summaries = [] }) {
       if (s.course?.term) terms.add(s.course.term);
     });
     if (terms.size === 0) terms.add('1/2569');
-    return Array.from(terms).sort().reverse();
+    const validTerms = Array.from(terms).filter((t) => isTermStartedOrPassed(t, '1/2569'));
+    return sortAcademicTerms(validTerms.length > 0 ? validTerms : Array.from(terms), false);
   }, [summaries]);
 
   const [selectedTerm, setSelectedTerm] = useState(academicTerms[0] || '1/2569');
