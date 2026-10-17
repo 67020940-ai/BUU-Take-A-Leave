@@ -66,13 +66,14 @@ export default function TeacherRequestsView({
   initialLeaves = [],
   rosterByCourse = {},
   usingMock = false,
+  initialCourseId = 'all',
 }) {
   const [leaves, setLeaves] = useState(initialLeaves);
   const [mobileSidebarOpen, setMobileSidebarOpen] = useState(false);
   const [activeTab, setActiveTab] = useState('รออนุมัติ'); // 'รออนุมัติ' | 'all'
 
   const [selectedTerm, setSelectedTerm] = useState('1/2569');
-  const [selectedCourseId, setSelectedCourseId] = useState('all');
+  const [selectedCourseId, setSelectedCourseId] = useState(initialCourseId || 'all');
   const [typeFilter, setTypeFilter] = useState('all');
   const [isTodayOnly, setIsTodayOnly] = useState(false);
   const [searchQuery, setSearchQuery] = useState('');
@@ -109,18 +110,29 @@ export default function TeacherRequestsView({
 
   const hasAutoOpenedRef = useRef(false);
 
-  // Sync tab & search query from URL once on mount
+  // Sync tab, courseId & search query from URL
   useEffect(() => {
     if (typeof window === 'undefined') return;
     const sp = new URLSearchParams(window.location.search);
     if (sp.get('tab') === 'all') setActiveTab('all');
     else if (sp.get('tab') === 'pending') setActiveTab('รออนุมัติ');
 
+    const courseParam = sp.get('courseId') || sp.get('course') || sp.get('code');
+    if (courseParam) {
+      const match = courses.find((c) => c.id === courseParam || c.code === courseParam);
+      if (match) {
+        setSelectedCourseId(match.id);
+        if (match.term) setSelectedTerm(match.term);
+      } else {
+        setSelectedCourseId(courseParam);
+      }
+    }
+
     const searchQueryParam = sp.get('search') || sp.get('student') || '';
     if (searchQueryParam) {
       setSearchQuery(searchQueryParam);
     }
-  }, []);
+  }, [courses]);
 
   // One-time auto-open only when deep-linking with a specific leave id
   useEffect(() => {
@@ -214,7 +226,13 @@ export default function TeacherRequestsView({
         if (term !== selectedTerm) return false;
       }
 
-      if (selectedCourseId !== 'all' && leave.courseId !== selectedCourseId) return false;
+      if (selectedCourseId !== 'all') {
+        const matchId = leave.courseId === selectedCourseId;
+        const matchCode = leave.courseCode === selectedCourseId;
+        const targetCourse = courses.find((c) => c.id === selectedCourseId || c.code === selectedCourseId);
+        const matchTarget = targetCourse && (leave.courseCode === targetCourse.code || leave.courseId === targetCourse.id);
+        if (!matchId && !matchCode && !matchTarget) return false;
+      }
 
       if (typeFilter !== 'all') {
         if (typeFilter === 'อื่น ๆ') {

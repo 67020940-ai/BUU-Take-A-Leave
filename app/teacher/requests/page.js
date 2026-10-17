@@ -11,7 +11,8 @@ export const metadata = {
   description: 'ระบบพิจารณาและอนุมัติคำขอลาเรียนของนิสิต มหาวิทยาลัยบูรพา',
 };
 
-export default async function TeacherRequestsPage() {
+export default async function TeacherRequestsPage(props) {
+  const searchParams = await props?.searchParams;
   let user = null;
   try {
     user = await getCurrentUser();
@@ -38,6 +39,7 @@ export default async function TeacherRequestsPage() {
       initialLeaves={leaves}
       rosterByCourse={rosterByCourse}
       usingMock={usingMock}
+      initialCourseId={searchParams?.courseId || searchParams?.course || 'all'}
     />
   );
 }
