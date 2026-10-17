@@ -23,8 +23,10 @@ export default async function TeacherRequestsPage(props) {
   if (!user) redirect('/login');
   if (user.role !== 'teacher') redirect(homePathForRole(user.role));
 
-  const { usingMock, courses, rosterByCourse } = await getTeacherCoursesAndRoster(user.id);
-  const leaves = await getTeacherLeaves(user.id, usingMock);
+  const [{ usingMock, courses, rosterByCourse }, leaves] = await Promise.all([
+    getTeacherCoursesAndRoster(user.id),
+    getTeacherLeaves(user.id, false),
+  ]);
 
   return (
     <TeacherRequestsView

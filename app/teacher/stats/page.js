@@ -28,18 +28,22 @@ export default async function TeacherStatsPage() {
   let leaves = [];
 
   try {
-    const data = await getTeacherCoursesAndRoster(user.id);
-    courses = data.courses || [];
-    rosterByCourse = data.rosterByCourse || {};
-    usingMock = Boolean(data.usingMock);
+    const [courseData, leavesData] = await Promise.all([
+      getTeacherCoursesAndRoster(user.id).catch((err) => {
+        console.warn('TeacherStatsPage getTeacherCoursesAndRoster error:', err);
+        return {};
+      }),
+      getTeacherLeaves(user.id, false).catch((err) => {
+        console.warn('TeacherStatsPage getTeacherLeaves error:', err);
+        return [];
+      }),
+    ]);
+    courses = courseData.courses || [];
+    rosterByCourse = courseData.rosterByCourse || {};
+    usingMock = Boolean(courseData.usingMock);
+    leaves = leavesData || [];
   } catch (err) {
-    console.warn('TeacherStatsPage getTeacherCoursesAndRoster error:', err);
-  }
-
-  try {
-    leaves = await getTeacherLeaves(user.id, usingMock);
-  } catch (err) {
-    console.warn('TeacherStatsPage getTeacherLeaves error:', err);
+    console.warn('TeacherStatsPage data fetch error:', err);
   }
 
   return (
