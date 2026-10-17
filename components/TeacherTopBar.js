@@ -111,7 +111,9 @@ export default function TeacherTopBar({
     }
 
     fetchNotes();
-    const interval = setInterval(fetchNotes, 4000);
+    const interval = setInterval(() => {
+      if (typeof document === 'undefined' || !document.hidden) fetchNotes();
+    }, 60000);
     const handleFocus = () => fetchNotes();
     window.addEventListener('focus', handleFocus);
     window.addEventListener('buu:leaves_updated', fetchNotes);

@@ -92,7 +92,9 @@ export default function TeacherRequestsView({
       } catch (err) {}
     }
 
-    const interval = setInterval(syncTeacherLeaves, 4000);
+    const interval = setInterval(() => {
+      if (typeof document === 'undefined' || !document.hidden) syncTeacherLeaves();
+    }, 60000);
     const handleFocus = () => syncTeacherLeaves();
     window.addEventListener('focus', handleFocus);
     window.addEventListener('buu:leaves_updated', syncTeacherLeaves);

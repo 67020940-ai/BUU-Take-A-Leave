@@ -75,7 +75,9 @@ export default function StudentHomepageView({
       } catch (err) {}
     }
 
-    const interval = setInterval(syncLeaves, 4000);
+    const interval = setInterval(() => {
+      if (typeof document === 'undefined' || !document.hidden) syncLeaves();
+    }, 60000);
     const handleFocus = () => syncLeaves();
     window.addEventListener('focus', handleFocus);
     window.addEventListener('buu:leaves_updated', syncLeaves);

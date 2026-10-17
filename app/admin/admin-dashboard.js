@@ -69,7 +69,9 @@ export default function AdminDashboard({ user, courses = [], leaves = [], ticket
       } catch (err) {}
     }
 
-    const interval = setInterval(syncAdminLeaves, 4000);
+    const interval = setInterval(() => {
+      if (typeof document === 'undefined' || !document.hidden) syncAdminLeaves();
+    }, 60000);
     const handleFocus = () => syncAdminLeaves();
     window.addEventListener('focus', handleFocus);
     window.addEventListener('buu:leaves_updated', syncAdminLeaves);
