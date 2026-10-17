@@ -16,6 +16,9 @@ import {
   MoreVertical,
   ChevronDown,
   Filter,
+  FileText,
+  AlertCircle,
+  CheckCircle2,
 } from 'lucide-react';
 import TeacherSidebar from '@/components/TeacherSidebar';
 import TeacherTopBar from '@/components/TeacherTopBar';
@@ -46,6 +49,60 @@ function initials(name) {
   return (name || '?').trim().charAt(0).toUpperCase();
 }
 
+// Mock leave distribution strictly adhering to user requirement: <= 3 leaves per student
+// Mathematically synchronizes 4 summary boxes, bar chart (01 vs 02), donut chart, and student table
+const MOCK_LEAVES_BY_STUDENT = {
+  // กลุ่ม 01: 8 คน -> ยื่นลา 10 ครั้ง, เสี่ยงหมดสิทธิ์ 1 คน (ปิยะดา ลา 3 ครั้ง)
+  // ประเภท: ป่วย 5, กิจ 3, กิจกรรม 1, อื่น ๆ 1 = รวม 10 ครั้ง
+  '67000001': [
+    { type: 'ลาป่วย', date: '2026-09-02', reason: 'มีอาการไข้หวัด ปวดศีรษะ พักรักษาตัวที่บ้าน', attachment: null },
+    { type: 'ลากิจส่วนตัว', date: '2026-09-23', reason: 'ไปทำธุระเอกสารราชการที่ภูมิลำเนา', attachment: null },
+  ],
+  '67000002': [
+    { type: 'ลาป่วย', date: '2026-08-26', reason: 'มีอาการไข้สูง ปวดศีรษะ พบแพทย์ที่ รพ.บูรพา', attachment: '/sample-medical-cert.png' },
+    { type: 'ลาป่วย', date: '2026-09-16', reason: 'ท้องเสียเฉียบพลัน อาหารเป็นพิษ พักฟื้น', attachment: '/sample-medical-cert.png' },
+    { type: 'ลากิจส่วนตัว', date: '2026-10-07', reason: 'กิจธุระสำคัญของครอบครัวต่างจังหวัด', attachment: null },
+  ],
+  '67000003': [
+    { type: 'ลากิจกรรม', date: '2026-09-09', reason: 'เข้าร่วมกิจกรรมอบรมวิชาการของคณะวิทยาการสารสนเทศ', attachment: '/sample-activity-cert.png' },
+  ],
+  '67000004': [
+    { type: 'ลาป่วย', date: '2026-09-16', reason: 'ปวดฟันคุด มีนัดผ่าตัดช่องปากที่คลินิกทันตกรรม', attachment: null },
+    { type: 'อื่นๆ', date: '2026-10-14', reason: 'ประสบอุบัติเหตุเฉี่ยวชนระหว่างเดินทาง', attachment: null },
+  ],
+  '67000005': [
+    { type: 'ลาป่วย', date: '2026-09-30', reason: 'มีไข้หวัด เจ็บคอ แพทย์แนะนำให้พัก 1 วัน', attachment: null },
+  ],
+  '67000006': [],
+  '67000007': [
+    { type: 'ลากิจส่วนตัว', date: '2026-10-07', reason: 'ธุระต่ออายุใบขับขี่และบัตรประชาชน', attachment: null },
+  ],
+  '67000008': [],
+
+  // กลุ่ม 02: 8 คน -> ยื่นลา 7 ครั้ง, เสี่ยงหมดสิทธิ์ 0 คน
+  // ประเภท: ป่วย 4, กิจ 2, กิจกรรม 1, อื่น ๆ 0 = รวม 7 ครั้ง
+  '68000001': [
+    { type: 'ลาป่วย', date: '2026-09-02', reason: 'มีอาการไข้หวัด ไอ เจ็บคอ', attachment: null },
+  ],
+  '68000002': [
+    { type: 'ลาป่วย', date: '2026-09-09', reason: 'ไมเกรนกำเริบ พักรักษาตัว', attachment: null },
+    { type: 'ลากิจส่วนตัว', date: '2026-09-30', reason: 'งานมงคลสมรสคนในครอบครัว', attachment: null },
+  ],
+  '68000003': [],
+  '68000004': [
+    { type: 'ลากิจกรรม', date: '2026-09-23', reason: 'ตัวแทนแข่งขันโครงงานเทคโนโลยีสารสนเทศ', attachment: '/sample-activity-cert.png' },
+  ],
+  '68000005': [
+    { type: 'ลาป่วย', date: '2026-09-16', reason: 'มีอาการไข้และปวดเมื่อยตามร่างกาย', attachment: null },
+    { type: 'ลากิจส่วนตัว', date: '2026-10-14', reason: 'เดินทางไปติดต่อราชการกับผู้ปกครอง', attachment: null },
+  ],
+  '68000006': [],
+  '68000007': [
+    { type: 'ลาป่วย', date: '2026-10-07', reason: 'พบแพทย์ตามนัดตรวจสุขภาพฟัน', attachment: null },
+  ],
+  '68000008': [],
+};
+
 export default function WireframeStatsView({
   user,
   courses = [],
@@ -62,16 +119,8 @@ export default function WireframeStatsView({
   const pageSize = 10;
 
   const availableSemesters = useMemo(() => {
-    const set = new Set();
-    courses.forEach((c) => {
-      if (c.term) set.add(c.term);
-    });
-    set.add('2/2569');
-    set.add('1/2569');
-    set.add('2/2568');
-    set.add('1/2568');
-    return Array.from(set);
-  }, [courses]);
+    return ['2/2569', '1/2569', '2/2568', '1/2568'];
+  }, []);
 
   const coursesForSemester = useMemo(() => {
     if (!semester) return courses;
@@ -106,9 +155,9 @@ export default function WireframeStatsView({
     return Array.from(map.values());
   }, [coursesForSemester]);
 
-  // Selected Subject (default to first subject)
+  // Selected Subject (default to first subject or OSS)
   const [selectedSubjectKey, setSelectedSubjectKey] = useState(
-    subjectGroups[0]?.key || 'SA'
+    subjectGroups[0]?.key || 'OSS'
   );
 
   // Sync selected subject when semester changes
@@ -173,126 +222,90 @@ export default function WireframeStatsView({
     const roster = rosterByCourse[selectedCourse.id] || [];
 
     return roster.map((s, idx) => {
-      // Find leaves belonging to this student in this course
-      const studentLeaves = leaves.filter(
+      // Find leaves belonging to this student in this course from DB props
+      const dbLeaves = leaves.filter(
         (l) =>
           (l.courseId === selectedCourse.id || l.courseCode === selectedCourse?.code) &&
           (l.studentCode === s.studentCode || l.studentId === s.studentId || l.studentName === s.studentName)
       );
 
-      let sickCount = studentLeaves.filter((l) => l.type === 'ลาป่วย').length;
-      let personalCount = studentLeaves.filter((l) => l.type === 'ลากิจส่วนตัว' || l.type === 'ลากิจ').length;
-      let activityCount = studentLeaves.filter((l) => l.type === 'ลากิจกรรม').length;
-      let otherCount = studentLeaves.filter(
+      // If database has leaves for this student, use them.
+      // Otherwise, use our user-requested mock distribution (max <= 3 leaves per student)
+      let completeLeaves = [...dbLeaves];
+      if (completeLeaves.length === 0) {
+        const studentMocks = MOCK_LEAVES_BY_STUDENT[s.studentCode] || [];
+        studentMocks.forEach((m, mIdx) => {
+          completeLeaves.push({
+            id: `leave-${s.studentCode}-${mIdx + 1}`,
+            status: 'อนุมัติ',
+            type: m.type,
+            period: selectedCourse.time ? `เวลาเรียน ${selectedCourse.time}` : 'เวลาเรียน 13:00-16:50',
+            startDate: m.date,
+            endDate: m.date,
+            reason: m.reason,
+            attachment: m.attachment || null,
+            attachmentUrl: m.attachment || null,
+            createdAt: `${m.date}T08:30:00`,
+            courseId: selectedCourse.id,
+            courseCode: selectedCourse.code,
+            courseName: selectedCourse.name,
+            courseTerm: selectedCourse.term,
+            section: selectedCourse.group,
+            studentName: s.studentName,
+            studentCode: s.studentCode,
+            studentEmail: s.email,
+            approvedBy: user?.name || 'ผศ.ดร.อัครา ธรรมมาสถิตย์กุล',
+            approvedAt: `${m.date}T12:00:00`,
+          });
+        });
+      }
+
+      const sickCount = completeLeaves.filter((l) => l.type === 'ลาป่วย').length;
+      const personalCount = completeLeaves.filter((l) => l.type === 'ลากิจส่วนตัว' || l.type === 'ลากิจ').length;
+      const activityCount = completeLeaves.filter((l) => l.type === 'ลากิจกรรม').length;
+      const otherCount = completeLeaves.filter(
         (l) => l.type === 'อื่น ๆ' || l.type === 'อื่นๆ' || l.type === 'เหตุฉุกเฉิน'
       ).length;
 
-      const totalLeaves = studentLeaves.length > 0 ? studentLeaves.length : (s.leavesCount || s.approvedLeaves || 0);
-
-      const completeLeaves = [...studentLeaves];
-
-      if (totalLeaves > 0 && completeLeaves.length === 0) {
-        sickCount = Math.ceil(totalLeaves * 0.6);
-        personalCount = totalLeaves > 1 ? Math.floor(totalLeaves * 0.25) : 0;
-        activityCount = totalLeaves > 2 ? 1 : 0;
-        otherCount = Math.max(0, totalLeaves - sickCount - personalCount - activityCount);
-
-        const categoriesToCreate = [
-          { type: 'ลาป่วย', count: sickCount, reason: 'มีอาการไข้หวัด ปวดศีรษะ และมีไข้สูง แพทย์สั่งให้พักรักษาตัว', attachment: '/sample-medical-cert.png' },
-          { type: 'ลากิจส่วนตัว', count: personalCount, reason: 'มีกิจธุระจำเป็นเร่งด่วนของครอบครัวที่ต่างจังหวัด', attachment: null },
-          { type: 'ลากิจกรรม', count: activityCount, reason: 'เข้าร่วมโครงการและกิจกรรมของมหาวิทยาลัยบูรพา', attachment: '/sample-activity-cert.png' },
-          { type: 'อื่นๆ', count: otherCount, reason: 'เหตุจำเป็นส่วนบุคคล', attachment: null },
-        ];
-
-        let createdCount = 0;
-        categoriesToCreate.forEach((cat) => {
-          for (let i = 0; i < cat.count; i++) {
-            createdCount++;
-            const day = String(Math.max(1, ((idx * 3 + createdCount * 7) % 28) + 1)).padStart(2, '0');
-            const month = String(Math.max(8, ((createdCount % 3) + 8))).padStart(2, '0');
-            const dateStr = `2026-${month}-${day}`;
-            completeLeaves.push({
-              id: `leave-auto-${s.studentCode || idx}-${cat.type}-${i + 1}`,
-              status: 'อนุมัติ',
-              type: cat.type,
-              period: selectedCourse.time ? `เวลาเรียน ${selectedCourse.time}` : 'เวลาเรียน 9:00-11:50',
-              startDate: dateStr,
-              endDate: dateStr,
-              reason: cat.reason,
-              attachment: cat.attachment,
-              attachmentUrl: cat.attachment,
-              createdAt: `${dateStr}T08:30:00`,
-              courseId: selectedCourse.id,
-              courseCode: selectedCourse.code,
-              courseName: selectedCourse.name,
-              courseTerm: selectedCourse.term,
-              section: selectedCourse.group,
-              studentName: s.studentName,
-              studentCode: s.studentCode,
-              studentEmail: s.email,
-              approvedBy: 'อาจารย์ผู้สอน',
-              approvedAt: `${dateStr}T12:00:00`,
-            });
-          }
-        });
-      }
+      const totalLeaves = completeLeaves.length;
 
       // Latest leave date
       let latestDate = s.lastLeaveDate;
       if (!latestDate && completeLeaves.length > 0) {
-        latestDate = formatThaiDate(completeLeaves[0].startDate || completeLeaves[0].createdAt);
+        const sorted = [...completeLeaves].sort(
+          (a, b) => new Date(b.startDate || b.createdAt) - new Date(a.startDate || a.createdAt)
+        );
+        latestDate = formatThaiDate(sorted[0].startDate || sorted[0].createdAt);
       }
-      if (!latestDate && totalLeaves > 0) {
-        latestDate = `${String((idx % 28) + 1).padStart(2, '0')}/09/2569`;
-      }
+
+      // Attendance percentage and at-risk flag (15 sessions total, <= 3 leaves allowed before risk)
+      const totalSessions = selectedCourse.totalSessions || 15;
+      const attended = Math.max(0, totalSessions - totalLeaves);
+      const percentage = Math.round((attended / totalSessions) * 100);
+      const isAtRisk = totalLeaves >= 3 || percentage <= 80;
 
       return {
         ...s,
         totalLeavesCount: totalLeaves,
         lastLeaveDate: latestDate || '-',
-        sickCount: sickCount,
-        personalCount: personalCount,
-        activityCount: activityCount,
-        otherCount: otherCount,
+        sickCount,
+        personalCount,
+        activityCount,
+        otherCount,
         leaves: completeLeaves,
+        percentage,
+        overQuota: isAtRisk,
       };
     });
-  }, [selectedCourse, rosterByCourse, leaves]);
+  }, [selectedCourse, rosterByCourse, leaves, user]);
 
-  // Group summary stats
+  // Group summary stats - 100% derived from sectionStudents!
   const stats = useMemo(() => {
-    const isGroup1 = selectedCourse?.group === '01' || selectedCourse?.id === 'mock-c1';
-    const isGroup2 = selectedCourse?.group === '02' || selectedCourse?.id === 'mock-c2';
-
-    // If using mock for SA, provide the exact numbers from the hand-drawn wireframes
-    if (selectedCourse?.code === '24527664') {
-      if (isGroup1) {
-        return {
-          totalStudents: 39,
-          submittedLeaves: 21,
-          atRiskCount: 6,
-          sickCount: 14,
-          personalCount: 4,
-          activityCount: 2,
-          otherCount: 1,
-        };
-      }
-      if (isGroup2) {
-        return {
-          totalStudents: 36,
-          submittedLeaves: 14,
-          atRiskCount: 4,
-          sickCount: 7,
-          personalCount: 4,
-          activityCount: 3,
-          otherCount: 0,
-        };
-      }
-    }
-
     const totalStudents = sectionStudents.length;
     const submittedLeaves = sectionStudents.reduce((sum, s) => sum + s.totalLeavesCount, 0);
-    const atRiskCount = sectionStudents.filter((s) => s.overQuota || s.percentage < 80).length;
+    const atRiskCount = sectionStudents.filter(
+      (s) => s.overQuota || s.percentage <= 80 || s.totalLeavesCount >= 3
+    ).length;
     const sickCount = sectionStudents.reduce((sum, s) => sum + s.sickCount, 0);
     const personalCount = sectionStudents.reduce((sum, s) => sum + s.personalCount, 0);
     const activityCount = sectionStudents.reduce((sum, s) => sum + s.activityCount, 0);
@@ -307,27 +320,11 @@ export default function WireframeStatsView({
       activityCount,
       otherCount,
     };
-  }, [selectedCourse, sectionStudents]);
+  }, [sectionStudents]);
 
   // Cross-section comparison: Group 01 vs Group 02
   const sectionComparison = useMemo(() => {
     const sections = currentSubject?.sections || [];
-    const isMockSA = (currentSubject?.code || selectedCourse?.code) === '24527664';
-
-    // If SA wireframe mock
-    if (isMockSA) {
-      return {
-        hasMultipleSections: true,
-        labels: ['กลุ่ม 01', 'กลุ่ม 02'],
-        leavesData: [21, 14],
-        atRiskData: [6, 4],
-        studentsData: [39, 36],
-        group1Leaves: 21,
-        group2Leaves: 14,
-        group1Students: 39,
-        group2Students: 36,
-      };
-    }
 
     if (sections.length > 1) {
       const labels = sections.map((s, idx) => `กลุ่ม ${s.group || (idx === 0 ? '01' : '02')}`);
@@ -337,13 +334,24 @@ export default function WireframeStatsView({
 
       sections.forEach((sec) => {
         const roster = rosterByCourse[sec.id] || [];
-        const secLeaves = leaves.filter((l) => l.courseId === sec.id || l.courseCode === sec.code);
-        const atRisk = roster.filter((s) => s.overQuota || (s.percentage ?? 100) < 80).length;
-        const totalLeaves = secLeaves.length > 0 ? secLeaves.length : roster.reduce((sum, s) => sum + (s.leavesCount || s.approvedLeaves || 0), 0);
+        let secLeaves = 0;
+        let secAtRisk = 0;
 
-        leavesData.push(totalLeaves);
-        atRiskData.push(atRisk);
-        studentsData.push(roster.length || sec.studentCount || 35);
+        roster.forEach((s) => {
+          const dbLeaves = leaves.filter(
+            (l) =>
+              (l.courseId === sec.id || l.courseCode === sec.code) &&
+              (l.studentCode === s.studentCode || l.studentId === s.studentId || l.studentName === s.studentName)
+          );
+          const count =
+            dbLeaves.length > 0 ? dbLeaves.length : (MOCK_LEAVES_BY_STUDENT[s.studentCode]?.length || 0);
+          secLeaves += count;
+          if (count >= 3) secAtRisk++;
+        });
+
+        leavesData.push(secLeaves);
+        atRiskData.push(secAtRisk);
+        studentsData.push(roster.length);
       });
 
       return {
@@ -359,7 +367,7 @@ export default function WireframeStatsView({
       };
     }
 
-    // Single section case (display Group 01 compared with course average/quota target)
+    // Single section case
     return {
       hasMultipleSections: false,
       labels: [`กลุ่ม ${displayGroup}`],
@@ -371,7 +379,7 @@ export default function WireframeStatsView({
       group1Students: stats.totalStudents,
       group2Students: 0,
     };
-  }, [currentSubject, selectedCourse, rosterByCourse, leaves, stats, displayGroup]);
+  }, [currentSubject, rosterByCourse, leaves, stats, displayGroup]);
 
   // Filtered by search & leave type
   const filteredStudents = useMemo(() => {
@@ -778,31 +786,62 @@ export default function WireframeStatsView({
                       setModalStudent(student);
                       setModalLeaveCategory(null);
                     }}
-                    className="p-3.5 rounded-2xl bg-white dark:bg-slate-800/80 border border-neutral-200/80 dark:border-slate-700/80 shadow-2xs flex items-center justify-between gap-3 cursor-pointer hover:border-purple-300 dark:hover:border-purple-700 hover:bg-purple-50/30 transition-all"
+                    className="p-3.5 rounded-2xl bg-white dark:bg-slate-800/80 border border-neutral-200/80 dark:border-slate-700/80 shadow-2xs flex flex-col gap-2.5 cursor-pointer hover:border-purple-300 dark:hover:border-purple-700 hover:bg-purple-50/30 transition-all"
                   >
-                    <div className="min-w-0">
-                      <p className="font-bold text-xs text-neutral-900 dark:text-neutral-100 truncate">
-                        {student.studentName}
-                      </p>
-                      <div className="flex items-center gap-2 mt-0.5 text-[11px] text-neutral-500 font-mono">
-                        <span>{student.studentCode}</span>
-                        <span>•</span>
-                        <span>ลาล่าสุด: {student.lastLeaveDate}</span>
+                    <div className="flex items-start justify-between gap-2">
+                      <div className="min-w-0">
+                        <p className="font-bold text-xs text-neutral-900 dark:text-neutral-100 truncate">
+                          {student.studentName}
+                        </p>
+                        <div className="flex items-center gap-2 mt-0.5 text-[11px] text-neutral-500 font-mono">
+                          <span>{student.studentCode}</span>
+                          <span>•</span>
+                          <span>ลาล่าสุด: {student.lastLeaveDate}</span>
+                        </div>
                       </div>
+
+                      {student.overQuota || student.totalLeavesCount >= 3 ? (
+                        <span className="shrink-0 inline-flex items-center gap-1 font-mono font-bold text-[11px] px-2.5 py-1 rounded-full bg-rose-100 text-rose-700 dark:bg-rose-950 dark:text-rose-300 border border-rose-300 dark:border-rose-800">
+                          <AlertCircle className="w-3 h-3" />
+                          <span>{student.totalLeavesCount} ครั้ง (เสี่ยง)</span>
+                        </span>
+                      ) : student.totalLeavesCount > 0 ? (
+                        <span className="shrink-0 inline-flex items-center font-mono font-bold text-[11px] px-2.5 py-1 rounded-full bg-purple-100 text-[#7749BC] dark:bg-purple-950 dark:text-purple-300 border border-purple-200">
+                          {student.totalLeavesCount} ครั้ง
+                        </span>
+                      ) : (
+                        <span className="shrink-0 inline-flex items-center gap-1 font-mono font-bold text-[11px] px-2.5 py-1 rounded-full bg-emerald-50 text-emerald-700 dark:bg-emerald-950/40 dark:text-emerald-300 border border-emerald-200">
+                          0 ครั้ง (100%)
+                        </span>
+                      )}
                     </div>
 
-                    <div className="flex items-center gap-2 shrink-0">
-                      <span
-                        className={`inline-block font-mono font-bold text-xs px-2.5 py-1 rounded-full ${
-                          student.totalLeavesCount > 3
-                            ? 'bg-rose-100 text-rose-700 dark:bg-rose-950 dark:text-rose-300'
-                            : student.totalLeavesCount > 0
-                            ? 'bg-purple-100 text-[#7749BC] dark:bg-purple-950 dark:text-purple-300'
-                            : 'bg-neutral-100 text-neutral-400 dark:bg-slate-700'
-                        }`}
-                      >
-                        {student.totalLeavesCount} ครั้ง
-                      </span>
+                    <div className="flex items-center justify-between pt-1 border-t border-neutral-100 dark:border-slate-800/80 text-[11px]">
+                      <div className="flex flex-wrap items-center gap-1">
+                        {student.sickCount > 0 && (
+                          <span className="px-1.5 py-0.5 rounded bg-sky-50 dark:bg-sky-950 text-sky-700 dark:text-sky-300 font-medium">
+                            ป่วย {student.sickCount}
+                          </span>
+                        )}
+                        {student.personalCount > 0 && (
+                          <span className="px-1.5 py-0.5 rounded bg-purple-50 dark:bg-purple-950 text-[#7749BC] dark:text-purple-300 font-medium">
+                            กิจ {student.personalCount}
+                          </span>
+                        )}
+                        {student.activityCount > 0 && (
+                          <span className="px-1.5 py-0.5 rounded bg-indigo-50 dark:bg-indigo-950 text-indigo-700 dark:text-indigo-300 font-medium">
+                            กิจกรรม {student.activityCount}
+                          </span>
+                        )}
+                        {student.otherCount > 0 && (
+                          <span className="px-1.5 py-0.5 rounded bg-amber-50 dark:bg-amber-950 text-amber-700 dark:text-amber-300 font-medium">
+                            อื่น ๆ {student.otherCount}
+                          </span>
+                        )}
+                        {student.totalLeavesCount === 0 && (
+                          <span className="text-neutral-400">ไม่มีประวัติการลา</span>
+                        )}
+                      </div>
 
                       <button
                         type="button"
@@ -811,10 +850,10 @@ export default function WireframeStatsView({
                           setModalStudent(student);
                           setModalLeaveCategory(null);
                         }}
-                        className="min-h-[44px] min-w-[44px] rounded-xl bg-neutral-100 dark:bg-slate-700 hover:bg-neutral-200 text-neutral-600 dark:text-neutral-200 flex items-center justify-center cursor-pointer shadow-2xs"
-                        title="ดูรายละเอียดการลาเพิ่มเติม"
+                        className="inline-flex items-center gap-1 px-2.5 py-1 rounded-lg bg-purple-50 dark:bg-slate-700 hover:bg-[#7749BC] hover:text-white text-[#7749BC] dark:text-purple-300 font-semibold cursor-pointer"
                       >
-                        <MoreVertical className="w-4 h-4" />
+                        <FileText className="w-3 h-3" />
+                        <span>ดูประวัติ</span>
                       </button>
                     </div>
                   </div>
@@ -829,15 +868,16 @@ export default function WireframeStatsView({
                   <tr className="border-b border-neutral-200/80 dark:border-slate-800 bg-neutral-100/70 dark:bg-slate-800/70 font-bold text-neutral-700 dark:text-neutral-300">
                     <th className="py-3.5 px-4 sm:px-6 font-mono">รหัสนิสิต</th>
                     <th className="py-3.5 px-4 sm:px-6">ชื่อ - นามสกุล</th>
-                    <th className="py-3.5 px-4 sm:px-6 text-center">จำนวนครั้งที่ลา</th>
+                    <th className="py-3.5 px-4 sm:px-6 text-center">จำแนกการลา</th>
+                    <th className="py-3.5 px-4 sm:px-6 text-center">จำนวนครั้ง & สถานะ</th>
                     <th className="py-3.5 px-4 sm:px-6 text-center font-mono">วันที่ลาล่าสุด</th>
-                    <th className="py-3.5 px-4 text-center w-12"></th>
+                    <th className="py-3.5 px-4 sm:px-6 text-center">จัดการ</th>
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-neutral-100 dark:divide-slate-800/80">
                   {paginatedStudents.length === 0 ? (
                     <tr>
-                      <td colSpan={5} className="py-12 text-center text-neutral-400">
+                      <td colSpan={6} className="py-12 text-center text-neutral-400">
                         ไม่พบรายชื่อนิสิตตามเงื่อนไขที่เลือก
                       </td>
                     </tr>
@@ -862,19 +902,53 @@ export default function WireframeStatsView({
                           {student.studentName}
                         </td>
 
-                        {/* จำนวนครั้งที่ลา */}
+                        {/* จำแนกการลา (Breakdown badges) */}
                         <td className="py-4 px-4 sm:px-6 text-center">
-                          <span
-                            className={`inline-block font-mono font-bold text-xs px-2.5 py-0.5 rounded-full ${
-                              student.totalLeavesCount > 3
-                                ? 'bg-rose-100 text-rose-700 dark:bg-rose-950 dark:text-rose-300'
-                                : student.totalLeavesCount > 0
-                                ? 'bg-purple-100 text-[#7749BC] dark:bg-purple-950 dark:text-purple-300'
-                                : 'text-neutral-400'
-                            }`}
-                          >
-                            {student.totalLeavesCount}
-                          </span>
+                          {student.totalLeavesCount > 0 ? (
+                            <div className="flex flex-wrap items-center justify-center gap-1.5">
+                              {student.sickCount > 0 && (
+                                <span className="inline-flex items-center px-2 py-0.5 rounded-md text-[11px] font-semibold bg-sky-50 dark:bg-sky-950/60 text-sky-700 dark:text-sky-300 border border-sky-200 dark:border-sky-800">
+                                  ป่วย {student.sickCount}
+                                </span>
+                              )}
+                              {student.personalCount > 0 && (
+                                <span className="inline-flex items-center px-2 py-0.5 rounded-md text-[11px] font-semibold bg-purple-50 dark:bg-purple-950/60 text-[#7749BC] dark:text-purple-300 border border-purple-200 dark:border-purple-800">
+                                  กิจ {student.personalCount}
+                                </span>
+                              )}
+                              {student.activityCount > 0 && (
+                                <span className="inline-flex items-center px-2 py-0.5 rounded-md text-[11px] font-semibold bg-indigo-50 dark:bg-indigo-950/60 text-indigo-700 dark:text-indigo-300 border border-indigo-200 dark:border-indigo-800">
+                                  กิจกรรม {student.activityCount}
+                                </span>
+                              )}
+                              {student.otherCount > 0 && (
+                                <span className="inline-flex items-center px-2 py-0.5 rounded-md text-[11px] font-semibold bg-amber-50 dark:bg-amber-950/60 text-amber-700 dark:text-amber-300 border border-amber-200 dark:border-amber-800">
+                                  อื่น ๆ {student.otherCount}
+                                </span>
+                              )}
+                            </div>
+                          ) : (
+                            <span className="text-neutral-400 font-mono text-xs">-</span>
+                          )}
+                        </td>
+
+                        {/* จำนวนครั้งที่ลา & สถานะ */}
+                        <td className="py-4 px-4 sm:px-6 text-center">
+                          {student.overQuota || student.totalLeavesCount >= 3 ? (
+                            <span className="inline-flex items-center gap-1 font-mono font-bold text-xs px-2.5 py-1 rounded-full bg-rose-100 text-rose-700 dark:bg-rose-950 dark:text-rose-300 border border-rose-300 dark:border-rose-800 shadow-2xs">
+                              <AlertCircle className="w-3.5 h-3.5 shrink-0" />
+                              <span>{student.totalLeavesCount} ครั้ง (เสี่ยงหมดสิทธิ์)</span>
+                            </span>
+                          ) : student.totalLeavesCount > 0 ? (
+                            <span className="inline-flex items-center font-mono font-bold text-xs px-2.5 py-1 rounded-full bg-purple-100 text-[#7749BC] dark:bg-purple-950 dark:text-purple-300 border border-purple-200 dark:border-purple-800">
+                              {student.totalLeavesCount} ครั้ง
+                            </span>
+                          ) : (
+                            <span className="inline-flex items-center gap-1 font-mono font-bold text-xs px-2.5 py-1 rounded-full bg-emerald-50 text-emerald-700 dark:bg-emerald-950/40 dark:text-emerald-300 border border-emerald-200 dark:border-emerald-800">
+                              <CheckCircle2 className="w-3.5 h-3.5 shrink-0" />
+                              <span>0 ครั้ง (100%)</span>
+                            </span>
+                          )}
                         </td>
 
                         {/* วันที่ลาล่าสุด */}
@@ -882,8 +956,8 @@ export default function WireframeStatsView({
                           {student.lastLeaveDate}
                         </td>
 
-                        {/* Action: 3 vertical dots (จุดสามจุดแนวตั้ง เพื่อดูรายละเอียดเพิ่มเติม) */}
-                        <td className="py-4 px-4 text-center">
+                        {/* Action: ดูประวัติ Button */}
+                        <td className="py-4 px-4 sm:px-6 text-center">
                           <button
                             type="button"
                             onClick={(e) => {
@@ -891,14 +965,14 @@ export default function WireframeStatsView({
                               setModalStudent(student);
                               setModalLeaveCategory(null);
                             }}
-                            className="p-1.5 rounded-xl hover:bg-neutral-200 dark:hover:bg-slate-700 text-neutral-500 hover:text-neutral-900 dark:hover:text-neutral-100 transition-colors cursor-pointer"
-                            title="ดูรายละเอียดการลาเพิ่มเติม"
+                            className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-purple-50 dark:bg-slate-800 hover:bg-[#7749BC] hover:text-white dark:hover:bg-[#7749BC] text-[#7749BC] dark:text-purple-300 text-xs font-semibold border border-purple-200 dark:border-slate-700 transition-all cursor-pointer shadow-2xs group-hover:border-[#7749BC]"
+                            title="ดูรายละเอียดการลาทั้งหมด"
                           >
-                            <MoreVertical className="w-4 h-4" />
+                            <FileText className="w-3.5 h-3.5 shrink-0" />
+                            <span>ดูประวัติ</span>
                           </button>
                         </td>
                       </tr>
-
                     ))
                   )}
                 </tbody>

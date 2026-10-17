@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useMemo } from 'react';
 import {
   Search,
   Bell,
@@ -134,17 +134,28 @@ export default function AdminTopBar({
     }
   }
 
+  // Chronological semester order: '1/2568' -> '2/2568' -> '1/2569' -> '2/2569'
+  const chronologicalSemesters = useMemo(() => {
+    const list = Array.from(new Set((availableSemesters || []).filter(Boolean)));
+    return list.sort((a, b) => {
+      const [semA, yearA] = (a || '').split('/').map((n) => parseInt(n, 10) || 0);
+      const [semB, yearB] = (b || '').split('/').map((n) => parseInt(n, 10) || 0);
+      if (yearA !== yearB) return yearA - yearB;
+      return semA - semB;
+    });
+  }, [availableSemesters]);
+
+  const currSemIdx = chronologicalSemesters.indexOf(semester);
+
   function handlePrevSemester() {
-    const idx = availableSemesters.indexOf(semester);
-    if (idx !== -1 && idx < availableSemesters.length - 1) {
-      if (onSemesterChange) onSemesterChange(availableSemesters[idx + 1]);
+    if (currSemIdx > 0) {
+      if (onSemesterChange) onSemesterChange(chronologicalSemesters[currSemIdx - 1]);
     }
   }
 
   function handleNextSemester() {
-    const idx = availableSemesters.indexOf(semester);
-    if (idx > 0) {
-      if (onSemesterChange) onSemesterChange(availableSemesters[idx - 1]);
+    if (currSemIdx !== -1 && currSemIdx < chronologicalSemesters.length - 1) {
+      if (onSemesterChange) onSemesterChange(chronologicalSemesters[currSemIdx + 1]);
     }
   }
 
@@ -179,7 +190,8 @@ export default function AdminTopBar({
               <button
                 type="button"
                 onClick={handlePrevSemester}
-                className="p-1 rounded-md hover:bg-white dark:hover:bg-slate-700 text-neutral-500 hover:text-neutral-900 dark:hover:text-white transition-colors cursor-pointer"
+                disabled={currSemIdx <= 0}
+                className="p-1 rounded-md hover:bg-white dark:hover:bg-slate-700 text-neutral-500 hover:text-neutral-900 dark:hover:text-white transition-colors cursor-pointer disabled:opacity-30 disabled:cursor-not-allowed"
                 title="ภาคเรียนก่อนหน้า"
               >
                 <ChevronLeft className="w-3.5 h-3.5" />
@@ -192,7 +204,8 @@ export default function AdminTopBar({
               <button
                 type="button"
                 onClick={handleNextSemester}
-                className="p-1 rounded-md hover:bg-white dark:hover:bg-slate-700 text-neutral-500 hover:text-neutral-900 dark:hover:text-white transition-colors cursor-pointer"
+                disabled={currSemIdx === -1 || currSemIdx >= chronologicalSemesters.length - 1}
+                className="p-1 rounded-md hover:bg-white dark:hover:bg-slate-700 text-neutral-500 hover:text-neutral-900 dark:hover:text-white transition-colors cursor-pointer disabled:opacity-30 disabled:cursor-not-allowed"
                 title="ภาคเรียนถัดไป"
               >
                 <ChevronRight className="w-3.5 h-3.5" />
