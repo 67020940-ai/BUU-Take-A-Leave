@@ -27,9 +27,11 @@ const REASON_LIMIT = 300;
 
 async function enrichLeave(leave) {
   if (!leave) return null;
+  const hasCourse = Boolean(leave.course || (leave.courseCode && leave.courseName));
+  const hasStudent = Boolean(leave.student || (leave.studentName && leave.studentCode));
   const [course, student] = await Promise.all([
-    leave.course || getCourse(leave.courseId),
-    getUserById(leave.studentId),
+    hasCourse ? leave.course : getCourse(leave.courseId),
+    hasStudent ? leave.student : getUserById(leave.studentId),
   ]);
   return {
     ...leave,
