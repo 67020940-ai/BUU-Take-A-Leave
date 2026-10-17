@@ -436,18 +436,6 @@ export default function TeacherSidebar({
                       {!collapsed && <span className="truncate">คลังสถิติย้อนหลัง</span>}
                     </div>
                   </button>
-
-                  {/* Back to Teacher Home */}
-                  <Link
-                    href="/teacher"
-                    onClick={onCloseMobile}
-                    className="w-full flex items-center justify-between px-3 py-2 rounded-2xl text-xs font-medium text-neutral-500 hover:text-neutral-800 dark:hover:text-neutral-200 hover:bg-neutral-100 dark:hover:bg-slate-800 transition-colors"
-                  >
-                    <div className="flex items-center gap-2.5 min-w-0">
-                      <ClipboardCheck className="w-3.5 h-3.5 shrink-0" />
-                      {!collapsed && <span className="truncate">กลับไปหน้าหลัก</span>}
-                    </div>
-                  </Link>
                 </div>
               </div>
             )}
