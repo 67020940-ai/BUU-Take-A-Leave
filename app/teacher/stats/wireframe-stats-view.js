@@ -108,6 +108,7 @@ export default function WireframeStatsView({
   courses = [],
   leaves = [],
   rosterByCourse = {},
+  usingMock = false,
 }) {
   // Controls & States
   const [semester, setSemester] = useState('1/2569');
@@ -236,9 +237,9 @@ export default function WireframeStatsView({
       );
 
       // If database has leaves for this student, use them.
-      // Otherwise, use our user-requested mock distribution (max <= 3 leaves per student)
+      // Otherwise, only use mock distribution if usingMock is true (pure mock prototype mode)
       let completeLeaves = [...dbLeaves];
-      if (completeLeaves.length === 0) {
+      if (usingMock && completeLeaves.length === 0) {
         const studentMocks = MOCK_LEAVES_BY_STUDENT[s.studentCode] || [];
         studentMocks.forEach((m, mIdx) => {
           completeLeaves.push({
@@ -351,7 +352,7 @@ export default function WireframeStatsView({
               (l.studentCode === s.studentCode || l.studentId === s.studentId || l.studentName === s.studentName)
           );
           const count =
-            dbLeaves.length > 0 ? dbLeaves.length : (MOCK_LEAVES_BY_STUDENT[s.studentCode]?.length || 0);
+            dbLeaves.length > 0 ? dbLeaves.length : (usingMock ? (MOCK_LEAVES_BY_STUDENT[s.studentCode]?.length || 0) : 0);
           secLeaves += count;
           if (count >= 3) secAtRisk++;
         });

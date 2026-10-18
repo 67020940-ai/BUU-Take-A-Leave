@@ -58,6 +58,7 @@ export default async function TeacherStatsPage() {
       courses={courses}
       leaves={leaves}
       rosterByCourse={rosterByCourse}
+      usingMock={usingMock}
     />
   );
 }
