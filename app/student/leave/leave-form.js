@@ -226,6 +226,40 @@ export default function LeaveForm({
     return '';
   }, [form.startDate, form.endDate]);
 
+  // ตรวจสอบว่าวันที่เลือกเคยยื่นลาของวิชานี้ไปแล้วและยังอยู่ในสถานะใช้งานหรือไม่
+  const duplicateLeaveError = useMemo(() => {
+    if (!form.startDate || !currentCourse) return '';
+    const match = (leaves || []).find((l) => {
+      const matchCourse =
+        (l.courseId && l.courseId === currentCourse.id) ||
+        (l.courseCode && l.courseCode === currentCourse.code);
+      const isActive = l.status === 'อนุมัติ' || l.status === 'รออนุมัติ';
+      return matchCourse && isActive && l.startDate === form.startDate;
+    });
+    if (match) {
+      return `คุณได้ยื่นคำขอลาของวิชานี้ในวันที่ ${form.startDate} ไปแล้ว (สถานะ: ${match.status})`;
+    }
+    return '';
+  }, [leaves, form.startDate, currentCourse]);
+
+  // ตรวจสอบว่าวันที่เลือกตรงกับวันที่มีเรียนตามตารางหรือไม่ (แจ้งเตือนความช่วยเหลือ)
+  const dayMismatchWarning = useMemo(() => {
+    if (!form.startDate || !currentCourse?.day) return null;
+    const isSingleDay = !form.endDate || form.endDate === form.startDate;
+    if (!isSingleDay) return null;
+    const dateObj = new Date(form.startDate + 'T00:00:00');
+    if (Number.isNaN(dateObj.getTime())) return null;
+    const dayCodes = ['SU', 'MO', 'TU', 'WE', 'TH', 'FR', 'SA'];
+    const selectedDayCode = dayCodes[dateObj.getDay()];
+    const courseDayCode = String(currentCourse.day).toUpperCase();
+    if (selectedDayCode && courseDayCode && selectedDayCode !== courseDayCode) {
+      const selectedTh = DAY_LABEL_TH[selectedDayCode] ? `วัน${DAY_LABEL_TH[selectedDayCode]}` : selectedDayCode;
+      const courseTh = DAY_LABEL_TH[courseDayCode] ? `วัน${DAY_LABEL_TH[courseDayCode]}` : courseDayCode;
+      return { selectedTh, courseTh };
+    }
+    return null;
+  }, [form.startDate, form.endDate, currentCourse]);
+
   const dayCount = useMemo(() => {
     if (!form.startDate || !form.endDate || dateError) return null;
     const diff = (new Date(form.endDate) - new Date(form.startDate)) / (1000 * 60 * 60 * 24);
@@ -264,6 +298,11 @@ export default function LeaveForm({
 
     if (dateError) {
       setError(dateError);
+      return;
+    }
+
+    if (duplicateLeaveError) {
+      setError(duplicateLeaveError);
       return;
     }
 
@@ -637,8 +676,24 @@ export default function LeaveForm({
               <AlertCircle className="w-3.5 h-3.5 shrink-0" />
               <span>{dateError}</span>
             </p>
+          ) : duplicateLeaveError ? (
+            <div className="p-3 rounded-xl bg-rose-50 dark:bg-rose-950/40 border border-rose-200 dark:border-rose-800 text-rose-700 dark:text-rose-300 text-xs flex items-center gap-2 mt-2">
+              <AlertCircle className="w-4 h-4 shrink-0 text-rose-600 dark:text-rose-400" />
+              <span className="font-semibold">{duplicateLeaveError}</span>
+            </div>
           ) : (
-            dayCount && <p className="text-xs text-neutral-500 dark:text-neutral-400 mt-1 font-medium">รวมระยะเวลา {dayCount} วัน</p>
+            <>
+              {dayCount && <p className="text-xs text-neutral-500 dark:text-neutral-400 mt-1 font-medium">รวมระยะเวลา {dayCount} วัน</p>}
+              {dayMismatchWarning && (
+                <div className="p-3 rounded-xl bg-amber-50 dark:bg-amber-950/40 border border-amber-200 dark:border-amber-800/80 text-amber-800 dark:text-amber-300 text-xs flex items-start gap-2 mt-2">
+                  <AlertTriangle className="w-4 h-4 shrink-0 text-amber-600 dark:text-amber-400 mt-0.5" />
+                  <div>
+                    <span className="font-bold">ข้อสังเกต: </span>
+                    <span>วันที่คุณเลือก ({dayMismatchWarning.selectedTh}) ไม่ตรงกับวันที่มีเรียนตามตารางเรียนวิชานี้ ({dayMismatchWarning.courseTh})</span>
+                  </div>
+                </div>
+              )}
+            </>
           )}
         </div>
       </section>
@@ -703,7 +758,7 @@ export default function LeaveForm({
 
       <button
         type="submit"
-        disabled={saving || !!dateError}
+        disabled={saving || !!dateError || !!duplicateLeaveError}
         className="w-full py-3 rounded-2xl bg-[#7749BC] hover:bg-[#653ba6] text-white text-sm font-bold shadow-md shadow-purple-700/25 transition-all disabled:opacity-60 flex items-center justify-center gap-2 cursor-pointer active:scale-[0.99]"
       >
         {saving ? (

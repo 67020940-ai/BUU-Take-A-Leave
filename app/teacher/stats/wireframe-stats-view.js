@@ -1043,9 +1043,16 @@ export default function WireframeStatsView({
                   <h3 className="text-sm sm:text-base font-bold text-neutral-900 dark:text-neutral-100 truncate">
                     {modalStudent.studentName}
                   </h3>
-                  <p className="text-[11px] sm:text-xs text-neutral-500 dark:text-neutral-400 font-mono">
-                    รหัสนิสิต {modalStudent.studentCode}
-                  </p>
+                  <div className="flex items-center gap-2 flex-wrap mt-0.5">
+                    <p className="text-[11px] sm:text-xs text-neutral-500 dark:text-neutral-400 font-mono">
+                      รหัสนิสิต {modalStudent.studentCode}
+                    </p>
+                    {selectedCourse && (
+                      <span className="text-[10px] sm:text-[11px] font-medium text-[#7749BC] dark:text-purple-300 bg-purple-50 dark:bg-purple-950/60 px-2 py-0.5 rounded-md border border-purple-200 dark:border-purple-800">
+                        {selectedCourse.code} {selectedCourse.name} (กลุ่ม {displayGroup})
+                      </span>
+                    )}
+                  </div>
                 </div>
               </div>
 

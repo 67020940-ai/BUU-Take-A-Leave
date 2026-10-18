@@ -591,12 +591,10 @@ export default function StudentScheduleGrid({
 
               <div className="col-span-2 sm:col-span-1 p-2.5 rounded-xl bg-slate-50 dark:bg-slate-800/60 border border-slate-200/70 dark:border-slate-700/60 flex flex-col justify-center">
                 <span className="text-neutral-400 text-[10px] flex items-center gap-1">
-                  <Clock className="w-3 h-3 text-[#7749BC]" /> เวลาเรียน & โควตา
+                  <Clock className="w-3 h-3 text-[#7749BC]" /> วัน & เวลาเรียน
                 </span>
-                <p className={`font-bold mt-0.5 text-xs font-mono ${
-                  selectedCourse.attendance < 80 ? 'text-rose-600 dark:text-rose-400' : 'text-emerald-600 dark:text-emerald-400'
-                }`}>
-                  {selectedCourse.attendance}% • เหลือลา {selectedCourse.remainingLeaves}/{selectedCourse.quotaLimit} ครั้ง
+                <p className="font-bold text-neutral-800 dark:text-neutral-200 mt-0.5 text-xs font-mono truncate">
+                  {selectedCourse.dayName || selectedCourse.day || ''} {selectedCourse.time ? `${selectedCourse.time} น.` : '-'}
                 </p>
               </div>
             </div>
@@ -701,9 +699,6 @@ export default function StudentScheduleGrid({
                           ? 'สถานะ: เฝ้าระวัง (สามารถลาได้อีกเพียง 1 ครั้ง)'
                           : 'สถานะ: ปลอดภัยตามเกณฑ์เวลาเรียนมหาวิทยาลัย (สิทธิ์สอบปกติ)'}
                       </h5>
-                      <span className="text-[11px] font-mono font-bold px-2 py-0.5 rounded-full bg-white/70 dark:bg-slate-900/60 border border-current/20">
-                        โควตา {selectedCourse.leaves}/{selectedCourse.quotaLimit} ครั้ง
-                      </span>
                     </div>
                     <p className="text-xs mt-1 opacity-90 leading-relaxed">
                       {selectedCourse.leaves > selectedCourse.quotaLimit || selectedCourse.attendance < 80
@@ -755,10 +750,10 @@ export default function StudentScheduleGrid({
                   <div className="p-3.5 rounded-2xl bg-slate-50 dark:bg-slate-800/60 border border-slate-200/80 dark:border-slate-700/70 space-y-2">
                     <div className="flex items-center justify-between">
                       <span className="text-neutral-500 dark:text-neutral-400 font-medium flex items-center gap-1.5">
-                        <FileText className="w-3.5 h-3.5 text-[#7749BC]" /> โควตาที่ใช้ไป
+                        <FileText className="w-3.5 h-3.5 text-[#7749BC]" /> ลาไปแล้ว
                       </span>
                       <span className="font-mono font-black text-sm text-neutral-900 dark:text-white">
-                        {selectedCourse.leaves} / {selectedCourse.quotaLimit} ครั้ง
+                        {selectedCourse.leaves} ครั้ง
                       </span>
                     </div>
                     <div className="w-full h-2 bg-neutral-200 dark:bg-slate-700 rounded-full overflow-hidden">
@@ -789,7 +784,7 @@ export default function StudentScheduleGrid({
                   <div className="p-3.5 rounded-2xl bg-slate-50 dark:bg-slate-800/60 border border-slate-200/80 dark:border-slate-700/70 space-y-2">
                     <div className="flex items-center justify-between">
                       <span className="text-neutral-500 dark:text-neutral-400 font-medium flex items-center gap-1.5">
-                        <ShieldCheck className="w-3.5 h-3.5 text-[#7749BC]" /> โควตาคงเหลือ
+                        <ShieldCheck className="w-3.5 h-3.5 text-[#7749BC]" /> สิทธิ์ที่ลาได้อีก
                       </span>
                       <span
                         className={`font-mono font-black text-sm ${
@@ -814,7 +809,7 @@ export default function StudentScheduleGrid({
                                 ? 'bg-purple-600 text-white'
                                 : 'bg-neutral-200 dark:bg-slate-700 text-neutral-400'
                             }`}
-                            title={`โควตาครั้งที่ ${i + 1}: ${isUsed ? 'ใช้แล้ว' : 'ยังว่างอยู่'}`}
+                            title={`สิทธิ์ครั้งที่ ${i + 1}: ${isUsed ? 'ใช้แล้ว' : 'ยังว่างอยู่'}`}
                           >
                             {i + 1}
                           </div>
@@ -834,7 +829,7 @@ export default function StudentScheduleGrid({
                 <div className="p-3.5 rounded-2xl bg-slate-50 dark:bg-slate-800/50 border border-slate-200/70 dark:border-slate-700/60 space-y-2.5">
                   <h6 className="text-xs font-bold text-neutral-800 dark:text-neutral-200 flex items-center gap-1.5">
                     <TrendingUp className="w-4 h-4 text-[#7749BC]" />
-                    <span>แผนภูมิแจกแจงสิทธิ์การลา (3 Quota Slots Breakdown)</span>
+                    <span>รายละเอียดสิทธิ์การลา (สูงสุด {selectedCourse.quotaLimit} ครั้ง)</span>
                   </h6>
 
                   <div className="grid grid-cols-1 sm:grid-cols-3 gap-2.5">
@@ -870,8 +865,8 @@ export default function StudentScheduleGrid({
                             {isUsed
                               ? 'บันทึกในระบบเรียบร้อย'
                               : isCurrentRisk
-                              ? '⚠️ โควตาสุดท้ายก่อนหมดสิทธิ์สอบ'
-                              : 'โควตาปกติ ลาได้ตามเกณฑ์'}
+                              ? '⚠️ สิทธิ์ครั้งสุดท้ายก่อนหมดสิทธิ์สอบ'
+                              : 'ใช้สิทธิ์ได้ตามเกณฑ์'}
                           </p>
                         </div>
                       );
