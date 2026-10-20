@@ -90,6 +90,9 @@ export default function LeaveForm({
   const [showConfirmModal, setShowConfirmModal] = useState(false);
   const [acknowledgedOverQuota, setAcknowledgedOverQuota] = useState(false);
 
+  // ตัวเลือกส่งใบรับรองแพทย์ย้อนหลัง
+  const [pendingMedicalProof, setPendingMedicalProof] = useState(false);
+
   // Sync courseId when available courses update (e.g. semester switched)
   useEffect(() => {
     if (courses && courses.length > 0) {
@@ -320,6 +323,11 @@ export default function LeaveForm({
           ? `[ประเภท: ${form.otherTypeDetail.trim()}] ${form.reason.trim()}`
           : form.reason.trim();
 
+      const reasonWithProofNote =
+        pendingMedicalProof && !attachment
+          ? `${finalReason} (📌 นิสิตแจ้งขอแนบใบรับรองแพทย์ย้อนหลังภายใน 48 ชม.)`
+          : finalReason;
+
       const resolvedPeriod = formatLeaveClassTime({
         startDate: form.startDate,
         endDate: form.endDate,
@@ -337,7 +345,7 @@ export default function LeaveForm({
           period: resolvedPeriod || 'เวลาเรียนตามตาราง',
           startDate: form.startDate,
           endDate: form.endDate,
-          reason: finalReason,
+          reason: reasonWithProofNote,
           attachment: attachment?.url || attachment?.filename || null,
           resubmitId: resubmitId || undefined,
         }),
@@ -740,6 +748,28 @@ export default function LeaveForm({
           )}
           {uploadError && <p className="text-[11px] text-rose-600 dark:text-rose-400 mt-1">{uploadError}</p>}
           <p className="text-[11px] text-neutral-400 mt-1">* รองรับไฟล์รูปภาพ (JPG, PNG, GIF, WEBP) และเอกสาร PDF ขนาดไม่เกิน 5MB</p>
+
+          {/* Pending Medical Proof Option */}
+          {form.type === 'ลาป่วย' && !attachment && (
+            <div className="pt-2">
+              <label className="flex items-start gap-2.5 p-3 rounded-2xl bg-purple-50/70 dark:bg-purple-950/40 border border-purple-200 dark:border-purple-800/80 cursor-pointer">
+                <input
+                  type="checkbox"
+                  checked={pendingMedicalProof}
+                  onChange={(e) => setPendingMedicalProof(e.target.checked)}
+                  className="mt-0.5 w-4 h-4 rounded text-[#7749BC] focus:ring-[#7749BC] accent-[#7749BC]"
+                />
+                <div className="text-xs">
+                  <span className="font-bold text-[#7749BC] dark:text-purple-300 block">
+                    ขอแนบใบรับรองแพทย์ย้อนหลัง (ยังไม่มีใบรับรองแพทย์ขณะยื่น)
+                  </span>
+                  <span className="text-[11px] text-neutral-500 dark:text-neutral-400 leading-relaxed block mt-0.5">
+                    ระบบจะบันทึกคำร้องล่วงหน้าเพื่อแจ้งอาจารย์ผู้สอน และนิสิตสามารถนำใบรับรองแพทย์มาอัปเดตเพิ่มเติมได้ภายใน 48 ชั่วโมง
+                  </span>
+                </div>
+              </label>
+            </div>
+          )}
         </div>
       </section>
 

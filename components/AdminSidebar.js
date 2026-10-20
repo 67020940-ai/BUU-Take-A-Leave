@@ -15,6 +15,7 @@ import {
   PanelLeft,
   ShieldCheck,
   Database,
+  Server,
   User,
   Camera,
 } from 'lucide-react';
@@ -90,6 +91,11 @@ export default function AdminSidebar({
       key: 'leaves',
       label: 'คำร้องลาทั้งระบบ',
       icon: ClipboardCheck,
+    },
+    {
+      key: 'integration',
+      label: 'เชื่อมต่อระบบมหาลัย (BUU Sync)',
+      icon: Server,
     },
     {
       key: 'backup',

@@ -384,24 +384,24 @@ export default function StudentScheduleGrid({
 
       {/* 2. Desktop & iPad Full Grid Container (>= md) */}
       <div className="hidden md:block overflow-x-auto">
-          <div className="min-w-[980px] p-4">
+          <div className="min-w-[1180px] p-4">
             {/* Header Row: Days label + Time Slots */}
             <div
               style={{
-                gridTemplateColumns: `minmax(65px, 80px) repeat(${TIME_SLOTS.length}, minmax(65px, 1fr))`,
+                gridTemplateColumns: `minmax(75px, 90px) repeat(${TIME_SLOTS.length}, minmax(88px, 1fr))`,
               }}
-              className="grid gap-1.5 mb-2 text-center text-xs font-bold text-neutral-500 dark:text-neutral-400"
+              className="grid gap-2 mb-2.5 text-center text-xs font-bold text-neutral-500 dark:text-neutral-400"
             >
-              <div className="py-2 bg-neutral-100 dark:bg-slate-800 rounded-xl flex items-center justify-center font-bold sticky left-0 z-20 shadow-xs border border-neutral-200/50 dark:border-slate-700/50">
+              <div className="py-2.5 bg-neutral-100 dark:bg-slate-800 rounded-xl flex items-center justify-center font-bold sticky left-0 z-20 shadow-xs border border-neutral-200/50 dark:border-slate-700/50">
                 วัน
               </div>
               {TIME_SLOTS.map((t, idx) => (
                 <div
                   key={idx}
-                  className="py-2 bg-neutral-100 dark:bg-slate-800/80 rounded-xl text-[11px] truncate px-0.5"
+                  className="py-2.5 bg-neutral-100 dark:bg-slate-800/80 rounded-xl text-[11px] font-mono tracking-tight font-medium px-2 flex items-center justify-center whitespace-nowrap"
                   title={t.label}
                 >
-                  {t.label.split(' - ')[0]}
+                  {t.label}
                 </div>
               ))}
             </div>
@@ -418,9 +418,9 @@ export default function StudentScheduleGrid({
                     key={day.key}
                     style={{
                       minHeight: `${rowMinHeight}px`,
-                      gridTemplateColumns: `minmax(65px, 80px) repeat(${TIME_SLOTS.length}, minmax(65px, 1fr))`,
+                      gridTemplateColumns: `minmax(75px, 90px) repeat(${TIME_SLOTS.length}, minmax(88px, 1fr))`,
                     }}
-                    className="grid gap-1.5 items-stretch p-1.5 rounded-2xl bg-neutral-50/50 dark:bg-slate-900/50 border border-neutral-150 dark:border-slate-800/70"
+                    className="grid gap-2 items-stretch p-1.5 rounded-2xl bg-neutral-50/50 dark:bg-slate-900/50 border border-neutral-150 dark:border-slate-800/70"
                   >
                     {/* Day Label Column (Sticky left on mobile scroll) */}
                     <div

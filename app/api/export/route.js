@@ -20,6 +20,116 @@ export async function GET(request) {
   const { searchParams } = new URL(request.url);
   const format = (searchParams.get('format') || 'xlsx').toLowerCase();
   const termParam = searchParams.get('term');
+  const typeParam = searchParams.get('type'); // 'leaves' หรือค่าว่าง (attendance)
+
+  // กรณี Export ประวัติคำร้องลาทั้งระบบสำหรับผู้ดูแลระบบ (Admin)
+  if (typeParam === 'leaves' && user.role === 'admin') {
+    const { listAllLeaves, getCourse, getUserById } = await import('@/lib/db');
+    const rawLeaves = await listAllLeaves();
+    const leaves = await Promise.all(
+      rawLeaves.map(async (l) => {
+        const course = await getCourse(l.courseId);
+        const student = await getUserById(l.studentId);
+        return {
+          id: l.id,
+          studentCode: student?.studentId || l.studentCode || '-',
+          studentName: student?.name || l.studentName || '-',
+          courseCode: course?.code || l.courseCode || '-',
+          courseName: course?.name || l.courseName || '-',
+          term: course?.term || l.courseTerm || '-',
+          type: l.type || '-',
+          startDate: l.startDate || '-',
+          endDate: l.endDate || l.startDate || '-',
+          status: l.status || '-',
+          reason: l.reason || '-',
+          teacherComment: l.teacherComment || '-',
+          createdAt: l.createdAt ? new Date(l.createdAt).toLocaleDateString('th-TH') : '-',
+        };
+      })
+    );
+
+    const filtered = termParam && termParam !== 'all'
+      ? leaves.filter((l) => l.term === termParam)
+      : leaves;
+
+    if (format === 'csv') {
+      const rows = [
+        ['รหัสคำร้อง', 'รหัสนิสิต', 'ชื่อ-นามสกุล', 'รหัสวิชา', 'ชื่อรายวิชา', 'ภาคเรียน', 'ประเภทการลา', 'วันที่เริ่มลา', 'วันที่สิ้นสุด', 'สถานะ', 'เหตุผลการลา', 'ข้อเสนอแนะอาจารย์', 'วันที่ยื่น']
+      ];
+      for (const l of filtered) {
+        rows.push([
+          l.id,
+          l.studentCode,
+          l.studentName,
+          l.courseCode,
+          l.courseName,
+          l.term,
+          l.type,
+          l.startDate,
+          l.endDate,
+          l.status,
+          l.reason,
+          l.teacherComment,
+          l.createdAt,
+        ]);
+      }
+      const csv = '\uFEFF' + rows.map((r) => r.map(csvEscape).join(',')).join('\n');
+      return new NextResponse(csv, {
+        headers: {
+          'Content-Type': 'text/csv; charset=utf-8',
+          'Content-Disposition': 'attachment; filename="buu-leaves-report.csv"',
+        },
+      });
+    }
+
+    // Excel for leaves
+    const workbook = new ExcelJS.Workbook();
+    workbook.creator = 'BUU Take A Leave Admin';
+    workbook.created = new Date();
+    const worksheet = workbook.addWorksheet('ทะเบียนคำร้องลาทั้งระบบ', {
+      views: [{ state: 'frozen', ySplit: 1 }],
+    });
+
+    worksheet.columns = [
+      { header: 'รหัสคำร้อง', key: 'id', width: 14 },
+      { header: 'รหัสนิสิต', key: 'studentCode', width: 14 },
+      { header: 'ชื่อ-นามสกุล นิสิต', key: 'studentName', width: 26 },
+      { header: 'รหัสวิชา', key: 'courseCode', width: 14 },
+      { header: 'ชื่อรายวิชา', key: 'courseName', width: 34 },
+      { header: 'ภาคเรียน', key: 'term', width: 12 },
+      { header: 'ประเภทการลา', key: 'type', width: 16 },
+      { header: 'วันที่เริ่มลา', key: 'startDate', width: 14 },
+      { header: 'วันที่สิ้นสุด', key: 'endDate', width: 14 },
+      { header: 'สถานะ', key: 'status', width: 14 },
+      { header: 'เหตุผลการลา', key: 'reason', width: 32 },
+      { header: 'ข้อเสนอแนะอาจารย์', key: 'teacherComment', width: 28 },
+      { header: 'วันที่ยื่น', key: 'createdAt', width: 14 },
+    ];
+
+    worksheet.getRow(1).font = { bold: true, color: { argb: 'FFFFFFFF' } };
+    worksheet.getRow(1).fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: 'FF7749BC' } };
+    worksheet.getRow(1).alignment = { vertical: 'middle', horizontal: 'center' };
+    worksheet.getRow(1).height = 24;
+
+    for (const l of filtered) {
+      const row = worksheet.addRow(l);
+      if (l.status === 'อนุมัติ') {
+        row.getCell('status').font = { color: { argb: 'FF059669' }, bold: true };
+      } else if (l.status === 'ไม่อนุมัติ') {
+        row.getCell('status').font = { color: { argb: 'FFDC2626' }, bold: true };
+      } else if (l.status === 'รออนุมัติ') {
+        row.getCell('status').font = { color: { argb: 'FFD97706' }, bold: true };
+      }
+    }
+
+    const buffer = await workbook.xlsx.writeBuffer();
+    return new NextResponse(buffer, {
+      headers: {
+        'Content-Type': 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
+        'Content-Disposition': 'attachment; filename="buu-leaves-report.xlsx"',
+      },
+    });
+  }
 
   let { courses, rosterByCourse } = await getTeacherCoursesAndRoster(user.id);
 

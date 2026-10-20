@@ -675,11 +675,29 @@ export default function TeacherRequestsView({
                   <div
                     key={leave.id}
                     className={`bg-white/90 dark:bg-slate-900/90 backdrop-blur-xl p-4 sm:p-5 rounded-3xl border transition-all shadow-xs ${
-                      isSelected
+                      leave.status === 'รออนุมัติ' && (leaveInfo.order >= 3 || atRisk)
+                        ? 'border-amber-300 dark:border-amber-700/80 bg-amber-50/20 dark:bg-amber-950/10'
+                        : isSelected
                         ? 'border-[#7749BC] ring-2 ring-purple-300/40'
                         : 'border-neutral-200/80 dark:border-slate-800 hover:border-purple-200'
                     }`}
                   >
+                    {/* High Risk Banner: เตือนอาจารย์เมื่อนิสิตกำลังจะหมดสิทธิ์สอบ */}
+                    {leave.status === 'รออนุมัติ' && (leaveInfo.order >= 3 || atRisk) && (
+                      <div className="mb-3 px-3 py-1.5 rounded-xl bg-amber-100/90 dark:bg-amber-950/70 border border-amber-300 dark:border-amber-800 text-amber-900 dark:text-amber-200 text-xs font-semibold flex items-center justify-between gap-2">
+                        <div className="flex items-center gap-1.5">
+                          <AlertTriangle className="w-4 h-4 text-amber-600 dark:text-amber-400 shrink-0" />
+                          <span>
+                            {leaveInfo.order > 3
+                              ? `⚠️ นิสิตลาเกินเกณฑ์ 20% แล้ว (ครั้งที่ ${leaveInfo.order}) — หากอนุมัติจะหมดสิทธิ์สอบปลายภาคทันที`
+                              : `⚠️ คำร้องนี้เป็นการลาครั้งสุดท้าย (ครั้งที่ 3) — หากอนุมัติ นิสิตจะห้ามขาดเรียนหรือลาเพิ่มอีก`}
+                          </span>
+                        </div>
+                        <span className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-amber-200/80 dark:bg-amber-900 text-amber-900 dark:text-amber-100 shrink-0">
+                          ต้องพิจารณาพิเศษ
+                        </span>
+                      </div>
+                    )}
                     <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
                       {/* Left: Checkbox + Avatar + Info */}
                       <div className="flex items-start gap-3.5 min-w-0">
