@@ -56,6 +56,23 @@ export default function LeaveDonutChart({
 
   const total = dataValues.reduce((acc, curr) => acc + (Number(curr) || 0), 0);
 
+  // Combine labels, values, and colors to sort descending clockwise (เรียงจากมากไปน้อยตามเข็มนาฬิกา)
+  // ผูกสีประจำประเภทการลาไว้กับ label เสมอเพื่อคงความถูกต้องของสี
+  const combinedData = labels.map((label, idx) => ({
+    label,
+    value: Number(dataValues[idx]) || 0,
+    color: colors[idx % colors.length],
+    hoverColor: hoverColors[idx % hoverColors.length],
+  }));
+
+  // เรียงลำดับจากค่าที่มากที่สุดไปน้อยที่สุด
+  combinedData.sort((a, b) => b.value - a.value);
+
+  const sortedLabels = combinedData.map((item) => item.label);
+  const sortedValues = combinedData.map((item) => item.value);
+  const sortedColors = combinedData.map((item) => item.color);
+  const sortedHoverColors = combinedData.map((item) => item.hoverColor);
+
   if (!isMounted) {
     return (
       <div
@@ -68,10 +85,10 @@ export default function LeaveDonutChart({
   }
 
   // Handle empty state gracefully
-  const displayValues = total === 0 ? [1] : dataValues;
-  const displayColors = total === 0 ? [isDark ? '#334155' : '#E2E8F0'] : colors;
-  const displayHoverColors = total === 0 ? [isDark ? '#475569' : '#CBD5E1'] : hoverColors;
-  const displayLabels = total === 0 ? ['ยังไม่มีข้อมูล'] : labels;
+  const displayValues = total === 0 ? [1] : sortedValues;
+  const displayColors = total === 0 ? [isDark ? '#334155' : '#E2E8F0'] : sortedColors;
+  const displayHoverColors = total === 0 ? [isDark ? '#475569' : '#CBD5E1'] : sortedHoverColors;
+  const displayLabels = total === 0 ? ['ยังไม่มีข้อมูล'] : sortedLabels;
 
   const data = {
     labels: displayLabels,
@@ -91,6 +108,11 @@ export default function LeaveDonutChart({
     responsive: true,
     maintainAspectRatio: false,
     cutout: '72%',
+    onHover: (event, chartElement) => {
+      if (event?.native?.target) {
+        event.native.target.style.cursor = chartElement[0] ? 'pointer' : 'default';
+      }
+    },
     onClick: (event, elements) => {
       if (elements && elements.length > 0 && onSelectCategory) {
         const index = elements[0].index;
@@ -110,7 +132,7 @@ export default function LeaveDonutChart({
         titleColor: '#FFFFFF',
         titleFont: { size: 12, weight: 'bold' },
         bodyColor: '#E2E8F0',
-        bodyFont: { size: 11 },
+        bodyFont: { size: 12, weight: '500' },
         padding: 12,
         cornerRadius: 12,
         boxPadding: 6,
@@ -118,10 +140,13 @@ export default function LeaveDonutChart({
         borderWidth: 1,
         usePointStyle: true,
         callbacks: {
+          title: function () {
+            return '';
+          },
           label: function (context) {
             const val = context.raw || 0;
             const pct = total > 0 ? Math.round((val / total) * 100) : 0;
-            return ` ${context.label}: ${val} ${unit} (${pct}%)`;
+            return ` ${context.label}: ${pct}% (${val} ${unit})`;
           },
         },
       },
@@ -146,12 +171,12 @@ export default function LeaveDonutChart({
         </div>
       </div>
 
-      {/* Legend & Percentages */}
-      <div className="flex-1 w-full space-y-2 min-w-0">
-        {labels.map((lbl, idx) => {
-          const val = dataValues[idx] || 0;
+      {/* Legend & Percentages - แสดงเฉพาะบนจอมือถือ/แท็บเล็ต (lg:hidden) และซ่อนบนคอมเพื่อให้ Clean ตามโจทย์ */}
+      <div className="flex-1 w-full space-y-2 min-w-0 lg:hidden">
+        {sortedLabels.map((lbl, idx) => {
+          const val = sortedValues[idx] || 0;
           const pct = total > 0 ? Math.round((val / total) * 100) : 0;
-          const color = colors[idx % colors.length];
+          const color = sortedColors[idx % sortedColors.length];
 
           return (
             <div
