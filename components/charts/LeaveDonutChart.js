@@ -171,8 +171,8 @@ export default function LeaveDonutChart({
         </div>
       </div>
 
-      {/* Legend & Percentages */}
-      <div className="flex-1 w-full flex flex-col gap-2 min-w-0">
+      {/* Legend & Percentages - แสดงเฉพาะบนจอมือถือ/แท็บเล็ต (lg:hidden) และซ่อนบนคอมเพื่อให้ Clean ตามโจทย์ */}
+      <div className="flex-1 w-full flex flex-col gap-2 min-w-0 lg:hidden">
         {sortedLabels.map((lbl, idx) => {
           const val = sortedValues[idx] || 0;
           const pct = total > 0 ? Math.round((val / total) * 100) : 0;
