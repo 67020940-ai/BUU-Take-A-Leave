@@ -57,30 +57,39 @@ export default function AdminDashboard({ user, courses = [], leaves = [], ticket
 
   useEffect(() => {
     let active = true;
-    async function syncAdminLeaves() {
+    async function syncAdminData() {
       try {
-        const res = await fetch('/api/leaves');
-        if (res.ok) {
-          const data = await res.json();
+        const [leavesRes, ticketsRes] = await Promise.all([
+          fetch('/api/leaves'),
+          fetch('/api/support'),
+        ]);
+        if (leavesRes.ok) {
+          const data = await leavesRes.json();
           if (active && Array.isArray(data.leaves)) {
             setLeavesList(data.leaves);
+          }
+        }
+        if (ticketsRes.ok) {
+          const tData = await ticketsRes.json();
+          if (active && Array.isArray(tData.tickets)) {
+            setTickets(tData.tickets);
           }
         }
       } catch (err) {}
     }
 
     const interval = setInterval(() => {
-      if (typeof document === 'undefined' || !document.hidden) syncAdminLeaves();
+      if (typeof document === 'undefined' || !document.hidden) syncAdminData();
     }, 60000);
-    const handleFocus = () => syncAdminLeaves();
+    const handleFocus = () => syncAdminData();
     window.addEventListener('focus', handleFocus);
-    window.addEventListener('buu:leaves_updated', syncAdminLeaves);
+    window.addEventListener('buu:leaves_updated', syncAdminData);
 
     return () => {
       active = false;
       clearInterval(interval);
       window.removeEventListener('focus', handleFocus);
-      window.removeEventListener('buu:leaves_updated', syncAdminLeaves);
+      window.removeEventListener('buu:leaves_updated', syncAdminData);
     };
   }, []);
 
@@ -146,14 +155,27 @@ export default function AdminDashboard({ user, courses = [], leaves = [], ticket
       };
       window.addEventListener('popstate', handlePopState);
 
-      const handleNotificationEvent = (e) => {
+      const handleNotificationEvent = async (e) => {
         setActiveTab('tickets');
         const n = e.detail?.notification;
-        if (n && tickets.length > 0) {
-          const msg = n.message || '';
-          const found = tickets.find((t) => msg.includes(t.subject) || msg.includes(t.userName));
-          if (found) setSelectedTicket(found);
+        if (!n) return;
+        const msg = n.message || '';
+        let currentList = tickets;
+        let found = currentList.find((t) => (t.subject && msg.includes(t.subject)) || (t.userName && msg.includes(t.userName)));
+        if (!found) {
+          try {
+            const res = await fetch('/api/support');
+            if (res.ok) {
+              const data = await res.json();
+              if (Array.isArray(data.tickets)) {
+                setTickets(data.tickets);
+                currentList = data.tickets;
+                found = currentList.find((t) => (t.subject && msg.includes(t.subject)) || (t.userName && msg.includes(t.userName)));
+              }
+            }
+          } catch {}
         }
+        if (found) setSelectedTicket(found);
       };
       window.addEventListener('buu:open-notification', handleNotificationEvent);
 
