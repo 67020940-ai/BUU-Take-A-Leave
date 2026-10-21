@@ -96,6 +96,12 @@ export default function TeacherDashboard({
     return leaves.filter((l) => l.status === 'ไม่อนุมัติ').length;
   }, [leaves]);
 
+  const totalRevokedCount = useMemo(() => {
+    return leaves.filter(
+      (l) => l.status === 'เพิกถอนการอนุมัติ' || l.status === 'เพิกถอน' || l.status === 'ยกเลิก'
+    ).length;
+  }, [leaves]);
+
   const [isSidebarCollapsed] = useSidebarCollapsed();
 
   // Search logic supporting keywords:
@@ -360,6 +366,11 @@ export default function TeacherDashboard({
                   รายการ
                 </span>
               </div>
+              {totalRevokedCount > 0 && (
+                <p className="text-[10px] text-neutral-400 dark:text-neutral-500 mt-1 font-medium">
+                  รวมเพิกถอน {totalRevokedCount}
+                </p>
+              )}
             </Link>
 
             {/* Box 2: อนุมัติ */}
