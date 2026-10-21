@@ -171,8 +171,8 @@ export default function LeaveDonutChart({
         </div>
       </div>
 
-      {/* Legend & Percentages - แสดงเฉพาะบนจอมือถือ/แท็บเล็ต (lg:hidden) และซ่อนบนคอมเพื่อให้ Clean ตามโจทย์ */}
-      <div className="flex-1 w-full space-y-2 min-w-0 lg:hidden">
+      {/* Legend & Percentages */}
+      <div className="flex-1 w-full flex flex-col gap-2 min-w-0">
         {sortedLabels.map((lbl, idx) => {
           const val = sortedValues[idx] || 0;
           const pct = total > 0 ? Math.round((val / total) * 100) : 0;
@@ -182,7 +182,7 @@ export default function LeaveDonutChart({
             <div
               key={lbl}
               onClick={() => onSelectCategory && onSelectCategory(lbl)}
-              className="flex items-center justify-between p-2.5 rounded-xl bg-neutral-50/70 dark:bg-slate-800/50 border border-neutral-200/50 dark:border-slate-700/50 hover:bg-purple-50/80 dark:hover:bg-purple-950/40 hover:border-purple-300 dark:hover:border-purple-700 transition-all text-xs cursor-pointer active:scale-98 select-none relative z-10 shadow-2xs"
+              className="flex items-center justify-between px-3 py-2.5 rounded-xl bg-neutral-50/70 dark:bg-slate-800/50 border border-neutral-200/50 dark:border-slate-700/50 hover:bg-purple-50/80 dark:hover:bg-purple-950/40 hover:border-purple-300 dark:hover:border-purple-700 transition-all text-xs cursor-pointer active:scale-98 select-none relative z-10 shadow-2xs"
               title={`คลิกเพื่อดูรายละเอียดสัดส่วน ${lbl}`}
             >
               <div className="flex items-center gap-2 min-w-0">

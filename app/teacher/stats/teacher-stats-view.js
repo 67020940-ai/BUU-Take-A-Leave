@@ -1366,7 +1366,7 @@ export default function TeacherStatsView({ courses = [], leaves = [], rosterByCo
               </div>
             </div>
 
-            <div className="p-3 rounded-2xl bg-purple-50/60 dark:bg-purple-950/30 border border-purple-200/60 dark:border-purple-800/60 flex items-center justify-between text-xs">
+            <div className="mt-3.5 p-3 rounded-2xl bg-purple-50/60 dark:bg-purple-950/30 border border-purple-200/60 dark:border-purple-800/60 flex items-center justify-between text-xs">
               <span className="text-[#7749BC] dark:text-purple-300 font-bold flex items-center gap-1.5">
                 <Users className="w-4 h-4" />
                 <span>นิสิตที่ยื่นลาในระบบ:</span>

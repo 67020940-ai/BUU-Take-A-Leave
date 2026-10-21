@@ -746,7 +746,7 @@ export default function WireframeStatsView({
                 </div>
               </div>
 
-              <div className="p-3 rounded-2xl bg-purple-50/70 dark:bg-purple-950/30 border border-purple-200/60 dark:border-purple-800/60 flex items-center justify-between text-xs">
+              <div className="mt-3.5 p-3 rounded-2xl bg-purple-50/70 dark:bg-purple-950/30 border border-purple-200/60 dark:border-purple-800/60 flex items-center justify-between text-xs">
                 <span className="text-[#7749BC] dark:text-purple-300 font-bold flex items-center gap-1.5">
                   <Clock className="w-3.5 h-3.5" />
                   <span>นิสิตเสี่ยงหมดสิทธิ์สอบ:</span>
