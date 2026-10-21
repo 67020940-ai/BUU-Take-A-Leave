@@ -8,7 +8,7 @@ export const revalidate = 0;
 
 export const metadata = {
   title: 'ระบบนิสิต | BUU Take A Leave',
-  description: 'ระบบบริหารจัดการการลาเรียนออนไลน์ สรุปเวลาเรียน มหาวิทยาลัยบูรพา',
+  description: 'ระบบยื่นและอนุมัติคำขอลาเรียนออนไลน์ สรุปเวลาเรียน มหาวิทยาลัยบูรพา',
 };
 
 export default async function StudentPage({ searchParams }) {

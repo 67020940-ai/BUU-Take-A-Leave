@@ -8,7 +8,7 @@ export const revalidate = 0;
 
 export const metadata = {
   title: 'ระบบอาจารย์ผู้สอน | Take A Leave',
-  description: 'ระบบบริหารจัดการการลาเรียนออนไลน์ มหาวิทยาลัยบูรพา',
+  description: 'ระบบยื่นและอนุมัติคำขอลาเรียนออนไลน์ มหาวิทยาลัยบูรพา',
 };
 
 export default async function TeacherPage() {

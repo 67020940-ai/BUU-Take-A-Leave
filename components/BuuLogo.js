@@ -23,7 +23,7 @@ export default function BuuLogo({ size = 42, variant = 'calendar', className = '
         fill="none"
         xmlns="http://www.w3.org/2000/svg"
         className={`shrink-0 transition-transform duration-200 select-none ${className}`}
-        aria-label="โลโก้ BUU TL - ระบบบริหารจัดการการลาเรียนออนไลน์"
+        aria-label="โลโก้ BUU TL - ระบบลาเรียนออนไลน์"
       >
         <defs>
           <linearGradient id="calBg" x1="0" y1="0" x2="48" y2="48" gradientUnits="userSpaceOnUse">

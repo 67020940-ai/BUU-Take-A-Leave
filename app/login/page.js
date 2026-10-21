@@ -107,7 +107,7 @@ export default function LoginPage() {
               <BuuLogo size={28} />
               <span>Take A Leave</span>
             </div>
-            <p className="text-xs text-slate-500 dark:text-slate-400">ระบบบริหารจัดการการลาเรียนออนไลน์ มหาวิทยาลัยบูรพา</p>
+            <p className="text-xs text-slate-500 dark:text-slate-400">ระบบบริหารจัดการการลาเรียน มหาวิทยาลัยบูรพา</p>
           </div>
           <div className="hidden md:block px-8 pt-8 pb-1">
             <h1 className="text-base font-bold text-slate-900 dark:text-slate-100">เข้าสู่ระบบ</h1>

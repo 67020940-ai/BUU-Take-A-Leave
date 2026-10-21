@@ -1,4 +1,4 @@
-# Design System — BUU Take A Leave (ระบบบริหารจัดการการลาเรียนออนไลน์ มหาวิทยาลัยบูรพา)
+# Design System — BUU Take A Leave (ระบบลาเรียนออนไลน์ มหาวิทยาลัยบูรพา)
 
 A locked Hallmark design system for BUU Take A Leave. Every page and component implementation reads this file as the single source of truth.
 
