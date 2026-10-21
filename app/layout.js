@@ -1,8 +1,20 @@
 import './globals.css';
 
 export const metadata = {
-  title: 'BUU Take A Leave | ระบบลาเรียนออนไลน์ มหาวิทยาลัยบูรพา',
-  description: 'ระบบยื่นและอนุมัติคำขอลาเรียนออนไลน์ สรุปเวลาเรียน มหาวิทยาลัยบูรพา',
+  title: 'ระบบบริหารจัดการการลาเรียนออนไลน์ | BUU Take A Leave',
+  description: 'ระบบบริหารจัดการการลาเรียนออนไลน์ มหาวิทยาลัยบูรพา',
+  openGraph: {
+    title: 'ระบบบริหารจัดการการลาเรียนออนไลน์ | BUU Take A Leave',
+    description: 'ระบบบริหารจัดการการลาเรียนออนไลน์ มหาวิทยาลัยบูรพา',
+    siteName: 'BUU Take A Leave',
+    locale: 'th_TH',
+    type: 'website',
+  },
+  twitter: {
+    card: 'summary',
+    title: 'ระบบบริหารจัดการการลาเรียนออนไลน์ | BUU Take A Leave',
+    description: 'ระบบบริหารจัดการการลาเรียนออนไลน์ มหาวิทยาลัยบูรพา',
+  },
 };
 
 export const viewport = {
