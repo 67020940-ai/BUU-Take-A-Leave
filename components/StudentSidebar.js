@@ -157,7 +157,7 @@ export default function StudentSidebar({
               {!collapsed && (
                 <div className="flex flex-col min-w-0">
                   <span className="text-[10px] text-neutral-400 dark:text-neutral-500 font-medium truncate leading-tight">
-                    ระบบลาเรียนออนไลน์
+                    ระบบบริหารจัดการการลาเรียนออนไลน์
                   </span>
                   <span className="font-extrabold text-neutral-900 dark:text-neutral-100 tracking-tight text-base leading-none mt-0.5 group-hover:text-[#7749BC] dark:group-hover:text-purple-300 transition-colors truncate">
                     Take A Leave

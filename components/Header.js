@@ -151,7 +151,7 @@ export default function Header({ user, semester = '1/2569' }) {
               onClick={cycleLogoVariant}
               role="button"
               tabIndex={0}
-              title="Take A Leave - ระบบลาเรียนออนไลน์ มหาวิทยาลัยบูรพา"
+              title="Take A Leave - ระบบบริหารจัดการการลาเรียนออนไลน์ มหาวิทยาลัยบูรพา"
               className="relative shrink-0 group-hover:scale-105 transition-transform duration-200 cursor-pointer"
             >
               <BuuLogo variant={logoVariant} size={42} className="drop-shadow-sm" />
@@ -163,7 +163,7 @@ export default function Header({ user, semester = '1/2569' }) {
                 Take A Leave
               </span>
               <p className="text-[11px] text-neutral-500 dark:text-neutral-400 hidden sm:block leading-tight mt-1 font-normal">
-                ระบบยื่นและอนุมัติคำขอลาเรียนออนไลน์ มหาวิทยาลัยบูรพา
+                ระบบบริหารจัดการการลาเรียนออนไลน์ มหาวิทยาลัยบูรพา
               </p>
             </div>
           </Link>

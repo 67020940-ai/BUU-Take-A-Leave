@@ -63,7 +63,7 @@ export async function GET(request) {
     ]);
 
     const backupData = {
-      system: 'BUU Take A Leave (ระบบลาเรียนออนไลน์ มหาวิทยาลัยบูรพา)',
+      system: 'BUU Take A Leave (ระบบบริหารจัดการการลาเรียนออนไลน์ มหาวิทยาลัยบูรพา)',
       version: '1.0.0',
       exportedAt: new Date().toISOString(),
       exportedBy: {

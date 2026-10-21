@@ -11,7 +11,7 @@ export default function Footer({ role, semester = '1/2569' }) {
         <div className="flex items-center gap-1.5">
           <span className="font-bold text-neutral-800 dark:text-neutral-200">BUU Take A Leave</span>
           <span>·</span>
-          <span>ระบบลาเรียนออนไลน์ มหาวิทยาลัยบูรพา</span>
+          <span>ระบบบริหารจัดการการลาเรียนออนไลน์ มหาวิทยาลัยบูรพา</span>
         </div>
         <div className="flex items-center gap-1.5">
           <Link href={supportHref} className="hover:text-[#7749BC] dark:hover:text-purple-300 hover:underline">
